@@ -1,0 +1,1 @@
+<?php /**PATH C:\Users\Administrator\Desktop\apps\t-dashboard\resources\views/components/plugins/fixed-plugin.blade.php ENDPATH**/ ?>

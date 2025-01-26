@@ -1,0 +1,1 @@
+<?php /**PATH /home/faysal/Desktop/apps/kasma/tour-travel-dashbaord/resources/views/components/plugins/fixed-plugin.blade.php ENDPATH**/ ?>
