@@ -132,7 +132,8 @@
             </div>
         </div>
     </nav>
-    <button type="button" id="iconNavbarSidenav" class="mr-10 block md:none">
-        <i class="fa-solid fa-bars"></i>
+    <button type="button" id="iconNavbarSidenav" class="mr-10 md:hidden">
+        <i class="fa-solid md:hidden fa-bars"></i>
     </button>
+    
 </main>

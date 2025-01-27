@@ -1,7 +1,7 @@
-<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 z-0"
-    id="sidenav-main">
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 " id="sidenav-main">
 
-    <div>
+
+    <div id="sidebar-container" class="">
         <ul id="navbar-nav" class="navbar-nav ">
             <li class="nav-item pb-2">
                 <a class="nav-link {{ Route::currentRouteName() == 'dashboard' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"

@@ -70,7 +70,7 @@
        
         document.addEventListener("DOMContentLoaded", () => {
             const toggleButton = document.getElementById("iconNavbarSidenav");
-            const sidenav = document.getElementById("navbar-nav");
+            const sidenav = document.getElementById("sidebar-container");
         console.log('here is me faya',sidenav)
             toggleButton.addEventListener("click", () => {
                 console.log('clicked here')
