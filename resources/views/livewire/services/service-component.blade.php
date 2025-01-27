@@ -35,9 +35,9 @@
                                         Title
                                     </th>
 
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                    {{-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Description
-                                    </th>
+                                    </th> --}}
 
 
 
@@ -60,9 +60,9 @@
                                     <td class="text-center">
                                         <p class="text-xs font-weight-bold mb-0">{{$service->title}}</p>
                                     </td>
-                                    <td class="text-center">
+                                    {{-- <td class="text-center">
                                         <p class="text-xs font-weight-bold mb-0">{{$service->description}}</p>
-                                    </td>
+                                    </td> --}}
 
 
                                     <td class="text-center">
