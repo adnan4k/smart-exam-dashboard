@@ -68,9 +68,7 @@ if (isset($__slots)) unset($__slots);
                                             Code
                                         </th>
 
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                        Inclusions
-                                    </th>
+                                    
 
 
 
@@ -97,9 +95,7 @@ if (isset($__slots)) unset($__slots);
                                     <td class="text-center">
                                         <p class="text-xs font-weight-bold mb-0"><?php echo e($tour->tour_code ?? "N/A"); ?></p>
                                     </td>
-                                    <td class="text-center">
-                                        <p class="text-xs font-weight-bold mb-0"><?php echo $tour->inclusions; ?></p>
-                                    </td>
+                                    
 
 
                                     <td class="text-center">

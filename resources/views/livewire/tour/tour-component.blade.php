@@ -38,9 +38,9 @@
                                             Code
                                         </th>
 
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                    {{-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Inclusions
-                                    </th>
+                                    </th> --}}
 
 
 
@@ -67,9 +67,9 @@
                                     <td class="text-center">
                                         <p class="text-xs font-weight-bold mb-0">{{$tour->tour_code ?? "N/A"}}</p>
                                     </td>
-                                    <td class="text-center">
+                                    {{-- <td class="text-center">
                                         <p class="text-xs font-weight-bold mb-0">{!! $tour->inclusions !!}</p>
-                                    </td>
+                                    </td> --}}
 
 
                                     <td class="text-center">
