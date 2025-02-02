@@ -1,0 +1,1 @@
+<?php /**PATH C:\Users\Administrator\Desktop\apps\quiz\resources\views/layouts/footers/auth/footer.blade.php ENDPATH**/ ?>

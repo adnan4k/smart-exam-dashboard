@@ -2,10 +2,7 @@
 
 namespace App\Http\Livewire;
 
-use App\Models\Scholarship;
-use App\Models\Tour;
-use App\Models\Booking;
-use App\Models\Category;
+
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -17,14 +14,10 @@ class Dashboard extends Component
 
     public function render()
     {
-        $this->podcastCount = Tour::count();
-        $this->vacanyCount = Booking::count();
-        $this->scholarship = Category::count();
-        $this->orderedCounts =  Booking::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-        ->groupBy('month')
-        ->orderBy('month')
-        ->pluck('count', 'month')
-        ->toArray();
+        $this->podcastCount = 0 ;
+        $this->vacanyCount = 0;
+        $this->scholarship = 0 ;
+        $this->orderedCounts = 0;
     //    dd($this->orderedCounts);
 
         return view('livewire.dashboard');

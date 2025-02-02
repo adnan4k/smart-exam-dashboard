@@ -8,12 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Category extends Model
 {
     use HasFactory;
-    public function blogs()
-    {
-        return $this->hasMany(Blog::class);
-    }
-    public function scholarships()
-    {
-        return $this->hasMany(Scholarship::class);
-    }
+  
+   
 }

@@ -20,7 +20,9 @@ class User extends Authenticatable
      * @var array
      */
 
-    protected $guarded = [];
+    protected $fillable = [
+        'name', 'email', 'password', 'role'
+    ];
 
     /**
      * The attributes that should be hidden for arrays.
@@ -38,6 +40,25 @@ class User extends Authenticatable
      * @var array
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        // 'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * A user can have many subscriptions.
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Check if the user is subscribed to a given year group.
+     */
+    public function isSubscribed($yearGroupId)
+    {
+        return $this->subscriptions()
+            ->where('year_group_id', $yearGroupId)
+            ->where('end_date', '>=', now())
+            ->exists();
+    }
 }
