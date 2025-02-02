@@ -168,15 +168,8 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                                         wire:model="choices.<?php echo e($index); ?>.text"
                                         placeholder="Choice Text"
                                         class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                    <input
-                                        type="file"
-                                        wire:model="choices.<?php echo e($index); ?>.image"
-                                        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                    <input
-                                        type="text"
-                                        wire:model="choices.<?php echo e($index); ?>.formula"
-                                        placeholder="Formula (LaTeX)"
-                                        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+
+                                   
                                     <button
                                         type="button"
                                         wire:click="removeChoice(<?php echo e($index); ?>)"

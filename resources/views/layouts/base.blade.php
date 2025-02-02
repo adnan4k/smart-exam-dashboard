@@ -34,7 +34,7 @@
     <link href="/css/app.css" rel="stylesheet">
 
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-    
+
 
 </head>
 
@@ -47,15 +47,14 @@
     <script src="assets/js/core/bootstrap.min.js"></script>
     <script src="assets/js/plugins/smooth-scrollbar.min.js"></script>
     <script>
-       
         document.addEventListener("DOMContentLoaded", () => {
             const toggleButton = document.getElementById("iconNavbarSidenav");
             const sidenav = document.getElementById("sidebar-container");
-        console.log('here is me faya',sidenav)
+            console.log('here is me faya', sidenav)
             toggleButton.addEventListener("click", () => {
                 console.log('clicked here')
                 // Toggle a class to show/hide the sidebar
-               console.log(sidenav.classList.toggle("hidden"));
+                console.log(sidenav.classList.toggle("hidden"));
             });
         });
     </script>
@@ -73,6 +72,14 @@
     <script async defer src="https://buttons.github.io/buttons.js"></script>
     <script src="resources/js/custom.js" defer></script>
 
+
+    <!-- TINY MCE -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <!-- MathJax for Rendering Math Equations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.12.1/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
     <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
     <script src="assets/js/soft-ui-dashboard.js"></script>
     <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>

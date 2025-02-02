@@ -23,6 +23,7 @@
     },
     "dependencies": {
         "async": ">=2.6.4",
-        "perfect-scrollbar": "^1.5.5"
+        "perfect-scrollbar": "^1.5.5",
+        "quill": "^2.0.3"
     }
 }
