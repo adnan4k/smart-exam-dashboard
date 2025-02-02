@@ -9,15 +9,12 @@ use App\Http\Livewire\Auth\Login;
 use App\Http\Livewire\Dashboard;
 
 use App\Http\Livewire\Profile;
-use App\Http\Livewire\Tables;
-use App\Http\Livewire\StaticSignIn;
 
 
-use App\Http\Livewire\LaravelExamples\UserProfile;
-use App\Http\Livewire\LaravelExamples\UserManagement;
+
 use App\Http\Livewire\Questions\QuestionComponent;
+use App\Http\Livewire\Subjects\SubjectComponent;
 use App\Http\Livewire\YearGroups\YearGroupComponent;
-use App\Models\Subject;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,19 +36,15 @@ Route::get('/login', Login::class)->name('login');
 
 Route::get('/login/forgot-password', ForgotPassword::class)->name('forgot-password');
 
-Route::get('/reset-password/{id}',ResetPassword::class)->name('reset-password')->middleware('signed');
+Route::get('/reset-password/{id}', ResetPassword::class)->name('reset-password')->middleware('signed');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', Profile::class)->name('profile');
-    Route::get('/tables', Tables::class)->name('tables');
-    Route::get('/static-sign-in', StaticSignIn::class)->name('sign-in');
-
-    Route::get('/laravel-user-profile', UserProfile::class)->name('user-profile');
-    Route::get('/laravel-user-management', UserManagement::class)->name('user-management');
+   
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
+    
+    // Livewire Components for Features
     Route::get('/questions', QuestionComponent::class)->name('questions');
-    Route::get('year-group',YearGroupComponent::class)->name('year-group');
-    Route::get('subject',Subject::class)->name('subject');
-
+    Route::get('/year-group', YearGroupComponent::class)->name('year-group');
+    Route::get('/subject', SubjectComponent::class)->name('subject'); // ✅ Corrected
 });
-

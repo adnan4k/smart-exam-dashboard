@@ -23,7 +23,9 @@
                                 wire:model="subjectId"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                                 <option value="">Select Subject</option>
-                             
+                                <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($subject->id); ?>"><?php echo e($subject->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
                             </select>
                             <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['subjectId'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');

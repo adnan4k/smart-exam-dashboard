@@ -7,12 +7,16 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Masmerise\Toaster\Toaster;
 
-class YearGroupForm extends Component
+class Form extends Component 
 {
     public $year;
     public $is_edit = false;
     public $id;
     public $openModal = false;
+    protected $listeners = ['yearGroupModal'=>'yearGroupModal'];
+    public function yearGroupModal(){
+        $this->openModal = true;
+     }
 
     protected $rules = [
         'year' => 'required|integer|unique:year_groups,year',

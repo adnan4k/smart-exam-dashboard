@@ -7,13 +7,16 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Masmerise\Toaster\Toaster;
 
-class SubjectForm extends Component
+class Form extends Component
 {
     public $name;
     public $is_edit = false;
     public $id;
     public $openModal = false;
-
+    protected $listeners = ['subjectModal'=>'subjectModal'];
+    public function subjectModal(){
+        $this->openModal = true;
+     }
     protected $rules = [
         'name' => 'required|string|max:255|unique:subjects,name',
     ];
