@@ -1,0 +1,51 @@
+name: Deploy Laravel to Shared Hosting
+
+on:
+  push:
+    branches:
+      - master # Replace this with the branch you want to deploy from
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Set up PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          extensions: mbstring, intl, pdo, bcmath
+          coverage: none
+
+      # Install Composer Dependencies
+      - name: Install Composer Dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      # Build Frontend (if needed)
+      - name: Build Frontend
+        run: |
+          npm install
+          npm run build
+
+      # Deploy files using FTP (username and password)
+      - name: Deploy to Shared Hosting
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: biniyamabera.com           # Replace with your FTP server
+          username: ${{ secrets.FTP_USERNAME }} # FTP username stored in GitHub Secrets
+          password: ${{ secrets.FTP_PASSWORD }} # FTP password stored in GitHub Secrets
+          local-dir: ./                       # Path to the local Laravel files
+          server-dir: dashboard.ethioexamhub.com/  # Path on the server to deploy the files
+          exclude: |
+            **/.git*
+            **/node_modules/**
+            **/vendor/**
+            **/storage/**
+            **/tests/**
+            **/.env
+            **/README.md
