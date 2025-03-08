@@ -9,16 +9,7 @@ class Question extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'subject_id', 
-        'year_group_id', 
-        'question_text', 
-        'question_image_path',
-        'formula', 
-        'answer_text', 
-        'explanation', 
-        'explanation_image_path'
-    ];
+    protected $guarded = [];
 
     /**
      * A question belongs to one subject.
@@ -50,6 +41,10 @@ class Question extends Model
     public function getQuestionImageUrlAttribute()
     {
         return $this->question_image_path ? asset('storage/' . $this->question_image_path) : null;
+    }
+
+    public function type(){
+        return $this->belongsTo(Type::class);
     }
 
     /**

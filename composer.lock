@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "96c8e8649d143721054f581c9762762c",
+    "content-hash": "6c780c4869900d3a5fbc3c5db4b839d4",
     "packages": [
         {
             "name": "blade-ui-kit/blade-ui-kit",
@@ -1981,22 +1981,22 @@
         },
         {
             "name": "masmerise/livewire-toaster",
-            "version": "2.3.2",
+            "version": "2.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/masmerise/livewire-toaster.git",
-                "reference": "a4687d0713e85008f10ce221ef41d3b1142c3049"
+                "reference": "9dc12004756eb1183c485a77fc5edf7bee3ec8e6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/masmerise/livewire-toaster/zipball/a4687d0713e85008f10ce221ef41d3b1142c3049",
-                "reference": "a4687d0713e85008f10ce221ef41d3b1142c3049",
+                "url": "https://api.github.com/repos/masmerise/livewire-toaster/zipball/9dc12004756eb1183c485a77fc5edf7bee3ec8e6",
+                "reference": "9dc12004756eb1183c485a77fc5edf7bee3ec8e6",
                 "shasum": ""
             },
             "require": {
                 "laravel/framework": "^11.0",
                 "livewire/livewire": "^3.0",
-                "php": "~8.2|~8.3"
+                "php": "~8.2|~8.3|~8.4"
             },
             "conflict": {
                 "stevebauman/unfinalize": "*"
@@ -2046,9 +2046,9 @@
             ],
             "support": {
                 "issues": "https://github.com/masmerise/livewire-toaster/issues",
-                "source": "https://github.com/masmerise/livewire-toaster/tree/2.3.2"
+                "source": "https://github.com/masmerise/livewire-toaster/tree/2.6.0"
             },
-            "time": "2024-11-06T16:06:13+00:00"
+            "time": "2024-12-01T11:27:35+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -8288,12 +8288,12 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.1"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }

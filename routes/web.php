@@ -13,8 +13,14 @@ use App\Http\Livewire\Profile;
 
 
 use App\Http\Livewire\Questions\QuestionComponent;
+use App\Http\Livewire\Referral\ReferralComponent;
+use App\Http\Livewire\Referral\ReferralSetting\ReferralSettingComponent;
 use App\Http\Livewire\Subjects\SubjectComponent;
+use App\Http\Livewire\Subscription\SubscriptionComponent;
+use App\Http\Livewire\Type\TypeComponent;
+use App\Http\Livewire\User\UserComponent;
 use App\Http\Livewire\YearGroups\YearGroupComponent;
+use App\Models\Referral;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,4 +53,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/questions', QuestionComponent::class)->name('questions');
     Route::get('/year-group', YearGroupComponent::class)->name('year-group');
     Route::get('/subject', SubjectComponent::class)->name('subject'); // ✅ Corrected
+    Route::get('/subscription', SubscriptionComponent::class)->name('subscription'); // ✅ Corrected
+    Route::get('/users', UserComponent::class)->name('users');
+    Route::get('/type',TypeComponent::class)->name('type');
+    Route::get('referral',ReferralComponent::class)->name('referral');
+    Route::get('referral-setting',ReferralSettingComponent::class)->name('referral-setting');
 });

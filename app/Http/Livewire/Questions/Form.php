@@ -5,6 +5,7 @@ namespace App\Http\Livewire\Questions;
 use App\Models\Question;
 use App\Models\Choice;
 use App\Models\Subject;
+use App\Models\Type;
 use App\Models\YearGroup;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -25,6 +26,7 @@ class Form extends Component
     public $answerText;
     public $explanation;
     public $explanationImage;
+    public $type;
     public $choices = [
         ['text' => '', 'image' => null, 'formula' => '']
     ];
@@ -64,6 +66,8 @@ class Form extends Component
 
     public function saveQuestion()
     {
+        // dd($this->all());
+
         $this->validate();
 
         // Upload question image
@@ -75,7 +79,6 @@ class Form extends Component
         $explanationImagePath = $this->explanationImage
             ? $this->explanationImage->store('explanations/images', 'public')
             : null;
-
         // Save question
         $question = Question::create([
             'subject_id' => $this->subjectId,
@@ -86,6 +89,7 @@ class Form extends Component
             'answer_text' => $this->answerText,
             'explanation' => $this->explanation,
             'explanation_image_path' => $explanationImagePath,
+            'type_id'=>$this->type,
         ]);
 
         // Save choices
@@ -128,6 +132,7 @@ class Form extends Component
         $this->formula = $question->formula;
         $this->answerText = $question->answer_text;
         $this->explanation = $question->explanation;
+        $this->type  = $question->type;
         $this->is_edit = true;
         $this->openModal = true;
 
@@ -145,6 +150,8 @@ class Form extends Component
     {
         return view('livewire.questions.form', [
             'subjects' => Subject::all(),
+             'types'=> Type::all(),
+
             'yearGroups' => YearGroup::all(),
         ]);
     }

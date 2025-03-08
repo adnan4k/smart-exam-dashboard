@@ -14,7 +14,8 @@ class QuestionComponent extends Component
     public function render()
     {
         // Retrieve questions with their related subject and year group.
-        $this->questions = Question::with(['subject', 'yearGroup'])->latest()->get();
+        $this->questions = Question::with(['subject', 'yearGroup','type'])->latest()->get();
+        // dd($this->questions);
         return view('livewire.questions.question-component');
     }
 } 

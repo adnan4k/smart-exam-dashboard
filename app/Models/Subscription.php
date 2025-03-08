@@ -13,7 +13,9 @@ class Subscription extends Model
         'user_id', 
         'year_group_id', 
         'start_date', 
-        'end_date'
+        'end_date',
+        'image',
+        'payment_status',
     ];
 
     /**
