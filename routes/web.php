@@ -6,6 +6,7 @@ use App\Http\Livewire\Auth\ForgotPassword;
 use App\Http\Livewire\Auth\ResetPassword;
 use App\Http\Livewire\Auth\SignUp;
 use App\Http\Livewire\Auth\Login;
+use App\Http\Livewire\Chapter\ChapterComponent;
 use App\Http\Livewire\Dashboard;
 
 use App\Http\Livewire\Profile;
@@ -58,4 +59,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/type',TypeComponent::class)->name('type');
     Route::get('referral',ReferralComponent::class)->name('referral');
     Route::get('referral-setting',ReferralSettingComponent::class)->name('referral-setting');
+    Route::get('chapter',ChapterComponent::class)->name('chapter');
 });

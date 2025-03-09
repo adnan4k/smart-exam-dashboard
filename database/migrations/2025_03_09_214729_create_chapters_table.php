@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('referral_settings', function (Blueprint $table) {
+        Schema::create('chapters', function (Blueprint $table) {
+            $table->string('name')->nullable();
+            $table->text('description')->nullable();
+            $table->string('image')->nullable();
             $table->id();
-            $table->integer('requuired_referrals')->default(5); // Example: User must refer 5 people
-            $table->decimal('reward_amount', 8, 2)->default(10.00); // Example: User gets $10
             $table->timestamps();
         });
-        
     }
 
     /**
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('referral_settings');
+        Schema::dropIfExists('chapters');
     }
 };

@@ -40,7 +40,7 @@
 
 </head>
 
-<body class="g-sidenav-show bg-gray-100">
+<body class="g-sidenav-show z-0 bg-gray-100">
 
     {{ $slot }}
 

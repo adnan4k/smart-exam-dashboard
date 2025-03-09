@@ -36,11 +36,11 @@ jobs:
       - name: Deploy to Shared Hosting
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: biniyamabera.com           # Replace with your FTP server
+          server: ethioexamhub.com           # Replace with your FTP server
           username: ${{ secrets.FTP_USERNAME }} # FTP username stored in GitHub Secrets
           password: ${{ secrets.FTP_PASSWORD }} # FTP password stored in GitHub Secrets
           local-dir: ./                       # Path to the local Laravel files
-          server-dir: dashboard.ethioexamhub.com/  # Path on the server to deploy the files
+          server-dir: ethioexamhub.com/  # Path on the server to deploy the files
           exclude: |
             **/.git*
             **/node_modules/**

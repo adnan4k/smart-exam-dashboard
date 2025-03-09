@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 
 class User extends Authenticatable
@@ -23,7 +24,16 @@ class User extends Authenticatable
     protected $fillable = [
         'name', 'email', 'password', 'role'
     ];
+    protected static function boot()
+    {
+        parent::boot();
 
+        static::creating(function ($user) {
+            do {
+                $user->referral_code = Str::upper(Str::random(8)); // Generates a unique 8-character referral code
+            } while (User::where('referral_code', $user->referral_code)->exists());
+        });
+    }
     /**
      * The attributes that should be hidden for arrays.
      *
