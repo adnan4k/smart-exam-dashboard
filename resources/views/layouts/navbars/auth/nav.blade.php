@@ -132,8 +132,8 @@
             </div>
         </div>
     </nav>
-    <button type="button" id="iconNavbarSidenav" class="mr-10 md:hidden">
+    {{-- <button type="button" id="iconNavbarSidenav" class="mr-10 md:hidden">
         <i class="fa-solid md:hidden fa-bars"></i>
-    </button>
+    </button> --}}
     
 </main>

@@ -149,8 +149,6 @@ if (isset($__slots)) unset($__slots);
             </div>
         </div>
     </nav>
-    <button type="button" id="iconNavbarSidenav" class="mr-10 md:hidden">
-        <i class="fa-solid md:hidden fa-bars"></i>
-    </button>
+    
     
 </main><?php /**PATH C:\Users\Administrator\Desktop\apps\quiz\resources\views/layouts/navbars/auth/nav.blade.php ENDPATH**/ ?>

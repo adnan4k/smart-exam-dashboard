@@ -33,6 +33,27 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         </div>
 
                         <div>
+                            <label class="text-gray-600 dark:text-gray-400">Chapters</label>
+                            <select wire:model="chapterId"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Chapters</option>
+                                <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $chapters; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $chapter): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($chapter->id); ?>"><?php echo e($chapter->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
+                            </select>
+                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['subjectId'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <span class="text-red-500"><?php echo e($message); ?></span>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
+                        </div>
+
+                        <div>
                             <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
                             <select wire:model="type"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
@@ -53,6 +74,23 @@ endif;
 unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         </div>
                         <!-- Year Group -->
+
+                          <!-- Exam Duration -->
+                          <div>
+                            <label class="text-gray-600 dark:text-gray-400">Exam Duration (in minutes)</label>
+                            <input type="number" wire:model="duration"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['duration'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <span class="text-red-500"><?php echo e($message); ?></span>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
+                        </div>
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Year Group</label>
                             <select wire:model="yearGroupId"
@@ -77,8 +115,7 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         <!-- Question Text -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Question Text</label>
-                            <textarea wire:model="questionText"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
+                            <textarea wire:model="questionText" class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
                             <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['questionText'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -128,8 +165,7 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         <!-- Answer Text -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Answer</label>
-                            <input type="text" wire:model="answerText"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                            <textarea wire:model="answerText" class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
                             <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['answerText'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -145,8 +181,7 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         <!-- Explanation -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Explanation</label>
-                            <textarea wire:model="explanation"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
+                            <textarea wire:model="explanation" class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
                             <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['explanation'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -181,18 +216,15 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                             <label class="text-gray-600 dark:text-gray-400">Choices</label>
                             <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $choices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $choice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="flex gap-2 mb-2">
-                                    <input type="text" wire:model="choices.<?php echo e($index); ?>.text"
-                                        placeholder="Choice Text"
-                                        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-
-
+                                    <textarea wire:model="choices.<?php echo e($index); ?>.text" placeholder="Choice Text"
+                                        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
                                     <button type="button" wire:click="removeChoice(<?php echo e($index); ?>)"
                                         class="text-red-500">
                                         Remove
                                     </button>
                                 </div>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
-                            <button type="button" st wire:click="addChoice"
+                            <button type="button" wire:click="addChoice"
                                 class="py-2.5 px-2 bg-[#56C596] text-sm font-medium text-white focus:outline-none rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                                 Add Choice
                             </button>
@@ -214,19 +246,4 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
         </div>
     </div>
 </div>
-
-    <?php
-        $__scriptKey = '496391880-0';
-        ob_start();
-    ?>
-    <script>
-        const quill = new Quill('#editor', {
-            theme: 'snow'
-        });
-    </script>
-    <?php
-        $__output = ob_get_clean();
-
-        \Livewire\store($this)->push('scripts', $__output, $__scriptKey)
-    ?>
 <?php /**PATH C:\Users\Administrator\Desktop\apps\quiz\resources\views/livewire/questions/form.blade.php ENDPATH**/ ?>

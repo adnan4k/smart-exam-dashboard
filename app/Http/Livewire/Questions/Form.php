@@ -2,6 +2,7 @@
 namespace App\Http\Livewire\Questions;
 namespace App\Http\Livewire\Questions;
 
+use App\Models\Chapter;
 use App\Models\Question;
 use App\Models\Choice;
 use App\Models\Subject;
@@ -26,7 +27,9 @@ class Form extends Component
     public $answerText;
     public $explanation;
     public $explanationImage;
+    public $chapterId;
     public $type;
+    public $duration;
     public $choices = [
         ['text' => '', 'image' => null, 'formula' => '']
     ];
@@ -51,6 +54,7 @@ class Form extends Component
         'choices.*.text' => 'required|string',
         'choices.*.image' => 'nullable|image|max:2048',
         'choices.*.formula' => 'nullable|string',
+        'duration'=>'nullable'
     ];
 
     public function addChoice()
@@ -83,6 +87,7 @@ class Form extends Component
         $question = Question::create([
             'subject_id' => $this->subjectId,
             'year_group_id' => $this->yearGroupId,
+            'chapter_id'=>$this->chapterId,
             'question_text' => $this->questionText,
             'question_image_path' => $questionImagePath,
             'formula' => $this->formula,
@@ -90,6 +95,7 @@ class Form extends Component
             'explanation' => $this->explanation,
             'explanation_image_path' => $explanationImagePath,
             'type_id'=>$this->type,
+            'duration'=>$this->duration
         ]);
 
         // Save choices
@@ -135,6 +141,7 @@ class Form extends Component
         $this->type  = $question->type;
         $this->is_edit = true;
         $this->openModal = true;
+        $this->duration = $question->duration;
 
         // Load choices
         $this->choices = $question->choices->map(function ($choice) {
@@ -153,6 +160,7 @@ class Form extends Component
              'types'=> Type::all(),
 
             'yearGroups' => YearGroup::all(),
+            'chapters'=>Chapter::all()
         ]);
     }
 }

@@ -76,6 +76,7 @@ if (isset($__slots)) unset($__slots);
                                                 data-bs-toggle="tooltip" title="Delete">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
+                                            
                                         </td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->

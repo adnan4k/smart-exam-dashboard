@@ -1,5 +1,12 @@
-<aside class="sidenav navbar navbar-vertical navbar-expand-xs z-0 border-0 border-radius-xl my-3 fixed-start ms-3" id="sidenav-main">
-    <div id="sidebar-container" class="z-999 md:z-0">
+<!-- Update the toggle button position to right side -->
+<button id="sidebarToggle" class="fixed top-4 right-4 z-[999] p-2.5 rounded-lg bg-[#56C596] text-white lg:hidden hover:bg-[#4ab485] transition-colors">
+    <i class="fas fa-bars text-lg"></i>
+</button>
+
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 
+             lg:translate-x-0 -translate-x-full transition-transform duration-300 ease-in-out bg-white" 
+       id="sidenav-main">
+    <div id="sidebar-container" class="z-[999] h-[calc(100vh-2rem)] overflow-y-auto">
         <ul id="navbar-nav" class="navbar-nav">
             
             <!-- Dashboard -->
@@ -110,4 +117,113 @@
         </ul>
     </div>
 </aside>
+
+<!-- Update the backdrop to only show when sidebar is open -->
+<div id="sidebarBackdrop" 
+     class="fixed inset-0 bg-black/50 lg:hidden hidden z-[50]">
+</div>
+
+<!-- Update the JavaScript with a more robust implementation -->
+<script>
+window.addEventListener('load', function() {
+    let sidebarState = {
+        isOpen: false,
+        init: function() {
+            this.sidebar = document.getElementById('sidenav-main');
+            this.toggle = document.getElementById('sidebarToggle');
+            this.backdrop = document.getElementById('sidebarBackdrop');
+            this.bindEvents();
+        },
+        bindEvents: function() {
+            if (this.toggle) {
+                this.toggle.addEventListener('click', () => this.toggleSidebar());
+            }
+            if (this.backdrop) {
+                this.backdrop.addEventListener('click', () => this.toggleSidebar());
+            }
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.isOpen) {
+                    this.toggleSidebar();
+                }
+            });
+        },
+        toggleSidebar: function() {
+            this.isOpen = !this.isOpen;
+            this.sidebar.classList.toggle('-translate-x-full');
+            this.backdrop.classList.toggle('hidden');
+            document.body.style.overflow = this.isOpen ? 'hidden' : '';
+        }
+    };
+
+    sidebarState.init();
+});
+</script>
+
+<!-- Update the styles to maintain consistent design -->
+<style>
+    #sidenav-main {
+        z-index: 55 !important;
+    }
+
+    #sidebarToggle {
+        position: fixed !important;
+        display: block !important;
+        right: 1rem !important;
+        z-index: 999 !important;
+    }
+
+    @media (min-width: 1024px) {
+        #sidebarToggle {
+            display: none !important;
+        }
+    }
+
+    /* Ensure backdrop is below sidebar but above content */
+    #sidebarBackdrop {
+        z-index: 54 !important;
+    }
+
+    @media (max-width: 1024px) {
+        #sidenav-main {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            width: 250px !important;
+            max-width: 250px !important;
+            margin: 1rem !important;
+            transform: translateX(-100%);
+            border-radius: 1rem;
+        }
+
+        #sidenav-main:not(.-translate-x-full) {
+            transform: translateX(0);
+        }
+
+        #sidebar-container {
+            height: 100% !important;
+            overflow-y: auto !important;
+            padding: 1rem;
+        }
+    }
+
+    /* Remove the black background from main content */
+    .main-content {
+        background: transparent !important;
+    }
+
+    @media (min-width: 1024px) {
+        .main-content {
+            margin-left: 17.125rem !important;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+    }
+</style>
+
 <?php /**PATH C:\Users\Administrator\Desktop\apps\quiz\resources\views/layouts/navbars/auth/sidebar.blade.php ENDPATH**/ ?>

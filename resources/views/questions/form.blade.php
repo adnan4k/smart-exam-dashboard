@@ -52,17 +52,17 @@
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
-                        <!-- Year Group -->
 
-                          <!-- Exam Duration -->
-                          <div>
+                        <div>
                             <label class="text-gray-600 dark:text-gray-400">Exam Duration (in minutes)</label>
-                            <input type="number" wire:model="duration"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                            @error('duration')
+                            <input type="number" wire:model="examDuration"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" placeholder="Enter duration in minutes">
+                            @error('examDuration')
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        <!-- Year Group -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Year Group</label>
                             <select wire:model="yearGroupId"

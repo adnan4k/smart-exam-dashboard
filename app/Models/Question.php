@@ -35,6 +35,8 @@ class Question extends Model
         return $this->hasMany(Choice::class);
     }
 
+
+
     /**
      * Get full URL for the question image.
      */
@@ -54,4 +56,6 @@ class Question extends Model
     {
         return $this->explanation_image_path ? asset('storage/' . $this->explanation_image_path) : null;
     }
+
+
 } 

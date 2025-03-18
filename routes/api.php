@@ -23,3 +23,9 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear']);
 
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
+
+Route::get('/questions/year', [QuestionController::class, 'getQuestionsByYear']);
+Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubject']);
+Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
+Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQuestionsGroupedByType']);
+Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);

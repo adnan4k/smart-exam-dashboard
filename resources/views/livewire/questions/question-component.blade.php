@@ -60,6 +60,12 @@
                                                 data-bs-toggle="tooltip" title="Delete">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
+                                            {{-- <button
+                                                @click="$dispatch('view-question-detail', { questionId: {{ $question->id }} })"
+                                                class="btn btn-sm text-info"
+                                                data-bs-toggle="tooltip" title="View Details">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button> --}}
                                         </td>
                                     </tr>
                                 @endforeach
