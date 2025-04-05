@@ -57,4 +57,6 @@ class SubscriptionController extends Controller
             'subscription' => $subscription,
         ], 201);
     }
+
+     public function 
 }
