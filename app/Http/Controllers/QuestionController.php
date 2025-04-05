@@ -5,11 +5,28 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\Subject;
+use App\Models\Type;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class QuestionController extends Controller
 {
+
+    public function examType()
+    {
+        $types = Type::all()->map(function ($type) {
+            return [
+                'id' => $type->id,
+                'name' => $type->name,
+                'image' => $type->image ? asset('storage/' . $type->image) : null
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'data' => $types
+        ]);
+    }
     public function getQuestionsByYear(Request $request)
     {
         // Validate year input

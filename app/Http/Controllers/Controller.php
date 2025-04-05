@@ -12,13 +12,5 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    public function examType(): JsonResponse
-    {
-        $types = Type::all();
-
-        return response()->json([
-            'status' => true,
-            'data' => $types
-        ]);
-    }
+   
 }
