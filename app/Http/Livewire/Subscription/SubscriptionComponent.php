@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Subscription;
 
 use Livewire\Component;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\Log;
 use Masmerise\Toaster\Toaster;
 
 class SubscriptionComponent extends Component
@@ -28,6 +29,7 @@ class SubscriptionComponent extends Component
     {
         // Eager load related user and yearGroup data
         $subscriptions = Subscription::with('user', 'yearGroup')->get();
+        Log::info($subscriptions);
         return view('livewire.subscription.subscription-component', compact('subscriptions'));
     }
 

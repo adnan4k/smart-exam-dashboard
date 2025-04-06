@@ -36,7 +36,7 @@ class SubscriptionController extends Controller
 
         // Get the type and its price
         $type = Type::findOrFail($user->type_id);
-
+        Log::info($type->price);
         // Check if a subscription already exists and is paid
         $existingSubscription = $user->subscriptions()
             ->where('type_id', $user->type_id)
@@ -72,5 +72,52 @@ class SubscriptionController extends Controller
             'message' => 'Subscription created successfully.',
             'subscription' => $subscription,
         ], 201);
+    }
+
+    /**
+     * Check subscription status for a user
+     */
+    public function checkSubscription(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        
+        if (!$user->type_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No exam type associated with this user.',
+            ], 400);
+        }
+
+        $subscription = $user->subscriptions()
+            ->where('type_id', $user->type_id)
+            ->where('payment_status', 'paid')
+            ->where('end_date', '>', now())
+            ->first();
+
+        if (!$subscription) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No active subscription found.',
+                'type_id' => $user->type_id,
+                'type_price' => Type::find($user->type_id)->price,
+            ], 200);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Active subscription found.',
+            'subscription' => [
+                'start_date' => $subscription->start_date,
+                'end_date' => $subscription->end_date,
+                'days_remaining' => now()->diffInDays($subscription->end_date),
+                'type_id' => $subscription->type_id,
+                'payment_status' => $subscription->payment_status,
+                'amount' => $subscription->amount,
+            ]
+        ], 200);
     }
 }
