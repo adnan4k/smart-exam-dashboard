@@ -58,7 +58,7 @@
                                                 wire:click="$dispatch('openDeleteModal', { itemId: {{ $question->id }}, model: '{{ addslashes(App\Models\Question::class) }}' })"
                                                 class="btn btn-sm text-danger"
                                                 data-bs-toggle="tooltip" title="Delete">
-                                                <i class="fa-solid fa-trash"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                             </button>
                                             {{-- <button
                                                 @click="$dispatch('view-question-detail', { questionId: {{ $question->id }} })"

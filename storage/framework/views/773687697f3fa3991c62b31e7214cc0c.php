@@ -1,7 +1,7 @@
-<div x-data="{ openModal: @entangle('openModal') }" class="flex justify-center px-8">
+<div x-data="{ openModal: <?php if ((object) ('openModal') instanceof \Livewire\WireDirective) : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('openModal'->value()); ?>')<?php echo e('openModal'->hasModifier('live') ? '.live' : ''); ?><?php else : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('openModal'); ?>')<?php endif; ?> }" class="flex justify-center px-8">
     <div @click.away="openModal = false" x-cloak x-show="openModal"
         class="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 overflow-y-auto">
-        <div x-data="{ isEdit: @entangle('isEdit') }" class="relative p-4 w-full max-w-2xl max-h-full">
+        <div x-data="{ isEdit: <?php if ((object) ('isEdit') instanceof \Livewire\WireDirective) : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('isEdit'->value()); ?>')<?php echo e('isEdit'->hasModifier('live') ? '.live' : ''); ?><?php else : ?>window.Livewire.find('<?php echo e($__livewire->getId()); ?>').entangle('<?php echo e('isEdit'); ?>')<?php endif; ?> }" class="relative p-4 w-full max-w-2xl max-h-full">
             <form class="relative bg-white rounded-lg shadow dark:bg-gray-700" wire:submit.prevent="saveType">
                 <div class="flex flex-wrap border shadow rounded-lg p-3 dark:bg-gray-600">
                     <h2 class="text-xl text-gray-600 dark:text-gray-300 pb-2"
@@ -14,7 +14,14 @@
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none 
                                        focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
                                 type="text">
-                            @error('name') <span class="text-red-500">{{ $message }}</span> @enderror
+                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <span class="text-red-500"><?php echo e($message); ?></span> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         </div>
 
                         <div>
@@ -23,17 +30,17 @@
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none 
                                        focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                             </textarea>
-                            @error('description') <span class="text-red-500">{{ $message }}</span> @enderror
+                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['description'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <span class="text-red-500"><?php echo e($message); ?></span> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         </div>
 
-                        {{-- <div>
-                            <label class="text-gray-600 dark:text-gray-400">Image</label>
-                            <input type="file" wire:model="image" class="w-full py-2 border border-slate-200 rounded-lg px-3">
-                            @if ($image)
-                                <img src="{{ $image->temporaryUrl() }}" class="w-20 h-20 mt-2 rounded-lg">
-                            @endif
-                            @error('image') <span class="text-red-500">{{ $message }}</span> @enderror
-                        </div> --}}
+                        
 
                         <div class="flex items-center p-4 justify-between md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <button style="background-color:#56C596;" type="submit"
@@ -56,4 +63,4 @@
             </form>
         </div>
     </div>
-</div>
+</div><?php /**PATH C:\Users\Administrator\Desktop\apps\quiz\resources\views/livewire/type/form.blade.php ENDPATH**/ ?>

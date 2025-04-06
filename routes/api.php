@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear']);
 
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
+Route::post('register',[UserController::class,'register']);
 Route::get('/exam-type',[QuestionController::class,'examType']);
 Route::get('/questions/year', [QuestionController::class, 'getQuestionsByYear']);
 Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubject']);

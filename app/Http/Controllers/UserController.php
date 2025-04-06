@@ -8,6 +8,7 @@ use App\Models\User; // Make sure this path matches your User model location
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -24,10 +25,13 @@ class UserController extends Controller
         // Validate the incoming request data
         $validatedData = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => 'required|email|unique:users,email',
+            'email'         => 'nullable',
             'password'      => 'required|string|min:8|confirmed',
             'phone_number'  => 'required|string|max:255',
             'referral_code' => 'nullable',
+            'institution_type' => 'nullable',
+            'institution_name' => 'nullable',
+            'type_id'=> 'required|exists:types,id', // Added type_id validation
         ]);
 
         DB::beginTransaction();
@@ -39,8 +43,11 @@ class UserController extends Controller
                 'email'         => $validatedData['email'],
                 'password'      => Hash::make($validatedData['password']),
                 'phone_number'  => $validatedData['phone_number'],
-                'role'          => 'user',
+                'role'          => 'student',
                 'status'        => 'active',
+                'institution_type' => $validatedData['institution_type'],
+                'institution_name' => $validatedData['institution_name'],
+                'type_id'       => $validatedData['type_id'], // Added type_id
                 'referred_by'   => User::where('referral_code', $request->referral_code)->value('id'),
             ]);
 
@@ -59,7 +66,7 @@ class UserController extends Controller
                     'is_paid'      => false,
                 ]);
             }
-
+            Log::info($user);
             DB::commit();
 
             // Generate token if using Laravel Sanctum

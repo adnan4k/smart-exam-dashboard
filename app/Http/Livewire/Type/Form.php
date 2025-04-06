@@ -43,10 +43,10 @@ class Form extends Component
             $type->name = $this->name;
             $type->description = $this->description;
             
-            if ($this->image) {
-                $imagePath = $this->image->store('types', 'public');
-                $type->image = $imagePath;
-            }
+            // if ($this->image) {
+            //     $imagePath = $this->image->store('types', 'public');
+            //     $type->image = $imagePath;
+            // }
             
             $type->save();
             $message = "Type Updated Successfully!";
