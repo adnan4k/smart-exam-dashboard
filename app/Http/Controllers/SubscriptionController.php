@@ -5,34 +5,41 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\YearGroup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
     public function subscribe(Request $request)
     {
+        Log::info($request->all());
         // Validate the request inputs
         $request->validate([
-            'user_id'       => 'required|exists:users,id',
-            'type_id' => 'required',
-            'image'         => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'amount'        => 'required|integer',
+            'user_id' => 'required|exists:users,id',
+            'type_id' => 'required|exists:types,id',
+            'image'   => 'required',
+            'amount'  => 'required',
         ]);
 
-        // Handle the image upload and store it in the public storage under the "subscriptions" directory
-        $imagePath = $request->file('image')->store('subscriptions', 'public');
+        // Handle the image upload
+        $imagePath = '';
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $imagePath = $request->file('image')->store('subscriptions', 'public');
+        }
 
-        // Retrieve the user and year group or fail
+        // Retrieve the user or fail
         $user = User::findOrFail($request->user_id);
-        $yearGroup = YearGroup::findOrFail($request->year_group_id);
 
-        // Check if a subscription for the given year group already exists and its payment status is 'paid'
-        $existingSubscription = $user->subscriptions()->where('year_group_id', $yearGroup->id)->first();
+        // Check if a subscription for the given type already exists and is paid
+        $existingSubscription = $user->subscriptions()
+            ->where('type_id', $request->type_id)
+            ->where('payment_status', 'paid')
+            ->first();
 
-        if ($existingSubscription && $existingSubscription->payment_status === 'paid') {
-            // Update the existing subscription with the new details
+        if ($existingSubscription) {
+            // Update the existing subscription
             $existingSubscription->update([
                 'start_date' => now(),
-                'end_date'   => now()->addYear(),
+                'end_date' => now()->addYears(3),
                 'image'      => $imagePath,
                 'amount'     => $request->amount,
             ]);
@@ -43,13 +50,14 @@ class SubscriptionController extends Controller
             ], 200);
         }
 
-        // Create a new subscription if none exists meeting the criteria
+        // Create a new subscription
         $subscription = $user->subscriptions()->create([
-            'year_group_id' => $yearGroup->id,
-            'start_date'    => now(),
-            'end_date'      => now()->addYear(),
-            'image'         => $imagePath,
-            'amount'        => $request->amount,
+            'type_id'    => $request->type_id,
+            'start_date' => now(),
+            'end_date'   => now()->addYear(),
+            'image'      => $imagePath,
+            'amount'     => $request->amount,
+            'payment_status' => 'pending',
         ]);
 
         return response()->json([
@@ -57,5 +65,4 @@ class SubscriptionController extends Controller
             'subscription' => $subscription,
         ], 201);
     }
-
 }

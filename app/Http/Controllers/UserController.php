@@ -26,7 +26,7 @@ class UserController extends Controller
         $validatedData = $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => 'nullable',
-            'password'      => 'required|string|min:8|confirmed',
+            // 'password'      => 'required',
             'phone_number'  => 'required|string|max:255',
             'referral_code' => 'nullable',
             'institution_type' => 'nullable',
@@ -41,7 +41,7 @@ class UserController extends Controller
             $user = User::create([
                 'name'          => $validatedData['name'],
                 'email'         => $validatedData['email'],
-                'password'      => Hash::make($validatedData['password']),
+                'password'      => Hash::make('password'),
                 'phone_number'  => $validatedData['phone_number'],
                 'role'          => 'student',
                 'status'        => 'active',
