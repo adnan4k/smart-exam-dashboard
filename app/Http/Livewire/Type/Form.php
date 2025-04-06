@@ -15,6 +15,7 @@ class Form extends Component
     public $name;
     public $description;
     public $image;
+    public $price;
     public $is_edit = false;
     public $id;
     public $openModal = false;
@@ -32,6 +33,7 @@ class Form extends Component
         'name' => 'required|string|max:255',
         'description' => 'nullable|string',
         'image' => 'nullable|image|max:1024', // Max 1MB
+        'price' => 'nullable',
     ];
 
     public function saveType()
@@ -42,6 +44,7 @@ class Form extends Component
             $type = Type::find($this->id);
             $type->name = $this->name;
             $type->description = $this->description;
+            $type->price = $this->price;
             
             // if ($this->image) {
             //     $imagePath = $this->image->store('types', 'public');
@@ -54,6 +57,7 @@ class Form extends Component
             $data = [
                 'name' => $this->name,
                 'description' => $this->description,
+                'price' => $this->price,
             ];
 
             if ($this->image) {
@@ -72,7 +76,7 @@ class Form extends Component
 
     public function resetForm()
     {
-        $this->reset(['name', 'description', 'image', 'is_edit', 'id']);
+        $this->reset(['name', 'description', 'image', 'price', 'is_edit', 'id']);
     }
 
     public function edit($id)
@@ -82,6 +86,7 @@ class Form extends Component
         $this->name = $type->name;
         $this->description = $type->description;
         $this->is_edit = true;
+        $this->price = $type->price;
         $this->openModal = true;
     }
 

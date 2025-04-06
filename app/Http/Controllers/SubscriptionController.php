@@ -13,7 +13,7 @@ class SubscriptionController extends Controller
         // Validate the request inputs
         $request->validate([
             'user_id'       => 'required|exists:users,id',
-            'year_group_id' => 'required|exists:year_groups,id',
+            'type_id' => 'required',
             'image'         => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'amount'        => 'required|integer',
         ]);

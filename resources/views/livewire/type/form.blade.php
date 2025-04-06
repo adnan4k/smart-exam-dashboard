@@ -26,6 +26,14 @@
                             @error('description') <span class="text-red-500">{{ $message }}</span> @enderror
                         </div>
 
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Price</label>
+                            <input wire:model="price" type="text"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none 
+                                       focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                            @error('price') <span class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+
                         {{-- <div>
                             <label class="text-gray-600 dark:text-gray-400">Image</label>
                             <input type="file" wire:model="image" class="w-full py-2 border border-slate-200 rounded-lg px-3">
