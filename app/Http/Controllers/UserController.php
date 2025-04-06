@@ -22,6 +22,7 @@ class UserController extends Controller
 
     public function register(Request $request)
     {
+        Log::info($request->all());
         // Validate the incoming request data
         $validatedData = $request->validate([
             'name'          => 'required|string|max:255',
