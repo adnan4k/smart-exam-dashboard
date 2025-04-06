@@ -19,6 +19,7 @@ class QuestionController extends Controller
                 'id' => $type->id,
                 'name' => $type->name,
                 'decription'=>$type->description,
+                'price'=>$type->price,
                 'image' => $type->image ? asset('storage/' . $type->image) : null
             ];
         });
