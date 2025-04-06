@@ -47,7 +47,7 @@ class UserController extends Controller
                 'status'        => 'active',
                 'institution_type' => $validatedData['institution_type'],
                 'institution_name' => $validatedData['institution_name'],
-                'type_id'       => $validatedData['type_id'], // Added type_id
+                'type_id'       => $request->type_id, // Added type_id
                 'referred_by'   => User::where('referral_code', $request->referral_code)->value('id'),
             ]);
 
