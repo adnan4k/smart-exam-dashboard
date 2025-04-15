@@ -23,7 +23,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
 Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear']);
-
+Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
 Route::post('register',[UserController::class,'register']);
 Route::get('/exam-type',[QuestionController::class,'examType']);

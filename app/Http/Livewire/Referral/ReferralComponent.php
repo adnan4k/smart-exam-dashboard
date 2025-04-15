@@ -2,7 +2,9 @@
 
 namespace App\Http\Livewire\Referral;
 
+use App\Models\Referral;
 use App\Models\ReferralSetting;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -15,7 +17,8 @@ class ReferralComponent extends Component
     #[On('refreshTable')]
     public function render()
     {
-        $referrals = ReferralSetting::latest()->get();
+        $referrals = Referral::with(['referrer', 'referred'])->get();
+        Log::info($referrals);
         return view('livewire.referral.referral-component',compact('referrals'));
     }
 }

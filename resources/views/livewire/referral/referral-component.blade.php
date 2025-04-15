@@ -26,7 +26,13 @@
                                         ID
                                     </th>
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
-                                        Name
+                                        Referrer Name
+                                    </th>
+                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                        Referred Name
+                                    </th>
+                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                        Bonus
                                     </th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Created At
@@ -43,7 +49,13 @@
                                             <p class="text-xs font-weight-bold mb-0">{{ $num + 1 }}</p>
                                         </td>
                                         <td class="text-center">
-                                            <p class="text-xs font-weight-bold mb-0">{{ $referral->name }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ $referral->referrer->name ?? 'N/A' }}</p>
+                                        </td>
+                                        <td class="text-center">
+                                            <p class="text-xs font-weight-bold mb-0">{{ $referral->referred->name ?? 'N/A' }}</p>
+                                        </td>
+                                        <td class="text-center">
+                                            <p class="text-xs font-weight-bold mb-0">{{ $referral->bonus_amount ?? 0 }}</p>
                                         </td>
                                         <td class="text-center">
                                             <p class="text-xs font-weight-bold mb-0">{{ $referral->created_at->format('Y-m-d') }}</p>
@@ -55,7 +67,7 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $referral->id }}, model: '{{ addslashes(App\Models\referral::class) }}' })"
+                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $referral->id }}, model: '{{ addslashes(App\Models\Referral::class) }}' })"
                                                 class="text-red-500">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>

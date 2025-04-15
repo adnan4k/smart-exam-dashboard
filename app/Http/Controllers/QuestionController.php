@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\Subject;
 use App\Models\Type;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Validate;
 
 class QuestionController extends Controller
 {
@@ -29,6 +31,8 @@ class QuestionController extends Controller
             'data' => $types
         ]);
     }
+     
+
     public function getQuestionsByYear(Request $request)
     {
         // Validate year input
@@ -123,6 +127,81 @@ class QuestionController extends Controller
             'response' => $response
         ]);
     }
+
+    public function sampleQuestions(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+    
+        $user = User::findOrFail($request->user_id);
+        
+        if (!$user->type_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No exam type associated with this user.'
+            ], 400);
+        }
+    
+        // Get random sample questions for the user's type
+        $questions = Question::where('type_id', $user->type_id)
+            ->with(['choices', 'subject', 'yearGroup', 'chapter'])
+            ->inRandomOrder()
+            ->limit(5)
+            ->get()
+            ->map(function ($question) {
+                return [
+                    'id' => $question->id,
+                    'subject_id' => $question->subject_id,
+                    'year_group_id' => $question->year_group_id,
+                    'chapter_id' => $question->chapter_id,
+                    'question_text' => $question->question_text,
+                    'question_image_path' => $question->question_image_path 
+                        ? asset('storage/' . $question->question_image_path) 
+                        : null,
+                    'formula' => $question->formula,
+                    'answer_text' => $question->answer_text,
+                    'explanation' => $question->explanation,
+                    'explanation_image_path' => $question->explanation_image_path 
+                        ? asset('storage/' . $question->explanation_image_path) 
+                        : null,
+                    'type_id' => $question->type_id,
+                    'duration' => $question->duration,
+                    'subject' => $question->subject->name,
+                    'year_group' => $question->yearGroup ? $question->yearGroup->name : null,
+                    'chapter' => $question->chapter ? $question->chapter->name : null,
+                    'choices' => $question->choices->map(function ($choice) {
+                        return [
+                            'id' => $choice->id,
+                            'question_id' => $choice->question_id,
+                            'choice_text' => $choice->choice_text,
+                            'choice_image_path' => $choice->choice_image_path 
+                                ? asset('storage/' . $choice->choice_image_path) 
+                                : null,
+                            'formula' => $choice->formula,
+                        ];
+                    }),
+                ];
+            });
+    
+        if ($questions->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No sample questions available for this exam type.'
+            ], 404);
+        }
+    
+        return response()->json([
+            'status' => true,
+            'message' => 'Sample questions retrieved successfully.',
+            'type_name' => Type::find($user->type_id)->name,
+            'questions_count' => $questions->count(),
+            'questions' => $questions
+        ]);
+    }
+
+
+    
 
     public function getAllQuestionsGroupedBySubject()
     {

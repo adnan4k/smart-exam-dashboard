@@ -12,8 +12,7 @@ class SubscriptionController extends Controller
 {
     public function subscribe(Request $request)
     {
-        Log::info($request->all());
-        // Validate only user_id and image
+  
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'image'   => 'required',

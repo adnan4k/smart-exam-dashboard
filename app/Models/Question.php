@@ -48,6 +48,9 @@ class Question extends Model
     public function type(){
         return $this->belongsTo(Type::class);
     }
+    public function chapter(){
+        return $this->belongsTo(Chapter::class);
+    }
 
     /**
      * Get full URL for the explanation image.
