@@ -102,6 +102,7 @@ class SubscriptionController extends Controller
                 'status' => false,
                 'message' => 'No active subscription found.',
                 'type_id' => $user->type_id,
+                'user_id'=>$user->id,
                 'type_price' => Type::find($user->type_id)->price,
             ], 200);
         }
@@ -111,6 +112,8 @@ class SubscriptionController extends Controller
             'message' => 'Active subscription found.',
             'subscription' => [
                 'start_date' => $subscription->start_date,
+                'user_id'=>$user->id,
+
                 'end_date' => $subscription->end_date,
                 'days_remaining' => now()->diffInDays($subscription->end_date),
                 'type_id' => $subscription->type_id,
