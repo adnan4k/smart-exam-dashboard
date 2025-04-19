@@ -81,45 +81,40 @@ class SubscriptionController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
         ]);
-
+    
         $user = User::findOrFail($request->user_id);
+        $response = [
+            'status' => false,
+            'message' => '',
+            'user_id' => $user->id,
+            'type_id' => $user->type_id,
+            'type_price' => $user->type_id ? Type::find($user->type_id)->price : null,
+        ];
         
         if (!$user->type_id) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No exam type associated with this user.',
-            ], 400);
+            $response['message'] = 'No exam type associated with this user.';
+            return response()->json($response, 400);
         }
-
+    
         $subscription = $user->subscriptions()
             ->where('type_id', $user->type_id)
             ->where('payment_status', 'paid')
             ->where('end_date', '>', now())
             ->first();
-
+    
         if (!$subscription) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No active subscription found.',
-                'type_id' => $user->type_id,
-                'user_id'=>$user->id,
-                'type_price' => Type::find($user->type_id)->price,
-            ], 200);
+            $response['message'] = 'No active subscription found.';
+            return response()->json($response, 200);
         }
-
+    
+        // Successful response with subscription details
         return response()->json([
             'status' => true,
             'message' => 'Active subscription found.',
-            'subscription' => [
-                'start_date' => $subscription->start_date,
-                'user_id'=>$user->id,
+            'user_id' => $user->id,
+            'type_id' => $subscription->type_id,
+            'type_price' => Type::find($user->type_id)->price,
 
-                'end_date' => $subscription->end_date,
-                'days_remaining' => now()->diffInDays($subscription->end_date),
-                'type_id' => $subscription->type_id,
-                'payment_status' => $subscription->payment_status,
-                'amount' => $subscription->amount,
-            ]
         ], 200);
     }
 }
