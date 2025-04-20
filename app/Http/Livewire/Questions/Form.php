@@ -1,6 +1,5 @@
 <?php
 namespace App\Http\Livewire\Questions;
-namespace App\Http\Livewire\Questions;
 
 use App\Models\Chapter;
 use App\Models\Question;
@@ -24,7 +23,7 @@ class Form extends Component
     public $questionText;
     public $questionImage;
     public $formula;
-    public $answerText;
+    // public $answerText  = 'none';
     public $explanation;
     public $explanationImage;
     public $chapterId;
@@ -38,9 +37,10 @@ class Form extends Component
     public $id;
     public $openModal = false;
     protected $listeners = ['questionModal'=>'questionModal'];
+    
     public function questionModal(){
         $this->openModal = true;
-     }
+    }
 
     protected $rules = [
         'subjectId' => 'required|exists:subjects,id',
@@ -48,7 +48,7 @@ class Form extends Component
         'questionText' => 'required|string',
         'questionImage' => 'nullable|image|max:2048',
         'formula' => 'nullable|string',
-        'answerText' => 'required|string',
+        // 'answerText' => 'required|integer',
         'explanation' => 'required|string',
         'explanationImage' => 'nullable|image|max:2048',
         'choices.*.text' => 'required|string',
@@ -70,8 +70,6 @@ class Form extends Component
 
     public function saveQuestion()
     {
-        // dd($this->all());
-
         $this->validate();
 
         // Upload question image
@@ -83,7 +81,8 @@ class Form extends Component
         $explanationImagePath = $this->explanationImage
             ? $this->explanationImage->store('explanations/images', 'public')
             : null;
-        // Save question
+        
+        // Save question (without answer_id first)
         $question = Question::create([
             'subject_id' => $this->subjectId,
             'year_group_id' => $this->yearGroupId,
@@ -91,26 +90,33 @@ class Form extends Component
             'question_text' => $this->questionText,
             'question_image_path' => $questionImagePath,
             'formula' => $this->formula,
-            'answer_text' => $this->answerText,
             'explanation' => $this->explanation,
             'explanation_image_path' => $explanationImagePath,
             'type_id'=>$this->type,
             'duration'=>$this->duration
         ]);
 
-        // Save choices
-        foreach ($this->choices as $choiceData) {
+        // Save choices and collect their IDs
+        $choicesIds = [];
+        foreach ($this->choices as $index => $choiceData) {
             $choiceImagePath = $choiceData['image']
                 ? $choiceData['image']->store('choices/images', 'public')
                 : null;
 
-            Choice::create([
+            $choice = Choice::create([
                 'question_id' => $question->id,
                 'choice_text' => $choiceData['text'],
                 'choice_image_path' => $choiceImagePath,
                 'formula' => $choiceData['formula'],
             ]);
+            
+            $choicesIds[$index] = $choice->id;
         }
+
+        // Update question with the correct answer_id
+        // $question->update([
+        //     'answer_id' => $choicesIds[$this->answerText] ?? "none"
+        // ]);
 
         $message = $this->is_edit ? "Question Updated Successfully!" : "Question Created Successfully!";
         Toaster::success($message);
@@ -123,8 +129,11 @@ class Form extends Component
     {
         $this->reset([
             'subjectId', 'yearGroupId', 'questionText', 'questionImage',
-            'formula', 'answerText', 'explanation', 'explanationImage', 'choices'
+            'formula',  'explanation', 'explanationImage', 'choices'
         ]);
+        $this->choices = [
+            ['text' => '', 'image' => null, 'formula' => '']
+        ];
         $this->is_edit = false;
     }
 
@@ -136,29 +145,36 @@ class Form extends Component
         $this->yearGroupId = $question->year_group_id;
         $this->questionText = $question->question_text;
         $this->formula = $question->formula;
-        $this->answerText = $question->answer_text;
         $this->explanation = $question->explanation;
-        $this->type  = $question->type;
+        $this->type = $question->type_id;
         $this->is_edit = true;
         $this->openModal = true;
         $this->duration = $question->duration;
 
-        // Load choices
-        $this->choices = $question->choices->map(function ($choice) {
-            return [
+        // Load choices and set the correct answer index
+        $this->choices = [];
+        $correctAnswerIndex = null;
+        
+        foreach ($question->choices as $index => $choice) {
+            $this->choices[] = [
                 'text' => $choice->choice_text,
-                'image' => null, // Reset image on edit
+                'image' => null,
                 'formula' => $choice->formula,
             ];
-        })->toArray();
+            
+            if ($choice->id == $question->answer_id) {
+                $correctAnswerIndex = $index;
+            }
+        }
+        
+        // $this->answerText = $correctAnswerIndex;
     }
 
     public function render()
     {
         return view('livewire.questions.form', [
             'subjects' => Subject::all(),
-             'types'=> Type::all(),
-
+            'types'=> Type::all(),
             'yearGroups' => YearGroup::all(),
             'chapters'=>Chapter::all()
         ]);

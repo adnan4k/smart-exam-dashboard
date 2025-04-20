@@ -79,7 +79,7 @@
                             @enderror
                         </div>
 
-                        <!-- Question Text with PlateJS -->
+                        <!-- Question Text -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Question Text</label>
                             <div class="plate-editor" wire:ignore>
@@ -112,18 +112,35 @@
                             @enderror
                         </div>
 
-                        <!-- Answer Text -->
+                        <!-- Choices -->
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Answer</label>
-                            <textarea wire:model="answerText" 
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                placeholder="Enter correct answer..."></textarea>
-                            @error('answerText')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
+                            <label class="text-gray-600 dark:text-gray-400">Choices</label>
+                            @foreach ($choices as $index => $choice)
+                                <div class="mb-4">
+                                    <div class="flex gap-2 mb-1">
+                                        <textarea wire:model="choices.{{ $index }}.text" placeholder="Choice Text"
+                                            class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
+                                        <button type="button" wire:click="removeChoice({{ $index }})"
+                                            class="text-red-500">
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="radio" wire:model="answerText" value="{{ $index }}" 
+                                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                        <label class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                            Mark as Correct Answer
+                                        </label>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <button type="button" wire:click="addChoice"
+                                class="py-2.5 px-2 bg-[#56C596] text-sm font-medium text-white focus:outline-none rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                Add Choice
+                            </button>
                         </div>
 
-                        <!-- Explanation with PlateJS -->
+                        <!-- Explanation -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Explanation</label>
                             <div class="plate-editor" wire:ignore>
@@ -144,25 +161,6 @@
                             @error('explanationImage')
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
-                        </div>
-
-                        <!-- Choices -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Choices</label>
-                            @foreach ($choices as $index => $choice)
-                                <div class="flex gap-2 mb-2">
-                                    <textarea wire:model="choices.{{ $index }}.text" placeholder="Choice Text"
-                                        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
-                                    <button type="button" wire:click="removeChoice({{ $index }})"
-                                        class="text-red-500">
-                                        Remove
-                                    </button>
-                                </div>
-                            @endforeach
-                            <button type="button" wire:click="addChoice"
-                                class="py-2.5 px-2 bg-[#56C596] text-sm font-medium text-white focus:outline-none rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                Add Choice
-                            </button>
                         </div>
                    
                         <!-- Submit Button -->

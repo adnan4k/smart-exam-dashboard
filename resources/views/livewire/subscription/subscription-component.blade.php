@@ -20,6 +20,10 @@
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                     User
                                 </th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                    User id
+                                </th>
+
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                     Year Group
                                 </th>
@@ -47,6 +51,11 @@
                                     <td>
                                         <p class="text-xs font-weight-bold mb-0">
                                             {{ $subscription->user->name ?? 'N/A' }}
+                                        </p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">
+                                            {{ $subscription->user->id ?? 'N/A' }}
                                         </p>
                                     </td>
                                     <td>
