@@ -12,7 +12,7 @@ class SubscriptionController extends Controller
 {
     public function subscribe(Request $request)
     {
-  
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'image'   => 'required',
@@ -26,7 +26,7 @@ class SubscriptionController extends Controller
 
         // Retrieve the user
         $user = User::findOrFail($request->user_id);
-        
+
         if (!$user->type_id) {
             return response()->json([
                 'message' => 'User has no exam type associated.',
@@ -81,32 +81,33 @@ class SubscriptionController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
         ]);
-    
+
         $user = User::findOrFail($request->user_id);
         $response = [
-            'status' => 'pending',
+            'status' => $user->subscriptions()
+                ->where('type_id', $user->type_id)
+                ->value('payment_status'),
             'message' => '',
             'user_id' => $user->id,
             'type_id' => $user->type_id,
             'type_price' => $user->type_id ? Type::find($user->type_id)->price : null,
         ];
-        
+
         if (!$user->type_id) {
             $response['message'] = 'No exam type associated with this user.';
             return response()->json($response, 400);
         }
-    
+
         $subscription = $user->subscriptions()
             ->where('type_id', $user->type_id)
             ->where('payment_status', 'paid')
-            ->where('end_date', '>', now())
             ->first();
-    
+
         if (!$subscription) {
             $response['message'] = 'No active subscription found.';
             return response()->json($response, 200);
         }
-    
+
         // Successful response with subscription details
         return response()->json([
             'status' => $subscription->payment_status,
