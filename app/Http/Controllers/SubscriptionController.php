@@ -84,7 +84,7 @@ class SubscriptionController extends Controller
     
         $user = User::findOrFail($request->user_id);
         $response = [
-            'status' => false,
+            'status' => 'pending',
             'message' => '',
             'user_id' => $user->id,
             'type_id' => $user->type_id,
@@ -109,7 +109,7 @@ class SubscriptionController extends Controller
     
         // Successful response with subscription details
         return response()->json([
-            'status' => true,
+            'status' => $subscription->payment_status,
             'message' => 'Active subscription found.',
             'user_id' => $user->id,
             'type_id' => $subscription->type_id,

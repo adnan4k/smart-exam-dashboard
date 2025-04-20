@@ -159,7 +159,7 @@ class QuestionController extends Controller
                     'question_image_path' => $question->question_image_path 
                         ? asset('storage/' . $question->question_image_path) 
                         : null,
-                    'formula' => $question->formula,
+                    // 'formula' => $question->formula,
                     'answer_text' => $question->answer_text,
                     'explanation' => $question->explanation,
                     'explanation_image_path' => $question->explanation_image_path 

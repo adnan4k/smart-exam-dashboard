@@ -15,6 +15,7 @@ class DeleteModal extends Component
 
     public function openDeleteModal($itemId, $model)
     {
+        // dd($itemId,$model);
         $this->itemId = $itemId;
         $this->model = $model;
         $this->show = true;
