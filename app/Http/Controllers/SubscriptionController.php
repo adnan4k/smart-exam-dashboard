@@ -35,11 +35,9 @@ class SubscriptionController extends Controller
 
         // Get the type and its price
         $type = Type::findOrFail($user->type_id);
-        Log::info($type->price);
         // Check if a subscription already exists and is paid
         $existingSubscription = $user->subscriptions()
             ->where('type_id', $user->type_id)
-            ->where('payment_status', 'paid')
             ->first();
 
         if ($existingSubscription) {

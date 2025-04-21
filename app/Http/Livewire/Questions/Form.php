@@ -11,6 +11,7 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Masmerise\Toaster\Toaster;
+use Illuminate\Support\Facades\DB;
 
 class Form extends Component
 {
@@ -38,6 +39,11 @@ class Form extends Component
     public $openModal = false;
     protected $listeners = ['questionModal'=>'questionModal'];
     
+    public $questionId;
+    public $scienceType;
+    public $region;
+    public $correctChoiceId;
+
     public function questionModal(){
         $this->openModal = true;
     }
@@ -46,6 +52,8 @@ class Form extends Component
         'subjectId' => 'required|exists:subjects,id',
         'yearGroupId' => 'required|exists:year_groups,id',
         'questionText' => 'required|string',
+        'scienceType' => 'required|in:social,natural',
+        'region' => 'required_if:type,regional',
         'questionImage' => 'nullable|image|max:2048',
         'formula' => 'nullable|string',
         // 'answerText' => 'required|integer',
@@ -72,102 +80,121 @@ class Form extends Component
     {
         $this->validate();
 
-        // Upload question image
-        $questionImagePath = $this->questionImage
-            ? $this->questionImage->store('questions/images', 'public')
-            : null;
-
-        // Upload explanation image
-        $explanationImagePath = $this->explanationImage
-            ? $this->explanationImage->store('explanations/images', 'public')
-            : null;
+        DB::beginTransaction();
         
-        // Save question (without answer_id first)
-        $question = Question::create([
-            'subject_id' => $this->subjectId,
-            'year_group_id' => $this->yearGroupId,
-            'chapter_id'=>$this->chapterId,
-            'question_text' => $this->questionText,
-            'question_image_path' => $questionImagePath,
-            'formula' => $this->formula,
-            'explanation' => $this->explanation,
-            'explanation_image_path' => $explanationImagePath,
-            'type_id'=>$this->type,
-            'duration'=>$this->duration
-        ]);
+        try {
+            $questionData = [
+                'subject_id' => $this->subjectId,
+                'year_group_id' => $this->yearGroupId,
+                'chapter_id' => $this->chapterId,
+                'question_text' => $this->questionText,
+                'formula' => $this->formula,
+                'explanation' => $this->explanation,
+                'type_id' => $this->type,
+                'duration' => $this->duration,
+                'science_type' => $this->scienceType,
+                'region' => $this->region,
+            ];
 
-        // Save choices and collect their IDs
-        $choicesIds = [];
-        foreach ($this->choices as $index => $choiceData) {
-            $choiceImagePath = $choiceData['image']
-                ? $choiceData['image']->store('choices/images', 'public')
-                : null;
+            // Handle question image
+            if ($this->questionImage) {
+                $questionData['question_image_path'] = $this->questionImage->store('questions/images', 'public');
+            }
 
-            $choice = Choice::create([
-                'question_id' => $question->id,
-                'choice_text' => $choiceData['text'],
-                'choice_image_path' => $choiceImagePath,
-                'formula' => $choiceData['formula'],
-            ]);
-            
-            $choicesIds[$index] = $choice->id;
+            // Handle explanation image
+            if ($this->explanationImage) {
+                $questionData['explanation_image_path'] = $this->explanationImage->store('explanations/images', 'public');
+            }
+
+            if ($this->is_edit) {
+                $question = Question::findOrFail($this->questionId);
+                $question->update($questionData);
+                
+                // Delete existing choices
+                $question->choices()->delete();
+            } else {
+                $question = Question::create($questionData);
+            }
+
+            // Save choices
+            foreach ($this->choices as $index => $choiceData) {
+                $choiceImagePath = isset($choiceData['image']) && $choiceData['image']
+                    ? $choiceData['image']->store('choices/images', 'public')
+                    : null;
+
+                $choice = Choice::create([
+                    'question_id' => $question->id,
+                    'choice_text' => $choiceData['text'],
+                    'choice_image_path' => $choiceImagePath,
+                    'formula' => $choiceData['formula'] ?? null,
+                ]);
+
+                if ($index === (int)$this->correctChoiceId) {
+                    $question->update(['correct_choice_id' => $choice->id]);
+                }
+            }
+
+            DB::commit();
+
+            $message = $this->is_edit ? "Question Updated Successfully!" : "Question Created Successfully!";
+            Toaster::success($message);
+            $this->openModal = false;
+            $this->resetForm();
+            $this->dispatch('refreshTable');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Toaster::error('Error saving question: ' . $e->getMessage());
         }
-
-        // Update question with the correct answer_id
-        // $question->update([
-        //     'answer_id' => $choicesIds[$this->answerText] ?? "none"
-        // ]);
-
-        $message = $this->is_edit ? "Question Updated Successfully!" : "Question Created Successfully!";
-        Toaster::success($message);
-        $this->openModal = false;
-        $this->resetForm();
-        $this->dispatch('refreshTable');
     }
 
     public function resetForm()
     {
         $this->reset([
-            'subjectId', 'yearGroupId', 'questionText', 'questionImage',
-            'formula',  'explanation', 'explanationImage', 'choices'
+            'questionId', 'subjectId', 'yearGroupId', 'questionText', 
+            'questionImage', 'formula', 'correctChoiceId', 'explanation', 
+            'explanationImage', 'choices', 'type', 'duration', 'chapterId',
+            'scienceType', 'region'
         ]);
-        $this->choices = [
-            ['text' => '', 'image' => null, 'formula' => '']
-        ];
         $this->is_edit = false;
     }
 
     #[On('edit-question')]
-    public function edit(Question $question)
+    public function edit($questionId)
     {
-        $this->id = $question->id;
+        $question = Question::with('choices')->findOrFail($questionId);
+        
+        $this->questionId = $question->id;
         $this->subjectId = $question->subject_id;
         $this->yearGroupId = $question->year_group_id;
+        $this->chapterId = $question->chapter_id;
         $this->questionText = $question->question_text;
         $this->formula = $question->formula;
         $this->explanation = $question->explanation;
         $this->type = $question->type_id;
+        $this->duration = $question->duration;
+        $this->scienceType = $question->science_type;
+        $this->region = $question->region;
+        
+        // Load choices
+        $this->choices = $question->choices->map(function ($choice) use ($question) {
+            return [
+                'text' => $choice->choice_text,
+                'formula' => $choice->formula,
+                'image' => null // Reset image on edit
+            ];
+        })->toArray();
+
+        // Set correct choice
+        if ($question->correct_choice_id) {
+            $correctChoiceIndex = collect($question->choices)->search(function($choice) use ($question) {
+                return $choice->id === $question->correct_choice_id;
+            });
+            $this->correctChoiceId = $correctChoiceIndex !== false ? $correctChoiceIndex : null;
+        }
+
         $this->is_edit = true;
         $this->openModal = true;
-        $this->duration = $question->duration;
-
-        // Load choices and set the correct answer index
-        $this->choices = [];
-        $correctAnswerIndex = null;
-        
-        foreach ($question->choices as $index => $choice) {
-            $this->choices[] = [
-                'text' => $choice->choice_text,
-                'image' => null,
-                'formula' => $choice->formula,
-            ];
-            
-            if ($choice->id == $question->answer_id) {
-                $correctAnswerIndex = $index;
-            }
-        }
-        
-        // $this->answerText = $correctAnswerIndex;
     }
 
     public function render()

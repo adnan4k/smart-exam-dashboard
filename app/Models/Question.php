@@ -9,7 +9,25 @@ class Question extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'subject_id',
+        'year_group_id',
+        'chapter_id',
+        'question_text',
+        'question_image_path',
+        'formula',
+        'correct_choice_id',
+        'explanation',
+        'explanation_image_path',
+        'type_id',
+        'duration',
+        'science_type',
+        'region'
+    ];
+
+    protected $casts = [
+        'science_type' => 'string',
+    ];
 
     /**
      * A question belongs to one subject.

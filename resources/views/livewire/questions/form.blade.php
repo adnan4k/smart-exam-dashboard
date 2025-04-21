@@ -162,6 +162,36 @@
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        <!-- Science Type -->
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Science Type</label>
+                            <select wire:model="scienceType" 
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Science Type</option>
+                                <option value="social">Social Science</option>
+                                <option value="natural">Natural Science</option>
+                            </select>
+                            @error('scienceType')
+                                <span class="text-red-500">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <!-- Show region field only if exam type is regional -->
+                        <div x-show="$wire.type === 'regional'">
+                            <label class="text-gray-600 dark:text-gray-400">Region</label>
+                            <select wire:model="region" 
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Region</option>
+                                <option value="amhara">Amhara</option>
+                                <option value="oromia">Oromia</option>
+                                <option value="tigray">Tigray</option>
+                                <!-- Add other regions as needed -->
+                            </select>
+                            @error('region')
+                                <span class="text-red-500">{{ $message }}</span>
+                            @enderror
+                        </div>
                    
                         <!-- Submit Button -->
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
