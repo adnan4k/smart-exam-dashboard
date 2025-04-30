@@ -199,21 +199,30 @@
                                 <span class="block mt-1 text-sm text-red-500">{{ $message }}</span>
                             @enderror
                         </div> --}}
+<!-- Show region field only if exam type is regional -->
+<div x-show="$wire.type === 'regional'">
+    <label class="text-gray-600 dark:text-gray-400">Region</label>
+    <select wire:model="region" 
+        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+        <option value="">Select Region</option>
+        <option value="addis_ababa">Addis Ababa</option>
+        <option value="afar">Afar</option>
+        <option value="amhara">Amhara</option>
+        <option value="benishangul_gumuz">Benishangul-Gumuz</option>
+        <option value="central_ethiopia">Central Ethiopia</option>
+        <option value="dire_dawa">Dire Dawa</option>
+        <option value="gambela">Gambela</option>
+        <option value="harari">Harari</option>
+        <option value="oromia">Oromia</option>
+        <option value="sidama">Sidama</option>
+        <option value="south_ethiopia">South Ethiopia</option>
+        <option value="tigray">Tigray</option>
+    </select>
+    @error('region')
+        <span class="text-red-500">{{ $message }}</span>
+    @enderror
+</div>
 
-                        <!-- Show region field only if exam type is regional -->
-                        <div x-show="$wire.type === 'regional'">
-                            <label class="text-gray-600 dark:text-gray-400">Region</label>
-                            <select wire:model="region" 
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Region</option>
-                                <option value="amhara">Amhara</option>
-                                <option value="oromia">Oromia</option>
-                                <option value="tigray">Tigray</option>
-                            </select>
-                            @error('region')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div>
                    
                         <!-- Submit Button -->
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">

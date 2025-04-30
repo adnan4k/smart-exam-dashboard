@@ -1,6 +1,5 @@
 <div class="main-content">
     <livewire:questions.form />
-    <livewire:components.delete-modal />
     <div class="row">
         <div class="col-12">
             <div class="card mb-4 mx-4">
@@ -55,17 +54,11 @@
                                                 <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <button
-                                                wire:click="$dispatch('deleteModalEvent', { itemId: {{ $question->id }}, model: '{{ addslashes(App\Models\Question::class) }}' })"
+                                                wire:click="deleteQuestion({{ $question->id }})"
                                                 class="btn btn-sm text-danger"
                                                 data-bs-toggle="tooltip" title="Delete">
-                                            <i class="fa-solid fa-trash"></i>
+                                                <i class="fa-solid fa-trash"></i>
                                             </button>
-                                            {{-- <button
-                                                @click="$dispatch('view-question-detail', { questionId: {{ $question->id }} })"
-                                                class="btn btn-sm text-info"
-                                                data-bs-toggle="tooltip" title="View Details">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </button> --}}
                                         </td>
                                     </tr>
                                 @endforeach

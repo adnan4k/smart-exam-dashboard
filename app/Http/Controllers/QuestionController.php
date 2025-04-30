@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Chapter;
 use App\Models\Question;
 use App\Models\Subject;
 use App\Models\Type;
@@ -127,6 +128,27 @@ class QuestionController extends Controller
             'response' => $response
         ]);
     }
+    public function availableChapters(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+    ]);
+
+    $user = User::findOrFail($request->user_id);
+
+    // Get all chapter_ids from questions with the user's type_id
+    $chapterIds = Question::where('type_id', $user->type_id)
+        ->pluck('chapter_id')
+        ->unique();
+
+    $chapters = Chapter::whereIn('id', $chapterIds)->get();
+
+    return response()->json([
+        'status' => 'success',
+        'chapters' => $chapters,
+    ]);
+}
+
 
     public function availableSubjects(Request $request)
     {
