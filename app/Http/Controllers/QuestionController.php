@@ -47,19 +47,46 @@ class QuestionController extends Controller
 
 
         $year = $request->year;
-        // Format response – mapping the subjects and their questions accordingly.
+
+        // Fetch questions with necessary relations
         $questions = Question::whereHas('yearGroup', function ($q) use ($year) {
             $q->where('year', $year);
         })->with(['choices', 'subject', 'yearGroup'])->get();
-
+        
+        // Map full image URLs
+        $questions->transform(function ($question) {
+            // Convert image paths to full URLs
+            $question->question_image_path = $question->question_image_path 
+                ? url('storage/' . $question->question_image_path) 
+                : null;
+        
+            $question->explanation_image_path = $question->explanation_image_path 
+                ? url('storage/' . $question->explanation_image_path) 
+                : null;
+        
+            // Map choices' image paths
+            if ($question->relationLoaded('choices')) {
+                $question->choices->transform(function ($choice) {
+                    $choice->choice_image_path = $choice->choice_image_path 
+                        ? url('storage/' . $choice->choice_image_path) 
+                        : null;
+                    return $choice;
+                });
+            }
+        
+            return $question;
+        });
+        
+        // Group by subject name
         $response = $questions->groupBy(function ($question) {
             return $question->subject->name;
         });
-
+        
         return response()->json([
             'status'   => 'success',
             'response' => $response
         ]);
+        
     }
 
     public function getQuestionsBySubject(Request $request)
