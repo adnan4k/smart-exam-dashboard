@@ -4,43 +4,33 @@ namespace App\Http\Livewire\Components;
 
 use Livewire\Component;
 use Masmerise\Toaster\Toaster;
-use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class DeleteModal extends Component
 {
-    public $show = false;
-    protected $listeners = ['openDeleteModal'];
-    public $itemId;
-    public $model;
+    public $openDeleteModal = false;
+    public $modelClass;
+    public  $itemId;
+    protected $listeners = ["deleteModalEvent"=> "showDeleteModal"];
+    public function showDeleteModal($model,$itemId){
 
-    public function openDeleteModal($itemId, $model)
-    {
-        // dd($itemId,$model);
+        $this->modelClass = $model;
         $this->itemId = $itemId;
-        $this->model = $model;
-        $this->show = true;
+        $this->openDeleteModal = true;
     }
 
-    public function delete()
+    public function deleteItem()
     {
-        $modelClass = app($this->model);
-        $item = $modelClass::find($this->itemId);
-
-        if ($item) {
-            $item->delete();
-            Toaster::success('Deleted Successfully');
-            $this->dispatch('refreshTable'); // Emit an event for parent components to listen to
-
+        // dd($this->modelClass);
+        if ($this->modelClass && $this->itemId) {
+            $model = $this->modelClass::find($this->itemId);
+            if ($model) {
+                $model->delete();
+                Toaster::success("Deleted Successfully");
+                $this->dispatch('refreshTable'); // Optional: Emit event to refresh table or list
+                $this->openDeleteModal = false;
+                $this->dispatch('refreshTable');
+            }
         }
-
-        $this->resetModal();
-    }
-
-    public function resetModal()
-    {
-        $this->show = false;
-        $this->itemId = null;
-        $this->model = null;
     }
     public function render()
     {

@@ -112,7 +112,7 @@
                             @enderror
                         </div>
 
-                        <!-- Choices -->
+                        <!-- Choices (Simplified - No Images) -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Choices</label>
                             @foreach ($choices as $index => $choice)
@@ -126,12 +126,15 @@
                                         </button>
                                     </div>
                                     <div class="flex items-center">
-                                        <input type="radio" wire:model="answerText" value="{{ $index }}" 
+                                        <input type="radio" wire:model="correctChoiceId" value="{{ $index }}" 
                                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
                                         <label class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                                             Mark as Correct Answer
                                         </label>
                                     </div>
+                                    @error('choices.'.$index.'.text')
+                                        <span class="text-red-500">Choice text is required</span>
+                                    @enderror
                                 </div>
                             @endforeach
                             <button type="button" wire:click="addChoice"
@@ -163,19 +166,39 @@
                             @enderror
                         </div>
 
-                        <!-- Science Type -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Science Type</label>
-                            <select wire:model="scienceType" 
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Science Type</option>
-                                <option value="social">Social Science</option>
-                                <option value="natural">Natural Science</option>
-                            </select>
+                        <!-- Science Type as Checkboxes -->
+                        {{-- <div>
+                            <label class="block mb-3 text-gray-600 dark:text-gray-400 text-base font-medium">Science Type</label>
+                            <div class="flex items-center gap-6">
+                                <!-- Natural Science Checkbox -->
+                                <div class="flex items-center">
+                                    <input id="natural-science" 
+                                           type="checkbox" 
+                                           wire:model="scienceType" 
+                                           value="natural"
+                                           checked
+                                           class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                    <label for="natural-science" class="ms-2 text-base font-medium text-gray-900 dark:text-gray-300">
+                                        Natural Science
+                                    </label>
+                                </div>
+                        
+                                <!-- Social Science Checkbox -->
+                                <div class="flex items-center">
+                                    <input id="social-science" 
+                                           type="checkbox" 
+                                           wire:model="scienceType" 
+                                           value="social"
+                                           class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                    <label for="social-science" class="ms-2 text-base font-medium text-gray-900 dark:text-gray-300">
+                                        Social Science
+                                    </label>
+                                </div>
+                            </div>
                             @error('scienceType')
-                                <span class="text-red-500">{{ $message }}</span>
+                                <span class="block mt-1 text-sm text-red-500">{{ $message }}</span>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <!-- Show region field only if exam type is regional -->
                         <div x-show="$wire.type === 'regional'">
@@ -186,7 +209,6 @@
                                 <option value="amhara">Amhara</option>
                                 <option value="oromia">Oromia</option>
                                 <option value="tigray">Tigray</option>
-                                <!-- Add other regions as needed -->
                             </select>
                             @error('region')
                                 <span class="text-red-500">{{ $message }}</span>

@@ -9,15 +9,16 @@ return new class extends Migration
     public function up()
     {
         Schema::table('questions', function (Blueprint $table) {
-            $table->enum('science_type', ['social', 'natural'])->after('type_id')->nullable();
-            $table->string('region')->nullable()->after('science_type');
+            $table->unsignedBigInteger('correct_choice_id')->nullable()->after('id');
+            $table->foreign('correct_choice_id')->references('id')->on('choices')->onDelete('set null');
         });
     }
 
     public function down()
     {
         Schema::table('questions', function (Blueprint $table) {
-            $table->dropColumn(['science_type', 'region']);
+            $table->dropForeign(['correct_choice_id']);
+            $table->dropColumn('correct_choice_id');
         });
     }
-}; 
+};

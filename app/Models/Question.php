@@ -36,6 +36,11 @@ class Question extends Model
     {
         return $this->belongsTo(Subject::class);
     }
+    // In app/Models/Question.php
+public function correctChoice()
+{
+    return $this->belongsTo(Choice::class, 'correct_choice_id');
+}
 
     /**
      * A question belongs to one year group.

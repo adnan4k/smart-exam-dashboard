@@ -1,6 +1,6 @@
-<div class="z-9999" x-data="{ openDeleteModal: @entangle('show') }">        
+<div x-data="{ openDeleteModal: @entangle('openDeleteModal') }">        
     <!-- Backdrop -->
-    <div x-cloak x-show="openDeleteModal" id="popup-modal" tabindex="-1" class="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex justify-center items-center">
+    <div x-cloak x-show="openDeleteModal" id="popup-modal" tabindex="-1" class="fixed inset-0 bg-black bg-opacity-50 z-[99] flex justify-center items-center">
         <!-- Modal Container -->
         <div class="relative p-4 w-full max-w-md bg-white rounded-lg shadow dark:bg-gray-700">
             <!-- Close Button -->
@@ -12,7 +12,7 @@
             </button>
             
             <!-- Modal Content -->
-            <div class="z-50 p-4 text-center">
+            <div class="p-4 text-center">
                 
                 <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to delete this ?</h3>
                 

@@ -128,6 +128,27 @@ class QuestionController extends Controller
         ]);
     }
 
+    public function availableSubjects(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+
+        // Get all subject_ids from questions with the user's type_id
+        $subjectIds = Question::where('type_id', $user->type_id)
+            ->pluck('subject_id')
+            ->unique();
+
+        $subjects = Subject::whereIn('id', $subjectIds)->get();
+
+        return response()->json([
+            'status' => 'success',
+            'subjects' => $subjects,
+        ]);
+    }
+
     public function sampleQuestions(Request $request)
     {
         $request->validate([

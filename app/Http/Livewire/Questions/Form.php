@@ -51,18 +51,20 @@ class Form extends Component
     protected $rules = [
         'subjectId' => 'required|exists:subjects,id',
         'yearGroupId' => 'required|exists:year_groups,id',
+        'chapterId' => 'nullable|exists:chapters,id',
+        'type' => 'required|exists:types,id', // Added validation for type
         'questionText' => 'required|string',
-        'scienceType' => 'required|in:social,natural',
+        'scienceType' => 'nullable',
         'region' => 'required_if:type,regional',
         'questionImage' => 'nullable|image|max:2048',
         'formula' => 'nullable|string',
-        // 'answerText' => 'required|integer',
         'explanation' => 'required|string',
         'explanationImage' => 'nullable|image|max:2048',
-        'choices.*.text' => 'required|string',
+        'choices.*.text' => 'required_without:choices.*.image|string|nullable', // Modified to allow empty text if image exists
         'choices.*.image' => 'nullable|image|max:2048',
         'choices.*.formula' => 'nullable|string',
-        'duration'=>'nullable'
+        'duration' => 'nullable|integer|min:1',
+        'correctChoiceId' => 'required|integer|min:0' // Added validation for correct choice
     ];
 
     public function addChoice()
@@ -79,7 +81,7 @@ class Form extends Component
     public function saveQuestion()
     {
         $this->validate();
-
+    
         DB::beginTransaction();
         
         try {
@@ -95,17 +97,24 @@ class Form extends Component
                 'science_type' => $this->scienceType,
                 'region' => $this->region,
             ];
-
+    
             // Handle question image
-            if ($this->questionImage) {
+            if ($this->questionImage instanceof \Illuminate\Http\UploadedFile) {
                 $questionData['question_image_path'] = $this->questionImage->store('questions/images', 'public');
+            } elseif ($this->is_edit && !$this->questionImage) {
+                // Keep existing image if not changed during edit
+                $existing = Question::find($this->questionId);
+                $questionData['question_image_path'] = $existing->question_image_path;
             }
-
+    
             // Handle explanation image
-            if ($this->explanationImage) {
+            if ($this->explanationImage instanceof \Illuminate\Http\UploadedFile) {
                 $questionData['explanation_image_path'] = $this->explanationImage->store('explanations/images', 'public');
+            } elseif ($this->is_edit && !$this->explanationImage) {
+                $existing = Question::find($this->questionId);
+                $questionData['explanation_image_path'] = $existing->explanation_image_path;
             }
-
+    
             if ($this->is_edit) {
                 $question = Question::findOrFail($this->questionId);
                 $question->update($questionData);
@@ -115,36 +124,40 @@ class Form extends Component
             } else {
                 $question = Question::create($questionData);
             }
-
+    
             // Save choices
             foreach ($this->choices as $index => $choiceData) {
-                $choiceImagePath = isset($choiceData['image']) && $choiceData['image']
-                    ? $choiceData['image']->store('choices/images', 'public')
-                    : null;
-
+                $choiceImagePath = null;
+                
+                if (isset($choiceData['image']) && $choiceData['image'] instanceof \Illuminate\Http\UploadedFile) {
+                    $choiceImagePath = $choiceData['image']->store('choices/images', 'public');
+                }
+    
                 $choice = Choice::create([
                     'question_id' => $question->id,
-                    'choice_text' => $choiceData['text'],
+                    'choice_text' => $choiceData['text'] ?? null,
                     'choice_image_path' => $choiceImagePath,
                     'formula' => $choiceData['formula'] ?? null,
                 ]);
-
-                if ($index === (int)$this->correctChoiceId) {
+    
+                // Set the correct choice
+                if ($index == $this->correctChoiceId) {
                     $question->update(['correct_choice_id' => $choice->id]);
                 }
             }
-
+    
             DB::commit();
-
+    
             $message = $this->is_edit ? "Question Updated Successfully!" : "Question Created Successfully!";
             Toaster::success($message);
             $this->openModal = false;
             $this->resetForm();
             $this->dispatch('refreshTable');
-
+    
         } catch (\Exception $e) {
             DB::rollBack();
             Toaster::error('Error saving question: ' . $e->getMessage());
+            throw $e; // Optional: re-throw the exception for debugging
         }
     }
 

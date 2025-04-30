@@ -69,4 +69,10 @@ class User extends Authenticatable
             ->where('end_date', '>=', now())
             ->exists();
     }
+
+    public function type()
+{
+    return $this->belongsTo(Type::class);
+}
+
 }

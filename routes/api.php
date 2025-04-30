@@ -21,6 +21,7 @@ use App\Http\Controllers\UserController;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::post('subjects',[QuestionController::class,'availableSubjects']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
 Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear']);
 Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);

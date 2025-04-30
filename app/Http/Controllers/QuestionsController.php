@@ -171,7 +171,7 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.questions.form', [
+        return view('questions.form', [
             'subjects' => Subject::all(),
             'types' => Type::all(),
             'yearGroups' => YearGroup::all(),

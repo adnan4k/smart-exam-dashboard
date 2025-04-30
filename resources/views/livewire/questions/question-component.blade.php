@@ -49,13 +49,13 @@
                                         </td>
                                         <td class="text-center">
                                             <button
-                                                @click="$dispatch('edit-question', { question: {{ $question->id }} })"
+                                                @click="$dispatch('edit-question', { questionId: {{ $question->id }} })"
                                                 class="btn btn-sm text-primary"
                                                 data-bs-toggle="tooltip" title="Edit">
                                                 <i class="fa-solid fa-pen"></i>
                                             </button>
                                             <button
-                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $question->id }}, model: '{{ addslashes(App\Models\Question::class) }}' })"
+                                                wire:click="$dispatch('deleteModalEvent', { itemId: {{ $question->id }}, model: '{{ addslashes(App\Models\Question::class) }}' })"
                                                 class="btn btn-sm text-danger"
                                                 data-bs-toggle="tooltip" title="Delete">
                                             <i class="fa-solid fa-trash"></i>
