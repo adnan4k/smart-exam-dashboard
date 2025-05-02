@@ -24,6 +24,28 @@
                             @error('name') <span class="text-red-500">{{ $message }}</span> @enderror
                         </div>
 
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
+                            <select wire:model="typeId"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Exam Type</option>
+                                @foreach ($types as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('typeId') <span class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Default Duration (minutes)</label>
+                            <input
+                                wire:model="defaultDuration"
+                                type="number"
+                                min="1"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                            @error('defaultDuration') <span class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <button
                                 style="background-color:#56C596;"

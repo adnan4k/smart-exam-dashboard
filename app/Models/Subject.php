@@ -9,7 +9,7 @@ class Subject extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'type_id', 'default_duration'];
 
     /**
      * A subject can have many questions.
@@ -17,5 +17,10 @@ class Subject extends Model
     public function questions()
     {
         return $this->hasMany(Question::class);
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(\App\Models\Type::class);
     }
 } 

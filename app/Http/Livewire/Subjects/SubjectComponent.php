@@ -13,7 +13,8 @@ class SubjectComponent extends Component
     #[On('refreshTable')]
     public function render()
     {
-        $this->subjects = Subject::all();
+        $this->subjects = Subject::with('type')->get();
+        // dd($this->subjects);
         return view('livewire.subjects.subject-component');
     }
 }

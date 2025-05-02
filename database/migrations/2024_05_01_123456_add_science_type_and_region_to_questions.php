@@ -9,10 +9,10 @@ class AddScienceTypeAndRegionToQuestions extends Migration
 {
     public function up()
     {
-        Schema::table('questions', function (Blueprint $table) {
-            $table->enum('science_type', ['social', 'natural'])->after('type_id');
-            $table->string('region')->nullable()->after('science_type');
-        });
+        // Schema::table('questions', function (Blueprint $table) {
+        //     $table->enum('science_type', ['social', 'natural'])->after('type_id');
+        //     $table->string('region')->nullable()->after('science_type');
+        // });
     }
 
     public function down()

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Livewire\Questions;
 
 use App\Models\Chapter;
@@ -37,14 +38,15 @@ class Form extends Component
     public $is_edit = false;
     public $id;
     public $openModal = false;
-    protected $listeners = ['questionModal'=>'questionModal'];
-    
+    protected $listeners = ['questionModal' => 'questionModal'];
+
     public $questionId;
     public $scienceType;
     public $region;
     public $correctChoiceId;
 
-    public function questionModal(){
+    public function questionModal()
+    {
         $this->openModal = true;
     }
 
@@ -81,9 +83,9 @@ class Form extends Component
     public function saveQuestion()
     {
         $this->validate();
-    
+
         DB::beginTransaction();
-        
+
         try {
             $questionData = [
                 'subject_id' => $this->subjectId,
@@ -94,10 +96,10 @@ class Form extends Component
                 'explanation' => $this->explanation,
                 'type_id' => $this->type,
                 'duration' => $this->duration,
-                'science_type' => $this->scienceType,
+                'science_type' => $this->scienceType ?? 'natural',
                 'region' => $this->region,
             ];
-    
+
             // Handle question image
             if ($this->questionImage instanceof \Illuminate\Http\UploadedFile) {
                 $questionData['question_image_path'] = $this->questionImage->store('questions/images', 'public');
@@ -106,7 +108,7 @@ class Form extends Component
                 $existing = Question::find($this->questionId);
                 $questionData['question_image_path'] = $existing->question_image_path;
             }
-    
+
             // Handle explanation image
             if ($this->explanationImage instanceof \Illuminate\Http\UploadedFile) {
                 $questionData['explanation_image_path'] = $this->explanationImage->store('explanations/images', 'public');
@@ -114,46 +116,45 @@ class Form extends Component
                 $existing = Question::find($this->questionId);
                 $questionData['explanation_image_path'] = $existing->explanation_image_path;
             }
-    
+
             if ($this->is_edit) {
                 $question = Question::findOrFail($this->questionId);
                 $question->update($questionData);
-                
+
                 // Delete existing choices
                 $question->choices()->delete();
             } else {
                 $question = Question::create($questionData);
             }
-    
+
             // Save choices
             foreach ($this->choices as $index => $choiceData) {
                 $choiceImagePath = null;
-                
+
                 if (isset($choiceData['image']) && $choiceData['image'] instanceof \Illuminate\Http\UploadedFile) {
                     $choiceImagePath = $choiceData['image']->store('choices/images', 'public');
                 }
-    
+
                 $choice = Choice::create([
                     'question_id' => $question->id,
                     'choice_text' => $choiceData['text'] ?? null,
                     'choice_image_path' => $choiceImagePath,
                     'formula' => $choiceData['formula'] ?? null,
                 ]);
-    
+
                 // Set the correct choice
                 if ($index == $this->correctChoiceId) {
                     $question->update(['correct_choice_id' => $choice->id]);
                 }
             }
-    
+
             DB::commit();
-    
+
             $message = $this->is_edit ? "Question Updated Successfully!" : "Question Created Successfully!";
             Toaster::success($message);
             $this->openModal = false;
             $this->resetForm();
             $this->dispatch('refreshTable');
-    
         } catch (\Exception $e) {
             DB::rollBack();
             Toaster::error('Error saving question: ' . $e->getMessage());
@@ -164,10 +165,21 @@ class Form extends Component
     public function resetForm()
     {
         $this->reset([
-            'questionId', 'subjectId', 'yearGroupId', 'questionText', 
-            'questionImage', 'formula', 'correctChoiceId', 'explanation', 
-            'explanationImage', 'choices', 'type', 'duration', 'chapterId',
-            'scienceType', 'region'
+            'questionId',
+            'subjectId',
+            'yearGroupId',
+            'questionText',
+            'questionImage',
+            'formula',
+            'correctChoiceId',
+            'explanation',
+            'explanationImage',
+            'choices',
+            'type',
+            'duration',
+            'chapterId',
+            'scienceType',
+            'region'
         ]);
         $this->is_edit = false;
     }
@@ -176,7 +188,7 @@ class Form extends Component
     public function edit($questionId)
     {
         $question = Question::with('choices')->findOrFail($questionId);
-        
+
         $this->questionId = $question->id;
         $this->subjectId = $question->subject_id;
         $this->yearGroupId = $question->year_group_id;
@@ -188,7 +200,7 @@ class Form extends Component
         $this->duration = $question->duration;
         $this->scienceType = $question->science_type;
         $this->region = $question->region;
-        
+
         // Load choices
         $this->choices = $question->choices->map(function ($choice) use ($question) {
             return [
@@ -200,7 +212,7 @@ class Form extends Component
 
         // Set correct choice
         if ($question->correct_choice_id) {
-            $correctChoiceIndex = collect($question->choices)->search(function($choice) use ($question) {
+            $correctChoiceIndex = collect($question->choices)->search(function ($choice) use ($question) {
                 return $choice->id === $question->correct_choice_id;
             });
             $this->correctChoiceId = $correctChoiceIndex !== false ? $correctChoiceIndex : null;
@@ -214,9 +226,9 @@ class Form extends Component
     {
         return view('livewire.questions.form', [
             'subjects' => Subject::all(),
-            'types'=> Type::all(),
+            'types' => Type::all(),
             'yearGroups' => YearGroup::all(),
-            'chapters'=>Chapter::all()
+            'chapters' => Chapter::all()
         ]);
     }
 }

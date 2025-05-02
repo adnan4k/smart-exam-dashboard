@@ -1,0 +1,22 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up()
+    {
+        Schema::table('subjects', function (Blueprint $table) {
+            $table->integer('default_duration')->nullable()->after('type_id');
+        });
+    }
+
+    public function down()
+    {
+        Schema::table('subjects', function (Blueprint $table) {
+            $table->dropForeign(['type_id']);
+            $table->dropColumn(['type_id', 'default_duration']);
+        });
+    }
+}; 
