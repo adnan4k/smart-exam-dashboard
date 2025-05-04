@@ -31,6 +31,7 @@ class Form extends Component
     public $chapterId;
     public $type;
     public $duration;
+    public $filteredChapters = [];
     public $choices = [
         ['text' => '', 'image' => null, 'formula' => '']
     ];
@@ -45,11 +46,36 @@ class Form extends Component
     public $region;
     public $correctChoiceId;
 
+    public $filteredSubjects = [];
+    public $subjects = [];
     public function questionModal()
     {
         $this->openModal = true;
     }
-
+    public function loadSubjects()
+    {
+        $this->reset('subjectId', 'chapterId', 'chapters');
+        
+        if ($this->type) {
+            $this->subjects = Subject::where('type_id', $this->type)->get();
+        } else {
+            $this->subjects = Subject::all();
+        }
+    }
+    public function loadChapters()
+{
+    $this->reset('chapterId');
+    
+    if ($this->subjectId) {
+        $this->chapters = Chapter::all();
+        
+        // Auto-set duration if needed
+        $subject = Subject::find($this->subjectId);
+        $this->duration = $subject->default_duration ?? null;
+    } else {
+        $this->chapters = [];
+    }
+}
     protected $rules = [
         'subjectId' => 'required|exists:subjects,id',
         'yearGroupId' => 'required|exists:year_groups,id',
@@ -222,13 +248,45 @@ class Form extends Component
         $this->openModal = true;
     }
 
+    public function updatedType($value)
+    {
+        // Filter subjects by selected type
+        $this->filteredSubjects = \App\Models\Subject::where('type_id', $value)->get();
+        $this->subjectId = null; // Reset subject selection
+        $this->filteredChapters = []; // Reset chapters
+        $this->chapterId = null; // Reset chapter selection
+    }
+    public $chapters = [];
+
+    public function updatedSubjectId($value)
+    {
+        logger()->info("Subject ID updated to: " . $value); // Check storage/logs/laravel.log
+        
+        if (empty($value)) {
+            $this->filteredChapters = [];
+            $this->chapterId = null;
+            $this->duration = null;
+            return;
+        }
+        
+        $subject = Subject::find($value);
+        if (!$subject) {
+            logger()->error("Subject not found with ID: " . $value);
+            return;
+        }
+        
+        $this->duration = $subject->default_duration;
+        // $this->filteredChapters = Chapter::where('subject_id', $value)->get();
+        $this->chapterId = null;
+        
+    }
     public function render()
     {
         return view('livewire.questions.form', [
-            'subjects' => Subject::all(),
             'types' => Type::all(),
+            'subjects' => $this->filteredSubjects ?: Subject::all(),
             'yearGroups' => YearGroup::all(),
-            'chapters' => Chapter::all()
+            'chapters' =>   Chapter::all(),
         ]);
     }
 }

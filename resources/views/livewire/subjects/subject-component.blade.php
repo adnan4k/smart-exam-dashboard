@@ -32,10 +32,13 @@
                                         Exam Type
                                     </th>
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                        Region
+                                    </th>
+                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                         Duration
                                     </th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                        Created At
+                                    Year
                                     </th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Action
@@ -51,14 +54,18 @@
                                         <td class="text-center">
                                             <p class="text-xs font-weight-bold mb-0">{{ $subject->name }}</p>
                                         </td>
-                                        <td class="text-center">
-                                            <p class="text-xs font-weight-bold mb-0">{{ $subject->default_duration }}</p>
-                                        </td>
+                                   
                                         <td class="text-center">
                                             <p class="text-xs font-weight-bold mb-0">{{ $subject->type ? $subject->type->name:"" }}</p>
                                         </td>
                                         <td class="text-center">
-                                            <p class="text-xs font-weight-bold mb-0">{{ $subject->created_at->format('Y-m-d') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ $subject->region ? $subject->region:"" }}</p>
+                                        </td>
+                                        <td class="text-center">
+                                            <p class="text-xs font-weight-bold mb-0">{{ $subject->default_duration }}</p>
+                                        </td>
+                                        <td class="text-center">
+                                            <p class="text-xs font-weight-bold mb-0">{{ $subject->year }}</p>
                                         </td>
                                         <td class="text-center">
                                             <button
@@ -67,8 +74,9 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $subject->id }}, model: '{{ addslashes(App\Models\Subject::class) }}' })"
-                                                class="text-red-500">
+                                                wire:click="deleteSubject({{ $subject->id }})"
+                                                class="btn btn-sm text-danger"
+                                                data-bs-toggle="tooltip" title="Delete">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </td>

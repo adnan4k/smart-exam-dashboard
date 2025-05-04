@@ -9,7 +9,7 @@ class Subject extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'type_id', 'default_duration'];
+    protected $guarded = [];
 
     /**
      * A subject can have many questions.

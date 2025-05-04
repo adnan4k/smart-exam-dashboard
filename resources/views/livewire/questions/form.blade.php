@@ -11,59 +11,51 @@
                         x-text="isEdit ? 'Edit Question' : 'Create Question'"></h2>
 
                     <div class="flex flex-col gap-2 w-full border-gray-400">
+                      <!-- Exam Type -->
+<div>
+    <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
+    <select wire:model="type" wire:change="loadSubjects()"
+        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+        <option value="">Select Exam Type</option>
+        @foreach ($types as $type)
+            <option value="{{ $type->id }}">{{ $type->name }}</option>
+        @endforeach
+    </select>
+</div>
 
-                        <!-- Subject -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Subject</label>
-                            <select wire:model="subjectId"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Subject</option>
-                                @foreach ($subjects as $subject)
-                                    <option value="{{ $subject->id }}">{{ $subject->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('subjectId')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div>
+<!-- Subject -->
+<div>
+    <label class="text-gray-600 dark:text-gray-400">Subject</label>
+    <select wire:model="subjectId" wire:change="loadChapters()"
+        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+        <option value="">Select Subject</option>
+        @foreach ($subjects as $subject)
+            <option value="{{ $subject->id }}">{{ $subject->name }}-{{ $subject->region }}</option>
+        @endforeach
+    </select>
+</div>
 
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Chapters</label>
-                            <select wire:model="chapterId"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Chapters</option>
-                                @foreach ($chapters as $chapter)
-                                    <option value="{{ $chapter->id }}">{{ $chapter->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('subjectId')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
-                            <select wire:model="type"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Exam Type</option>
-                                @foreach ($types as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('type')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div>
+<!-- Chapters -->
+<div>
+    <label class="text-gray-600 dark:text-gray-400">Chapters</label>
+    <select wire:model="chapterId"
+        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+        <option value="">Select Chapters</option>
+        @foreach ($chapters as $chapter)
+            <option value="{{ $chapter->id }}">{{ $chapter->name }}</option>
+        @endforeach
+    </select>
+</div>
 
                         <!-- Exam Duration -->
-                        <div>
+                        {{-- <div>
                             <label class="text-gray-600 dark:text-gray-400">Exam Duration (in minutes)</label>
                             <input type="number" wire:model="duration"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                             @error('duration')
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
-                        </div>
+                        </div> --}}
                         
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Year Group</label>
@@ -101,16 +93,6 @@
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
-
-                        <!-- Formula -->
-                        {{-- <div>
-                            <label class="text-gray-600 dark:text-gray-400">Formula (LaTeX)</label>
-                            <input type="text" wire:model="formula"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                            @error('formula')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div> --}}
 
                         <!-- Choices (Simplified - No Images) -->
                         <div>
@@ -166,63 +148,29 @@
                             @enderror
                         </div>
 
-                        <!-- Science Type as Checkboxes -->
-                        {{-- <div>
-                            <label class="block mb-3 text-gray-600 dark:text-gray-400 text-base font-medium">Science Type</label>
-                            <div class="flex items-center gap-6">
-                                <!-- Natural Science Checkbox -->
-                                <div class="flex items-center">
-                                    <input id="natural-science" 
-                                           type="checkbox" 
-                                           wire:model="scienceType" 
-                                           value="natural"
-                                           checked
-                                           class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                    <label for="natural-science" class="ms-2 text-base font-medium text-gray-900 dark:text-gray-300">
-                                        Natural Science
-                                    </label>
-                                </div>
-                        
-                                <!-- Social Science Checkbox -->
-                                <div class="flex items-center">
-                                    <input id="social-science" 
-                                           type="checkbox" 
-                                           wire:model="scienceType" 
-                                           value="social"
-                                           class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                    <label for="social-science" class="ms-2 text-base font-medium text-gray-900 dark:text-gray-300">
-                                        Social Science
-                                    </label>
-                                </div>
-                            </div>
-                            @error('scienceType')
-                                <span class="block mt-1 text-sm text-red-500">{{ $message }}</span>
+                        <!-- Show region field only if exam type is regional -->
+                        <div x-show="$wire.type === 'regional'">
+                            <label class="text-gray-600 dark:text-gray-400">Region</label>
+                            <select wire:model="region" 
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Region</option>
+                                <option value="addis_ababa">Addis Ababa</option>
+                                <option value="afar">Afar</option>
+                                <option value="amhara">Amhara</option>
+                                <option value="benishangul_gumuz">Benishangul-Gumuz</option>
+                                <option value="central_ethiopia">Central Ethiopia</option>
+                                <option value="dire_dawa">Dire Dawa</option>
+                                <option value="gambela">Gambela</option>
+                                <option value="harari">Harari</option>
+                                <option value="oromia">Oromia</option>
+                                <option value="sidama">Sidama</option>
+                                <option value="south_ethiopia">South Ethiopia</option>
+                                <option value="tigray">Tigray</option>
+                            </select>
+                            @error('region')
+                                <span class="text-red-500">{{ $message }}</span>
                             @enderror
-                        </div> --}}
-<!-- Show region field only if exam type is regional -->
-<div x-show="$wire.type === 'regional'">
-    <label class="text-gray-600 dark:text-gray-400">Region</label>
-    <select wire:model="region" 
-        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-        <option value="">Select Region</option>
-        <option value="addis_ababa">Addis Ababa</option>
-        <option value="afar">Afar</option>
-        <option value="amhara">Amhara</option>
-        <option value="benishangul_gumuz">Benishangul-Gumuz</option>
-        <option value="central_ethiopia">Central Ethiopia</option>
-        <option value="dire_dawa">Dire Dawa</option>
-        <option value="gambela">Gambela</option>
-        <option value="harari">Harari</option>
-        <option value="oromia">Oromia</option>
-        <option value="sidama">Sidama</option>
-        <option value="south_ethiopia">South Ethiopia</option>
-        <option value="tigray">Tigray</option>
-    </select>
-    @error('region')
-        <span class="text-red-500">{{ $message }}</span>
-    @enderror
-</div>
-
+                        </div>
                    
                         <!-- Submit Button -->
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
