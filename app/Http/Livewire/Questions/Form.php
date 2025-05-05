@@ -78,7 +78,7 @@ class Form extends Component
 }
     protected $rules = [
         'subjectId' => 'required|exists:subjects,id',
-        'yearGroupId' => 'required|exists:year_groups,id',
+        // 'yearGroupId' => 'required|exists:year_groups,id',
         'chapterId' => 'nullable|exists:chapters,id',
         'type' => 'required|exists:types,id', // Added validation for type
         'questionText' => 'required|string',
