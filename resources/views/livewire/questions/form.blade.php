@@ -57,7 +57,7 @@
                             @enderror
                         </div> --}}
                         
-                        <div>
+                        {{-- <div>
                             <label class="text-gray-600 dark:text-gray-400">Year Group</label>
                             <select wire:model="yearGroupId"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
@@ -69,7 +69,7 @@
                             @error('yearGroupId')
                                 <span class="text-red-500">{{ $message }}</span>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <!-- Question Text -->
                         <div>
