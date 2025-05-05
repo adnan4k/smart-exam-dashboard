@@ -128,7 +128,7 @@ class QuestionController extends Controller
 
         $type = $request->type;
         // Format response – mapping the subjects and their questions accordingly.
-        $questions = Question::where('type', $type)
+        $questions = Question::where('type_id', $type)
             ->with(['choices', 'subject', 'yearGroup'])->get();
 
         $response = $questions->groupBy(function ($question) {

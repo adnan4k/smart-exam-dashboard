@@ -36,3 +36,4 @@ Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType'])
 Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQuestionsGroupedByType']);
 Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
+Route::post('get-questions',[QuestionController::class,'getQuestionsByType']);
