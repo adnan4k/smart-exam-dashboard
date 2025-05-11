@@ -144,7 +144,7 @@ class QuestionController extends Controller
     public function getAllQuestionsGroupedByType()
     {
         // Fetch all questions and group them by type
-        $questions = Question::with(['choices', 'subject','chapter', 'type'])->get();
+        $questions = Question::with(['choices', 'subject', 'type','chapter'])->get();
 
         $response = $questions->groupBy(function ($question) {
             return $question->type->name; // Assuming 'name' is the field in the types table
