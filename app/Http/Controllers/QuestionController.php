@@ -125,10 +125,9 @@ class QuestionController extends Controller
                 'message' => 'Invalid type provided.'
             ], 400);
         }
-
-        $type = $request->type;
+         $user = User::where('id',$request->user_id) ->first();
         // Format response – mapping the subjects and their questions accordingly.
-        $questions = Question::where('type_id', $type)
+        $questions = Question::where('type_id', $user->type_id)
             ->with(['choices', 'subject', 'yearGroup'])->get();
 
         $response = $questions->groupBy(function ($question) {
@@ -205,23 +204,36 @@ class QuestionController extends Controller
         ]);
     
         $user = User::findOrFail($request->user_id);
-        
+    
         if (!$user->type_id) {
             return response()->json([
-                'status' => false,
+                'status' => 'error',
                 'message' => 'No exam type associated with this user.'
             ], 400);
         }
     
-        // Get random sample questions for the user's type
         $questions = Question::where('type_id', $user->type_id)
             ->with(['choices', 'subject', 'yearGroup', 'chapter'])
             ->inRandomOrder()
             ->limit(5)
-            ->get()
-            ->map(function ($question) {
+            ->get();
+    
+        if ($questions->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No sample questions available for this exam type.'
+            ], 404);
+        }
+    
+        $grouped = $questions->groupBy(function ($question) {
+            return optional($question->subject)->name ?? 'Unknown Subject';
+        });
+    
+        $response = $grouped->map(function ($questions) {
+            return $questions->map(function ($question) {
                 return [
                     'id' => $question->id,
+                    'correct_choice_id' => $question->answer_id,
                     'subject_id' => $question->subject_id,
                     'year_group_id' => $question->year_group_id,
                     'chapter_id' => $question->chapter_id,
@@ -229,17 +241,15 @@ class QuestionController extends Controller
                     'question_image_path' => $question->question_image_path 
                         ? asset('storage/' . $question->question_image_path) 
                         : null,
-                    // 'formula' => $question->formula,
-                    'answer_text' => $question->answer_text,
+                    'formula' => $question->formula,
                     'explanation' => $question->explanation,
                     'explanation_image_path' => $question->explanation_image_path 
                         ? asset('storage/' . $question->explanation_image_path) 
                         : null,
+                    'created_at' => $question->created_at,
+                    'updated_at' => $question->updated_at,
                     'type_id' => $question->type_id,
                     'duration' => $question->duration,
-                    'subject' => $question->subject->name,
-                    'year_group' => $question->yearGroup ? $question->yearGroup->name : null,
-                    'chapter' => $question->chapter ? $question->chapter->name : null,
                     'choices' => $question->choices->map(function ($choice) {
                         return [
                             'id' => $choice->id,
@@ -249,26 +259,23 @@ class QuestionController extends Controller
                                 ? asset('storage/' . $choice->choice_image_path) 
                                 : null,
                             'formula' => $choice->formula,
+                            'created_at' => $choice->created_at,
+                            'updated_at' => $choice->updated_at,
                         ];
                     }),
+                    'subject' => $question->subject,
+                    'chapter' => $question->chapter,
+                    'year_group' => $question->yearGroup,
                 ];
             });
-    
-        if ($questions->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No sample questions available for this exam type.'
-            ], 404);
-        }
+        });
     
         return response()->json([
-            'status' => true,
-            'message' => 'Sample questions retrieved successfully.',
-            'type_name' => Type::find($user->type_id)->name,
-            'questions_count' => $questions->count(),
-            'questions' => $questions
+            'status' => 'success',
+            'response' => $response
         ]);
     }
+    
 
 
     
