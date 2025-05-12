@@ -119,12 +119,12 @@ class QuestionController extends Controller
     {
         // Validate type input
         Log::info('Getting questions for type: ' . $request->type);
-        if (!$request->type) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Invalid type provided.'
-            ], 400);
-        }
+        // if (!$request->type) {
+        //     return response()->json([
+        //         'status'  => 'error',
+        //         'message' => 'Invalid type provided.'
+        //     ], 400);
+        // }
          $user = User::where('id',$request->user_id) ->first();
         // Format response – mapping the subjects and their questions accordingly.
         $questions = Question::where('type_id', $user->type_id)
