@@ -26,7 +26,7 @@ class UserController extends Controller
         // Validate the incoming request data
         $validatedData = $request->validate([
             'name'          => 'required|string|max:255',
-            'email'         => 'nullable|unique|email',
+            'email' => 'nullable|email|unique:users,email',
             // 'password'      => 'required',
             'phone_number'  => 'required|string|max:255',
             'referral_code' => 'nullable',
