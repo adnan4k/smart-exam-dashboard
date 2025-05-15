@@ -39,7 +39,7 @@
                                             <span class="badge bg-primary text-white">{{ $question->subject->name }}</span>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-info text-white">{{ $question->yearGroup->year }}</span>
+                                            <span class="badge bg-info text-white">{{ $question->subject->year }}</span>
                                         </td>
                                         <td class="text-center">
                                             <span class="badge {{ $question->type == 'exam' ? 'bg-danger' : 'bg-success' }} text-white">
