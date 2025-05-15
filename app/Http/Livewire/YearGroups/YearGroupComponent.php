@@ -10,6 +10,15 @@ class YearGroupComponent extends Component
 {
     public $yearGroups;
 
+
+    public function delete($id)
+    {
+        $type = YearGroup::findOrFail($id);
+        $type->delete();
+
+        $this->dispatch('refreshTable');
+    }
+
     #[On('refreshTable')]
     public function render()
     {

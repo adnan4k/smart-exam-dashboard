@@ -55,10 +55,9 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $yearGroup->id }}, model: '{{ addslashes(App\Models\YearGroup::class) }}' })"
-                                                class="text-red-500">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
+                                            wire:click="delete({{ $yearGroup->id }})" class="text-red-500">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
                                         </td>
                                     </tr>
                                 @endforeach

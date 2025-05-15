@@ -91,6 +91,16 @@ class TypeComponent extends Component
             $this->showImageModal = true;
         }
     }
+
+    public function delete($id)
+    {
+        $type = Type::findOrFail($id);
+        $type->delete();
+
+        Toaster::success('Type Deleted Successfully!');
+        $this->dispatch('refreshTable');
+    }
+
     #[On('refreshTable')]
     public function render()
     {

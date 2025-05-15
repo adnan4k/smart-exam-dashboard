@@ -78,16 +78,25 @@ class Form extends Component
     {
         $this->reset(['name', 'description', 'image', 'price', 'is_edit', 'id']);
     }
-
-    public function edit($id)
+    #[On('edit-type')]
+    public function edit($type)
     {
-        $type = Type::find($id);
+        $type = Type::find($type);
         $this->id = $type->id;
         $this->name = $type->name;
         $this->description = $type->description;
         $this->is_edit = true;
         $this->price = $type->price;
         $this->openModal = true;
+    }
+    public function delete($id)
+    {
+        $type = Type::find($id);
+        if ($type) {
+            $type->delete();
+            Toaster::success("Type Deleted Successfully!");
+            $this->dispatch('refreshTable');
+        }
     }
 
     public function showImage($id)

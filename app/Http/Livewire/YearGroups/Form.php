@@ -48,9 +48,9 @@ class Form extends Component
     }
 
     #[On('edit-yearGroup')]
-    public function edit($data)
+    public function edit($yearGroup)
     {
-        $yearGroup = YearGroup::find($data['yearGroup']);
+        $yearGroup = YearGroup::find($yearGroup);
         $this->id = $yearGroup->id;
         $this->year = $yearGroup->year;
         $this->is_edit = true;

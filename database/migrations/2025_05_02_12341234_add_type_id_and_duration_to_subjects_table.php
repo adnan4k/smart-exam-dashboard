@@ -8,15 +8,15 @@ return new class extends Migration {
     public function up()
     {
         Schema::table('subjects', function (Blueprint $table) {
-            $table->integer('default_duration')->nullable()->after('type_id');
+            $table->integer('default_duration')->nullable();
         });
     }
 
     public function down()
     {
         Schema::table('subjects', function (Blueprint $table) {
-            $table->dropForeign(['type_id']);
-            $table->dropColumn(['type_id', 'default_duration']);
+            // $table->dropForeign(['type_id']);
+            $table->dropColumn(['default_duration']);
         });
     }
 }; 

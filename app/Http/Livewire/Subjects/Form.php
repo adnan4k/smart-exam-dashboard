@@ -93,9 +93,9 @@ class Form extends Component
     }
 
     #[On('edit-subject')]
-    public function edit($data)
+    public function edit($subject)
     {
-        $subject = Subject::find($data['subject']);
+        $subject = Subject::find($subject);
         $this->id = $subject->id;
         $this->name = $subject->name;
         $this->typeId = $subject->type_id;
