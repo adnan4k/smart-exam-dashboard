@@ -60,7 +60,7 @@
                                     </td>
                                     <td>
                                         <p class="text-xs font-weight-bold mb-0">
-                                            {{ $subscription->yearGroup->year ?? 'N/A' }}
+                                            {{ $subscription->user->type->name ?? 'N/A' }}
                                         </p>
                                     </td>
                                     <td>
