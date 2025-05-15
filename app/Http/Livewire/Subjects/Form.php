@@ -51,7 +51,7 @@ class Form extends Component
     }
 
     protected $rules = [
-        'name' => 'required|string|max:255|unique:subjects,name',
+        'name' => 'required',
         'typeId' => 'required|exists:types,id',
         'defaultDuration' => 'required|integer|min:1',
         'region' => 'required_if:isRegional,true',

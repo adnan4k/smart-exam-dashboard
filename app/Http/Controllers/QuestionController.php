@@ -128,7 +128,7 @@ class QuestionController extends Controller
          $user = User::where('id',$request->user_id) ->first();
         // Format response – mapping the subjects and their questions accordingly.
         $questions = Question::where('type_id', $user->type_id)
-            ->with(['choices', 'subject', 'yearGroup'])->get();
+            ->with(['choices', 'subject', 'yearGroup','chapter'])->get();
 
         $response = $questions->groupBy(function ($question) {
             return $question->subject->name;
