@@ -20,8 +20,24 @@ class User extends Authenticatable
      *
      * @var array
      */
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'phone_number',
+        'role',
+        'status',
+        'institution_type',
+        'institution_name',
+        'type_id',
+        'referred_by',
+        'device_id',
+        'last_login_at',
+        'phone',
+        'uv'
+    ];
 
-       protected $guarded = [];
+    protected $guarded = [];
     protected static function boot()
     {
         parent::boot();
@@ -48,7 +64,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $casts = [
-        // 'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
     ];
 
     /**

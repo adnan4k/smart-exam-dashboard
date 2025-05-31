@@ -119,26 +119,172 @@ class QuestionController extends Controller
     {
         // Validate type input
         Log::info('Getting questions for type: ' . $request->type);
-        // if (!$request->type) {
-        //     return response()->json([
-        //         'status'  => 'error',
-        //         'message' => 'Invalid type provided.'
-        //     ], 400);
-        // }
-         $user = User::where('id',$request->user_id) ->first();
-        // Format response – mapping the subjects and their questions accordingly.
-        $questions = Question::where('type_id', $user->type_id)
-            ->with(['choices', 'subject', 'yearGroup','chapter'])->get();
+        
+        $user = User::where('id', $request->user_id)->first();
+        
+        if (!$user->type_id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No exam type associated with this user.'
+            ], 400);
+        }
 
+        // Check if user has an active subscription
+        $hasActiveSubscription = $user->subscriptions()
+            ->where('end_date', '>=', now())
+            ->where('payment_status', 'completed')
+            ->exists();
+
+        // Get questions based on subscription status
+        if ($hasActiveSubscription) {
+            // For subscribed users, get all questions
+            $questions = Question::where('type_id', $user->type_id)
+                ->with(['choices', 'subject', 'yearGroup', 'chapter'])
+                ->get();
+        } else {
+            // For non-subscribed users, get only 5 random questions as samples
+            $questions = Question::where('type_id', $user->type_id)
+                ->with(['choices', 'subject', 'yearGroup', 'chapter'])
+                ->inRandomOrder()
+                ->limit(5)
+                ->get();
+        }
+
+        // Group questions by subject
         $response = $questions->groupBy(function ($question) {
-            return $question->subject->name;
+            return optional($question->subject)->name ?? 'Unknown Subject';
+        });
+
+        // Transform the questions to include all necessary data
+        $response = $response->map(function ($questions) {
+            return $questions->map(function ($question) {
+                return [
+                    'id' => $question->id,
+                    'correct_choice_id' => $question->answer_id,
+                    'subject_id' => $question->subject_id,
+                    'year_group_id' => $question->year_group_id,
+                    'chapter_id' => $question->chapter_id,
+                    'question_text' => $question->question_text,
+                    'question_image_path' => $question->question_image_path 
+                        ? asset('storage/' . $question->question_image_path) 
+                        : null,
+                    'formula' => $question->formula,
+                    'explanation' => $question->explanation,
+                    'explanation_image_path' => $question->explanation_image_path 
+                        ? asset('storage/' . $question->explanation_image_path) 
+                        : null,
+                    'created_at' => $question->created_at,
+                    'updated_at' => $question->updated_at,
+                    'type_id' => $question->type_id,
+                    'duration' => $question->duration,
+                    'choices' => $question->choices->map(function ($choice) {
+                        return [
+                            'id' => $choice->id,
+                            'question_id' => $choice->question_id,
+                            'choice_text' => $choice->choice_text,
+                            'choice_image_path' => $choice->choice_image_path 
+                                ? asset('storage/' . $choice->choice_image_path) 
+                                : null,
+                            'formula' => $choice->formula,
+                            'created_at' => $choice->created_at,
+                            'updated_at' => $choice->updated_at,
+                        ];
+                    }),
+                    'subject' => $question->subject,
+                    'chapter' => $question->chapter,
+                    'year_group' => $question->yearGroup,
+                ];
+            });
         });
 
         return response()->json([
-            'status'   => 'success',
+            'status' => 'success',
+            'response' => $response,
+            'is_subscribed' => $hasActiveSubscription
+        ]);
+    }
+
+    public function sampleQuestions(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+    
+        $user = User::findOrFail($request->user_id);
+    
+        if (!$user->type_id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No exam type associated with this user.'
+            ], 400);
+        }
+    
+        $questions = Question::where('type_id', $user->type_id)
+            ->where('is_sample', true)
+            ->with(['choices', 'subject', 'yearGroup', 'chapter'])
+            ->inRandomOrder()
+            ->limit(5)
+            ->get();
+    
+        if ($questions->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No sample questions available for this exam type.'
+            ], 404);
+        }
+    
+        $grouped = $questions->groupBy(function ($question) {
+            return optional($question->subject)->name ?? 'Unknown Subject';
+        });
+    
+        $response = $grouped->map(function ($questions) {
+            return $questions->map(function ($question) {
+                return [
+                    'id' => $question->id,
+                    'correct_choice_id' => $question->answer_id,
+                    'subject_id' => $question->subject_id,
+                    'year_group_id' => $question->year_group_id,
+                    'chapter_id' => $question->chapter_id,
+                    'question_text' => $question->question_text,
+                    'question_image_path' => $question->question_image_path 
+                        ? asset('storage/' . $question->question_image_path) 
+                        : null,
+                    'formula' => $question->formula,
+                    'explanation' => $question->explanation,
+                    'explanation_image_path' => $question->explanation_image_path 
+                        ? asset('storage/' . $question->explanation_image_path) 
+                        : null,
+                    'created_at' => $question->created_at,
+                    'updated_at' => $question->updated_at,
+                    'type_id' => $question->type_id,
+                    'duration' => $question->duration,
+                    'is_sample' => $question->is_sample,
+                    'choices' => $question->choices->map(function ($choice) {
+                        return [
+                            'id' => $choice->id,
+                            'question_id' => $choice->question_id,
+                            'choice_text' => $choice->choice_text,
+                            'choice_image_path' => $choice->choice_image_path 
+                                ? asset('storage/' . $choice->choice_image_path) 
+                                : null,
+                            'formula' => $choice->formula,
+                            'created_at' => $choice->created_at,
+                            'updated_at' => $choice->updated_at,
+                        ];
+                    }),
+                    'subject' => $question->subject,
+                    'chapter' => $question->chapter,
+                    'year_group' => $question->yearGroup,
+                ];
+            });
+        });
+    
+        return response()->json([
+            'status' => 'success',
             'response' => $response
         ]);
     }
+    
 
     public function getAllQuestionsGroupedByType()
     {
@@ -197,85 +343,7 @@ class QuestionController extends Controller
         ]);
     }
 
-    public function sampleQuestions(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id'
-        ]);
-    
-        $user = User::findOrFail($request->user_id);
-    
-        if (!$user->type_id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No exam type associated with this user.'
-            ], 400);
-        }
-    
-        $questions = Question::where('type_id', $user->type_id)
-            ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-            ->inRandomOrder()
-            ->limit(5)
-            ->get();
-    
-        if ($questions->isEmpty()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No sample questions available for this exam type.'
-            ], 404);
-        }
-    
-        $grouped = $questions->groupBy(function ($question) {
-            return optional($question->subject)->name ?? 'Unknown Subject';
-        });
-    
-        $response = $grouped->map(function ($questions) {
-            return $questions->map(function ($question) {
-                return [
-                    'id' => $question->id,
-                    'correct_choice_id' => $question->answer_id,
-                    'subject_id' => $question->subject_id,
-                    'year_group_id' => $question->year_group_id,
-                    'chapter_id' => $question->chapter_id,
-                    'question_text' => $question->question_text,
-                    'question_image_path' => $question->question_image_path 
-                        ? asset('storage/' . $question->question_image_path) 
-                        : null,
-                    'formula' => $question->formula,
-                    'explanation' => $question->explanation,
-                    'explanation_image_path' => $question->explanation_image_path 
-                        ? asset('storage/' . $question->explanation_image_path) 
-                        : null,
-                    'created_at' => $question->created_at,
-                    'updated_at' => $question->updated_at,
-                    'type_id' => $question->type_id,
-                    'duration' => $question->duration,
-                    'choices' => $question->choices->map(function ($choice) {
-                        return [
-                            'id' => $choice->id,
-                            'question_id' => $choice->question_id,
-                            'choice_text' => $choice->choice_text,
-                            'choice_image_path' => $choice->choice_image_path 
-                                ? asset('storage/' . $choice->choice_image_path) 
-                                : null,
-                            'formula' => $choice->formula,
-                            'created_at' => $choice->created_at,
-                            'updated_at' => $choice->updated_at,
-                        ];
-                    }),
-                    'subject' => $question->subject,
-                    'chapter' => $question->chapter,
-                    'year_group' => $question->yearGroup,
-                ];
-            });
-        });
-    
-        return response()->json([
-            'status' => 'success',
-            'response' => $response
-        ]);
-    }
-    
+  
 
 
     

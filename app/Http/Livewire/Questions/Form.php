@@ -32,6 +32,7 @@ class Form extends Component
     public $type;
     public $duration;
     public $filteredChapters = [];
+    public $isSample = false;
     public $choices = [
         ['text' => '', 'image' => null, 'formula' => '']
     ];
@@ -92,7 +93,8 @@ class Form extends Component
         'choices.*.image' => 'nullable|image|max:2048',
         'choices.*.formula' => 'nullable|string',
         'duration' => 'nullable|integer|min:1',
-        'correctChoiceId' => 'required|integer|min:0' // Added validation for correct choice
+        'correctChoiceId' => 'required|integer|min:0', // Added validation for correct choice
+        'isSample' => 'boolean'
     ];
 
     public function addChoice()
@@ -124,6 +126,7 @@ class Form extends Component
                 'duration' => $this->duration,
                 'science_type' => $this->scienceType ?? 'natural',
                 'region' => $this->region,
+                'is_sample' => $this->isSample,
             ];
 
             // Handle question image
@@ -205,7 +208,8 @@ class Form extends Component
             'duration',
             'chapterId',
             'scienceType',
-            'region'
+            'region',
+            'isSample'
         ]);
         $this->is_edit = false;
     }
@@ -226,6 +230,7 @@ class Form extends Component
         $this->duration = $question->duration;
         $this->scienceType = $question->science_type;
         $this->region = $question->region;
+        $this->isSample = $question->is_sample;
 
         // Load choices
         $this->choices = $question->choices->map(function ($choice) use ($question) {

@@ -26,13 +26,13 @@ class UserController extends Controller
         // Validate the incoming request data
         $validatedData = $request->validate([
             'name'          => 'required|string|max:255',
-            'email' => 'nullable|email|unique:users,email',
-            // 'password'      => 'required',
+            'email'         => 'nullable|email|unique:users,email',
             'phone_number'  => 'required|string|max:255',
             'referral_code' => 'nullable',
             'institution_type' => 'nullable',
             'institution_name' => 'nullable',
-            'type_id'=> 'required|exists:types,id', // Added type_id validation
+            'type_id'      => 'required|exists:types,id',
+            'device_id'    => 'required|string', // Add device_id validation
         ]);
 
         DB::beginTransaction();
@@ -48,8 +48,10 @@ class UserController extends Controller
                 'status'        => 'active',
                 'institution_type' => $validatedData['institution_type'],
                 'institution_name' => $validatedData['institution_name'],
-                'type_id'       => $request->type_id, // Added type_id
+                'type_id'       => $request->type_id,
                 'referred_by'   => User::where('referral_code', $request->referral_code)->value('id'),
+                'device_id'     => $validatedData['device_id'],
+                'last_login_at' => now(),
             ]);
 
             // If the user was referred, create a referral record
@@ -78,7 +80,6 @@ class UserController extends Controller
                 'user'    => $user,
                 'token'   => $token,
                 'referral_code' => $user->referral_code,
-
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -97,8 +98,9 @@ class UserController extends Controller
     {
         // Validate the request data
         $credentials = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string',
+            'email'     => 'required|email',
+            'password'  => 'required|string',
+            'device_id' => 'required|string', // Add device_id validation
         ]);
 
         // Retrieve the user by email
@@ -111,13 +113,48 @@ class UserController extends Controller
             ], 401);
         }
 
-        // If using token-based authentication, generate a token for the user
+        // Check if user is already logged in on another device
+        if ($user->device_id && $user->device_id !== $credentials['device_id']) {
+            return response()->json([
+                'message' => 'You are already logged in on another device. Please logout from the other device first.'
+            ], 403);
+        }
+
+        // Update user's device_id and last_login_at
+        $user->update([
+            'device_id' => $credentials['device_id'],
+            'last_login_at' => now()
+        ]);
+
+        // Revoke all existing tokens
+        $user->tokens()->delete();
+
+        // Generate new token
         $token = $user->createToken('authToken')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
             'user'    => $user,
             'token'   => $token,
+        ], 200);
+    }
+
+    public function logout(Request $request)
+    {
+        // Get the authenticated user
+        $user = $request->user();
+        
+        // Clear the device_id
+        $user->update([
+            'device_id' => null,
+            'last_login_at' => null
+        ]);
+
+        // Revoke all tokens
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Successfully logged out'
         ], 200);
     }
 }

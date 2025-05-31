@@ -2,90 +2,172 @@
     <div class="container">
         <div class="card mb-4 mx-4">
             <div class="card-header pb-0">
-                <div class="d-flex flex-row justify-content-between">
+                <div class="d-flex flex-row justify-content-between align-items-center">
                     <div>
                         <h5 class="mb-0">All Users</h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="input-group">
+                            <input type="text" wire:model.live="searchTerm" class="form-control" placeholder="Search users...">
+                        </div>
+                        <select wire:model.live="selectedType" class="form-select">
+                            <option value="">All Types</option>
+                            @foreach($types as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                            @endforeach
+                        </select>
+                        <select wire:model.live="selectedSubject" class="form-select">
+                            <option value="">All Subjects</option>
+                            @foreach($subjects as $subject)
+                                <option value="{{ $subject->name }}">{{ $subject->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
 
             <div class="card-body px-0 pt-0 pb-2">
-                <div class="table-responsive p-0">
-                    <table class="table align-items-center mb-0">
-                        <thead>
-                            <tr>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                    ID
-                                </th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
-                                    Name
-                                </th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                    Email
-                                </th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                    Role
-                                </th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                    Status
-                                </th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($users as $user)
-                                <tr>
-                                    <td class="ps-4">
-                                        <p class="text-xs font-weight-bold mb-0">{{ $user->id }}</p>
-                                    </td>
-                                    <td>
-                                        <p class="text-xs font-weight-bold mb-0">
-                                            {{ $user->name }}
-                                        </p>
-                                    </td>
-                                    <td>
-                                        <p class="text-xs font-weight-bold mb-0">
-                                            {{ $user->email }}
-                                        </p>
-                                    </td>
-                                    <td>
-                                        <p class="text-xs font-weight-bold mb-0">
-                                            {{ ucfirst($user->role) }}
-                                        </p>
-                                    </td>
-                                    <td>
-                                        @if($user->status === 'active')
-                                            <span class="inline-block rounded bg-green-500 text-white px-2 py-1 text-xs font-bold">
-                                                {{ ucfirst($user->status) }}
-                                            </span>
-                                        @elseif($user->status === 'inactive')
-                                            <span style="background-color:yellow " class="inline-block rounded bg-yellow-500 text-white px-2 py-1 text-xs font-bold">
-                                                {{ ucfirst($user->status) }}
-                                            </span>
-                                        @elseif($user->status === 'suspended')
-                                            <span class="inline-block rounded bg-red-500 text-white px-2 py-1 text-xs font-bold">
-                                                {{ ucfirst($user->status) }}
-                                            </span>
-                                        @else
-                                            <span style="background-color:green " class="inline-block rounded bg-green-500 text-white px-2 py-1 text-xs font-bold">
-                                                {{ ucfirst($user->status) }}
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <button
-                                            wire:click="edit({{ $user->id }})"
-                                            class="btn btn-primary btn-sm">
-                                            Update Status
-                                        </button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                @php
+                    $groupedUsers = $users->groupBy(function($user) {
+                        return $user->type->subject ?? 'No Subject';
+                    });
+                @endphp
+
+                @foreach($groupedUsers as $subject => $subjectUsers)
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 px-4">
+                            {{ $subject }}
+                        </h6>
+                        <div class="table-responsive p-0">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            ID
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                            Name
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Email
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Phone Number
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Institution
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Type
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Referral
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Role
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Status
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Last Login
+                                        </th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($subjectUsers as $user)
+                                        <tr>
+                                            <td class="ps-4">
+                                                <p class="text-xs font-weight-bold mb-0">{{ $user->id }}</p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ $user->name }}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ $user->email }}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ $user->phone_number }}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ $user->institution_name }}
+                                                    @if($user->institution_type)
+                                                        <br>
+                                                        <small class="text-muted">({{ $user->institution_type }})</small>
+                                                    @endif
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ $user->type->name ?? 'N/A' }}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    Code: {{ $user->referral_code }}
+                                                    @if($user->referred_by)
+                                                        <br>
+                                                        <small class="text-muted">Referred by: {{ $user->referredBy->name ?? 'N/A' }}</small>
+                                                    @endif
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ ucfirst($user->role) }}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                @if($user->status === 'active')
+                                                    <span class="inline-block rounded bg-green-500 text-white px-2 py-1 text-xs font-bold">
+                                                        {{ ucfirst($user->status) }}
+                                                    </span>
+                                                @elseif($user->status === 'inactive')
+                                                    <span style="background-color:yellow " class="inline-block rounded bg-yellow-500 text-white px-2 py-1 text-xs font-bold">
+                                                        {{ ucfirst($user->status) }}
+                                                    </span>
+                                                @elseif($user->status === 'suspended')
+                                                    <span class="inline-block rounded bg-red-500 text-white px-2 py-1 text-xs font-bold">
+                                                        {{ ucfirst($user->status) }}
+                                                    </span>
+                                                @else
+                                                    <span style="background-color:green " class="inline-block rounded bg-green-500 text-white px-2 py-1 text-xs font-bold">
+                                                        {{ ucfirst($user->status) }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <p class="text-xs font-weight-bold mb-0">
+                                                    {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Never' }}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    wire:click="edit({{ $user->id }})"
+                                                    class="btn btn-primary btn-sm">
+                                                    Update Status
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endforeach
+
+                @if($users->isEmpty())
+                    <div class="text-center p-3 text-muted">No users found.</div>
+                @endif
             </div>
         </div>
     </div>
