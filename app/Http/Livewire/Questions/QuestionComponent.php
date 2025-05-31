@@ -6,11 +6,13 @@ use App\Models\Question;
 use App\Models\Subject;
 use App\Models\Type;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\On;
 
 class QuestionComponent extends Component
 {
-    public $questions = [];
+    use WithPagination;
+
     public $selectedSubject;
     public $selectedYear;
     public $selectedType;
@@ -18,6 +20,7 @@ class QuestionComponent extends Component
     public $subjects;
     public $years;
     public $types;
+    protected $paginationTheme = 'bootstrap';
 
     public function mount()
     {
@@ -50,27 +53,27 @@ class QuestionComponent extends Component
             $query->where('type_id', $this->selectedType);
         }
 
-        $this->questions = $query->latest()->get();
+        return $query->latest()->paginate(10);
     }
 
     public function updatedSearchTerm()
     {
-        $this->filterQuestions();
+        $this->resetPage();
     }
 
     public function updatedSelectedSubject()
     {
-        $this->filterQuestions();
+        $this->resetPage();
     }
 
     public function updatedSelectedYear()
     {
-        $this->filterQuestions();
+        $this->resetPage();
     }
 
     public function updatedSelectedType()
     {
-        $this->filterQuestions();
+        $this->resetPage();
     }
 
     public function deleteQuestion($questionId)
@@ -79,7 +82,6 @@ class QuestionComponent extends Component
             $question = Question::findOrFail($questionId);
             $question->delete();
             
-            $this->filterQuestions();
             session()->flash('message', 'Question deleted successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting question: ' . $e->getMessage());
@@ -89,7 +91,8 @@ class QuestionComponent extends Component
     #[On('refreshTable')]
     public function render()
     {
-        $this->filterQuestions();
-        return view('livewire.questions.question-component');
+        return view('livewire.questions.question-component', [
+            'questions' => $this->filterQuestions()
+        ]);
     }
 } 

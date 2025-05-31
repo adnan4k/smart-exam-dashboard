@@ -107,6 +107,10 @@
                     @if ($questions->isEmpty())
                         <div class="text-center p-3 text-muted">No questions found.</div>
                     @endif
+
+                    <div class="d-flex justify-content-center mt-4">
+                        {{ $questions->links() }}
+                    </div>
                 </div>
             </div>
         </div>
