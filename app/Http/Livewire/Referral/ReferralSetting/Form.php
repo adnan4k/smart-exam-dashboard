@@ -3,29 +3,54 @@
 namespace App\Http\Livewire\Referral\ReferralSetting;
 
 use App\Models\ReferralSetting;
-use Livewire\Attributes\On;
 use Livewire\Component;
-use Livewire\WithFileUploads;
-use Masmerise\Toaster\Toaster;
-
+use Livewire\Attributes\On;
 
 class Form extends Component
 {
+    public $openModal = false;
+    public $is_edit = false;
+    public $referralSettingId;
     public $required_referrals;
     public $reward_amount;
-    public $is_edit = false;
-    public $referral_id;
-    public $openModal = false;
+    public $is_active = true;
 
     protected $rules = [
         'required_referrals' => 'required|integer|min:1',
         'reward_amount' => 'required|numeric|min:0',
+        'is_active' => 'boolean'
     ];
-    protected $listeners = ['referralSettingModal'=>'referralSettingModal'];
 
-    public function referralSettingModal()
+    public function mount()
     {
-        // dd('here it is ');
+        $this->resetForm();
+    }
+
+    public function resetForm()
+    {
+        $this->referralSettingId = null;
+        $this->required_referrals = null;
+        $this->reward_amount = null;
+        $this->is_active = true;
+        $this->is_edit = false;
+    }
+
+    #[On('referralSettingModal-')]
+    public function openModal()
+    {
+        $this->resetForm();
+        $this->openModal = true;
+    }
+
+    #[On('edit-referralSetting')]
+    public function edit($data)
+    {
+        $referralSetting = ReferralSetting::findOrFail($data['referralSetting']);
+        $this->referralSettingId = $referralSetting->id;
+        $this->required_referrals = $referralSetting->required_referrals;
+        $this->reward_amount = $referralSetting->reward_amount;
+        $this->is_active = $referralSetting->is_active;
+        $this->is_edit = true;
         $this->openModal = true;
     }
 
@@ -34,45 +59,29 @@ class Form extends Component
         $this->validate();
 
         if ($this->is_edit) {
-            $setting = ReferralSetting::find($this->referral_id);
-            $setting->required_referrals = $this->required_referrals;
-            $setting->reward_amount = $this->reward_amount;
-            $setting->save();
-            $message = "Referral Setting Updated Successfully!";
+            $referralSetting = ReferralSetting::findOrFail($this->referralSettingId);
+            $referralSetting->update([
+                'required_referrals' => $this->required_referrals,
+                'reward_amount' => $this->reward_amount,
+                'is_active' => $this->is_active
+            ]);
+            session()->flash('message', 'Referral setting updated successfully.');
         } else {
             ReferralSetting::create([
                 'required_referrals' => $this->required_referrals,
                 'reward_amount' => $this->reward_amount,
+                'is_active' => $this->is_active
             ]);
-            $message = "Referral Setting Created Successfully!";
+            session()->flash('message', 'Referral setting created successfully.');
         }
 
-        Toaster::success($message);
         $this->openModal = false;
         $this->resetForm();
         $this->dispatch('refreshTable');
     }
 
-    public function resetForm()
-    {
-        $this->reset(['required_referrals', 'reward_amount', 'is_edit', 'referral_id']);
-    }
-
-    #[On('edit-referralSetting')]
-    public function edit($referralSetting)
-    {
-        $setting = ReferralSetting::find($referralSetting);
-        $this->referral_id = $setting->id;
-        $this->required_referrals = $setting->required_referrals;
-        $this->reward_amount = $setting->reward_amount;
-        $this->is_edit = true;
-        $this->openModal = true;
-    }
-
-    #[On('refreshTable')]
     public function render()
     {
-        $referrals = ReferralSetting::all();
-        return view('livewire.referral.referral-setting.form', compact('referrals'));
+        return view('livewire.referral.referral-setting.form');
     }
 }

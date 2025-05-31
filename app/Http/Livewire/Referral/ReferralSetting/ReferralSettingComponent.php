@@ -3,15 +3,20 @@
 namespace App\Http\Livewire\Referral\ReferralSetting;
 
 use App\Models\ReferralSetting;
-use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class ReferralSettingComponent extends Component
-{   #[On('refreshTable')]
+{
+    use WithPagination;
+
+    protected $paginationTheme = 'bootstrap';
+
     public function render()
     {
-        $referralSettings = ReferralSetting::latest()->get();
-
-        return view('livewire.referral.referral-setting.referral-setting-component',compact('referralSettings'));
+        $referralSettings = ReferralSetting::latest()->paginate(10);
+        return view('livewire.referral.referral-setting.referral-setting-component', [
+            'referralSettings' => $referralSettings
+        ]);
     }
 }
