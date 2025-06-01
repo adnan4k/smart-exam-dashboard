@@ -43,9 +43,9 @@ class Form extends Component
     }
 
     #[On('edit-referralSetting')]
-    public function edit($data)
+    public function edit($itemId)
     {
-        $referralSetting = ReferralSetting::findOrFail($data['referralSetting']);
+        $referralSetting = ReferralSetting::findOrFail($itemId);
         $this->referralSettingId = $referralSetting->id;
         $this->required_referrals = $referralSetting->required_referrals;
         $this->reward_amount = $referralSetting->reward_amount;

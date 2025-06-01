@@ -57,12 +57,12 @@
                                         </td>
                                         <td class="text-center">
                                             <button
-                                                @click="$dispatch('edit-referralSetting', { referralSetting: {{ $referralSetting->id }} })"
+                                                @click="$dispatch('edit-referralSetting', { itemId: {{ $referralSetting->id }} })"
                                                 class="text-blue-500">
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $referralSetting->id }}, model: '{{ addslashes(App\Models\referralSetting::class) }}' })"
+                                                wire:click="$dispatch('openDeleteModal', { itemId: {{ $referralSetting->id }}, model: '{{ addslashes(App\Models\ReferralSetting::class) }}' })"
                                                 class="text-red-500">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
