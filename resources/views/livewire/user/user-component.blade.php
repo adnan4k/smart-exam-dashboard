@@ -9,35 +9,17 @@
                     <div class="d-flex gap-2">
                         <div class="input-group">
                             <input type="text" wire:model.live="searchTerm" class="form-control" placeholder="Search users...">
-                        </div>
-                        <select wire:model.live="selectedType" class="form-select">
-                            <option value="">All Types</option>
-                            @foreach($types as $type)
-                                <option value="{{ $type->id }}">{{ $type->name }}</option>
-                            @endforeach
-                        </select>
-                        <select wire:model.live="selectedSubject" class="form-select">
-                            <option value="">All Subjects</option>
-                            @foreach($subjects as $subject)
-                                <option value="{{ $subject->name }}">{{ $subject->name }}</option>
-                            @endforeach
-                        </select>
+            
                     </div>
                 </div>
             </div>
 
             <div class="card-body px-0 pt-0 pb-2">
-                @php
-                    $groupedUsers = $users->groupBy(function($user) {
-                        return $user->type->subject ?? 'No Subject';
-                    });
-                @endphp
+            
 
-                @foreach($groupedUsers as $subject => $subjectUsers)
+                @foreach($users as $user)
                     <div class="mb-4">
-                        <h6 class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 px-4">
-                            {{ $subject }}
-                        </h6>
+                      
                         <div class="table-responsive p-0">
                             <table class="table align-items-center mb-0">
                                 <thead>
