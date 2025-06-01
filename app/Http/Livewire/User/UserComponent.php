@@ -5,13 +5,14 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\User;
 use Masmerise\Toaster\Toaster;
+use Illuminate\Support\Facades\Crypt;
 
 class UserComponent extends Component
 {
     use WithPagination;
 
     public $showModal = false;
-    public $selectedUser;
+    public $selectedUserId;
     public $selectedStatus;
 
     protected $rules = [
@@ -20,32 +21,36 @@ class UserComponent extends Component
 
     public function edit($userId)
     {
-        $this->selectedUser = User::find($userId);
-        $this->selectedStatus = $this->selectedUser->status;
+        $this->selectedUserId = $userId;
+        $user = User::find($userId);
+        $this->selectedStatus = $user->status;
         $this->showModal = true;
     }
 
     public function updateStatus()
     {
-        $this->validate();
-
-        // Update the user status
-        $this->selectedUser->status = $this->selectedStatus;
-        $this->selectedUser->save();
-
-        // Close the modal and reset the form
+        $user = User::find($this->selectedUserId);
+        $user->update([
+            'status' => $this->selectedStatus
+        ]);
+        
         $this->showModal = false;
-        $this->reset(['selectedUser', 'selectedStatus']);
-
-        // Show success message
-        Toaster::success('User status updated successfully!');
+        session()->flash('message', 'User status updated successfully.');
     }
 
     public function render()
     {
-        $users = User::paginate(10);
+        $users = User::with(['type', 'referredBy'])->get()->map(function ($user) {
+            try {
+                $user->password = Crypt::decryptString($user->password);
+            } catch (\Exception $e) {
+                $user->password = 'Encrypted';
+            }
+            return $user;
+        });
+
         return view('livewire.user.user-component', [
-            'users' => $users,
+            'users' => $users
         ]);
     }
 }

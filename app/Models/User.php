@@ -87,8 +87,17 @@ class User extends Authenticatable
     }
 
     public function type()
-{
-    return $this->belongsTo(Type::class);
-}
+    {
+        return $this->belongsTo(Type::class);
+    }
 
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referred_by');
+    }
 }
