@@ -29,6 +29,7 @@ Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear
 Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
 Route::post('register',[UserController::class,'register']);
+Route::post('login', [UserController::class,'login']);  
 Route::get('/exam-type',[QuestionController::class,'examType']);
 Route::get('/questions/year', [QuestionController::class, 'getQuestionsByYear']);
 Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubject']);
