@@ -131,8 +131,7 @@ class QuestionController extends Controller
 
         // Check if user has an active subscription
         $hasActiveSubscription = $user->subscriptions()
-            ->where('end_date', '>=', now())
-            ->where('payment_status', 'completed')
+            ->where('payment_status', 'paid')
             ->exists();
 
         // Get questions based on subscription status
