@@ -34,7 +34,10 @@ use App\Models\Referral;
 |
 */
 
-Route::get('/', function() {
+Route::get('privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy-policy');
+Route::get('/', function () {
     return redirect('/login');
 });
 
@@ -47,17 +50,17 @@ Route::get('/reset-password/{id}', ResetPassword::class)->name('reset-password')
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', Profile::class)->name('profile');
-   
+
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
-    
+
     // Livewire Components for Features
     Route::get('/questions', QuestionComponent::class)->name('questions');
     Route::get('/year-group', YearGroupComponent::class)->name('year-group');
     Route::get('/subject', SubjectComponent::class)->name('subject'); // ✅ Corrected
     Route::get('/subscription', SubscriptionComponent::class)->name('subscription'); // ✅ Corrected
     Route::get('/users', UserComponent::class)->name('users');
-    Route::get('/type',TypeComponent::class)->name('type');
-    Route::get('referral',ReferralComponent::class)->name('referral');
-    Route::get('referral-setting',ReferralSettingComponent::class)->name('referral-setting');
-    Route::get('chapter',ChapterComponent::class)->name('chapter');
+    Route::get('/type', TypeComponent::class)->name('type');
+    Route::get('referral', ReferralComponent::class)->name('referral');
+    Route::get('referral-setting', ReferralSettingComponent::class)->name('referral-setting');
+    Route::get('chapter', ChapterComponent::class)->name('chapter');
 });
