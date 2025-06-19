@@ -64,19 +64,18 @@ class Form extends Component
         }
     }
     public function loadChapters()
-{
-    $this->reset('chapterId');
-    
-    if ($this->subjectId) {
-        $this->chapters = Chapter::all();
+    {
+        $this->reset('chapterId');
         
-        // Auto-set duration if needed
-        $subject = Subject::find($this->subjectId);
-        $this->duration = $subject->default_duration ?? null;
-    } else {
-        $this->chapters = [];
+        if ($this->subjectId) {
+            $this->chapters = \App\Models\Chapter::where('subject_id', $this->subjectId)->get();
+            // Auto-set duration if needed
+            $subject = \App\Models\Subject::find($this->subjectId);
+            $this->duration = $subject->default_duration ?? null;
+        } else {
+            $this->chapters = [];
+        }
     }
-}
     protected $rules = [
         'subjectId' => 'required|exists:subjects,id',
         // 'yearGroupId' => 'required|exists:year_groups,id',

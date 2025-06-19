@@ -23,4 +23,9 @@ class Subject extends Model
     {
         return $this->belongsTo(\App\Models\Type::class);
     }
+
+    public function chapters()
+    {
+        return $this->hasMany(Chapter::class);
+    }
 } 
