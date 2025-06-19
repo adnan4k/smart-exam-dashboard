@@ -177,6 +177,7 @@ class Form extends Component
                         'answer_id' => $choice->id
                     ]);
                 }
+                
             }
 
             DB::commit();

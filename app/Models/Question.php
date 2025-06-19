@@ -22,7 +22,8 @@ class Question extends Model
         'type_id',
         'duration',
         'science_type',
-        'region'
+        'region',
+        'answer_id',
     ];
 
     protected $casts = [
