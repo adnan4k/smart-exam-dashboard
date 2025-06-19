@@ -173,7 +173,10 @@ class Form extends Component
 
                 // Set the correct choice
                 if ($index == $this->correctChoiceId) {
-                    $question->update(['correct_choice_id' => $choice->id]);
+                    $question->update([
+                        'correct_choice_id' => $choice->id,
+                        'answer_id' => $choice->id
+                    ]);
                 }
             }
 
