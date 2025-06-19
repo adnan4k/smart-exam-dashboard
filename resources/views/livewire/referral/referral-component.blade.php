@@ -11,11 +11,11 @@
                         <div>
                             <h5 class="mb-0">Referral Settings</h5>
                         </div>
-                        <button
+                        <!-- <button
                             style="background-color:#56C596;"
                             @click="$dispatch('referralSettingModal')"
                             class="btn text-white bg-green-400 btn-sm mb-0"
-                            type="button">+&nbsp; New Setting</button>
+                            type="button">+&nbsp; New Setting</button> -->
                     </div>
                 </div>
 
@@ -83,11 +83,11 @@
                         <div>
                             <h5 class="mb-0">All Referrals</h5>
                         </div>
-                        <button
+                        <!-- <button
                             style="background-color:#56C596;"
                             @click="$dispatch('referralModal')"
                             class="btn text-white bg-green-400 btn-sm mb-0"
-                            type="button">+&nbsp; New Referral</button>
+                            type="button">+&nbsp; New Referral</button> -->
                     </div>
                 </div>
 
@@ -108,12 +108,15 @@
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                         Bonus
                                     </th>
+                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                        Payment Status
+                                    </th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Created At
                                     </th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                                    <!-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Action
-                                    </th>
+                                    </th> -->
                                 </tr>
                             </thead>
                             <tbody>
@@ -132,10 +135,15 @@
                                             <p class="text-xs font-weight-bold mb-0">{{ number_format($referral->bonus_amount, 2) }} ETB</p>
                                         </td>
                                         <td class="text-center">
+                                            <span class="badge {{ $referral->is_paid ? 'bg-success' : 'bg-warning' }}">
+                                                {{ $referral->is_paid ? 'Paid' : 'Pending' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
                                             <p class="text-xs font-weight-bold mb-0">{{ $referral->created_at->format('Y-m-d') }}</p>
                                         </td>
                                         <td class="text-center">
-                                            <button
+                                            <!-- <button
                                                 @click="$dispatch('edit-referral', { referral: {{ $referral->id }} })"
                                                 class="text-blue-500">
                                                 <i class="fa-regular fa-pen-to-square"></i>
@@ -144,6 +152,11 @@
                                                 wire:click="$dispatch('openDeleteModal', { itemId: {{ $referral->id }}, model: '{{ addslashes(App\Models\Referral::class) }}' })"
                                                 class="text-red-500">
                                                 <i class="fa-solid fa-trash"></i>
+                                            </button> -->
+                                            <button
+                                                wire:click="togglePaymentStatus({{ $referral->id }})"
+                                                class="btn btn-sm {{ $referral->is_paid ? 'btn-warning' : 'btn-success' }}">
+                                                {{ $referral->is_paid ? 'Mark as Pending' : 'Mark as Paid' }}
                                             </button>
                                         </td>
                                     </tr>

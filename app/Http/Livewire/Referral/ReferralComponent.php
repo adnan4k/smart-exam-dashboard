@@ -17,4 +17,15 @@ class ReferralComponent extends Component
         
         return view('livewire.referral.referral-component', compact('referrals', 'referralSettings'));
     }
+    // In app/Http/Livewire/Referral/ReferralComponent.php
+
+public function togglePaymentStatus($referralId)
+{
+    $referral = \App\Models\Referral::findOrFail($referralId);
+    $referral->is_paid = !$referral->is_paid;
+    $referral->save();
+
+    session()->flash('message', 'Payment status updated successfully.');
+    $this->dispatch('refreshTable');
+}
 }
