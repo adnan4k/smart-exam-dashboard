@@ -41,7 +41,7 @@
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                                 <option value="">Select Subject</option>
                                 @foreach (\App\Models\Subject::all() as $subject)
-                                    <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                                    <option value="{{ $subject->id }}">{{ $subject->name }} -{{ $subject->year }} </option>
                                 @endforeach
                             </select>
                             @error('subject_id') <span class="text-red-500">{{ $message }}</span> @enderror
