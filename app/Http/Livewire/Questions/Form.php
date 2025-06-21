@@ -150,6 +150,10 @@ class Form extends Component
                 $question->update($questionData);
 
                 // Delete existing choices
+                $question->update([
+                    'answer_id' => null,
+                    'correct_choice_id' => null,
+                ]);
                 $question->choices()->delete();
             } else {
                 $question = Question::create($questionData);
