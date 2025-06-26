@@ -67,13 +67,13 @@ class Form extends Component
     {
         $this->reset('chapterId');
         
+        // Load all chapters since chapters are no longer linked to subjects
+        $this->chapters = \App\Models\Chapter::all();
+        
+        // Auto-set duration if needed
         if ($this->subjectId) {
-            $this->chapters = \App\Models\Chapter::where('subject_id', $this->subjectId)->get();
-            // Auto-set duration if needed
             $subject = \App\Models\Subject::find($this->subjectId);
             $this->duration = $subject->default_duration ?? null;
-        } else {
-            $this->chapters = [];
         }
     }
     protected $rules = [
@@ -288,7 +288,7 @@ class Form extends Component
         }
         
         $this->duration = $subject->default_duration;
-        // $this->filteredChapters = Chapter::where('subject_id', $value)->get();
+        // Chapters are no longer linked to subjects, so no filtering needed
         $this->chapterId = null;
         
     }

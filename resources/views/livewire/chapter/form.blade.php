@@ -35,18 +35,6 @@
                             @error('image') <span class="text-red-500">{{ $message }}</span> @enderror
                         </div>
 
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Subject</label>
-                            <select wire:model="subject_id"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Subject</option>
-                                @foreach (\App\Models\Subject::all() as $subject)
-                                    <option value="{{ $subject->id }}">{{ $subject->name }} -{{ $subject->year }} </option>
-                                @endforeach
-                            </select>
-                            @error('subject_id') <span class="text-red-500">{{ $message }}</span> @enderror
-                        </div>
-
                         <div class="flex items-center p-4 justify-between md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <button style="background-color:#56C596;" type="submit"
                                 class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none 

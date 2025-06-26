@@ -21,7 +21,6 @@ class Form extends Component
     public $openModal = false;
     public $fullScreenImage;
     public $showImageModal = false;
-    public $subject_id;
 
     protected $listeners = ['chapterModal' => 'chapterModal'];
 
@@ -44,7 +43,6 @@ class Form extends Component
             $chapter = Chapter::find($this->id);
             $chapter->name = $this->name;
             $chapter->description = $this->description;
-            $chapter->subject_id = $this->subject_id; // Set subject_id
     
             if ($this->image) {
                 $imagePath = $this->image->store('chapters', 'public');
@@ -57,7 +55,6 @@ class Form extends Component
             $data = [
                 'name' => $this->name,
                 'description' => $this->description,
-                'subject_id' => $this->subject_id, // Set subject_id
             ];
     
             if ($this->image) {
@@ -84,7 +81,6 @@ class Form extends Component
         $this->id = $chapter->id;
         $this->name = $chapter->name;
         $this->description = $chapter->description;
-        $this->subject_id = $chapter->subject_id; // Load subject_id
         $this->is_edit = true;
         $this->openModal = true;
     }
