@@ -21,9 +21,10 @@ use App\Http\Controllers\UserController;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Public routes
 Route::post('subjects',[QuestionController::class,'availableSubjects']);
 Route::post('/available-chapters', [QuestionController::class, 'availableChapters']);
-
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
 Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear']);
 Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);
@@ -38,3 +39,12 @@ Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQues
 Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
 Route::post('get-questions',[QuestionController::class,'getQuestionsByType']);
+
+// Referral endpoints (using query parameters)
+Route::get('my-referrals', [UserController::class, 'getMyReferrals']);
+Route::get('referral-details', [UserController::class, 'getReferralDetails']);
+
+// Protected routes (require authentication)
+Route::middleware('auth:api')->group(function () {
+    Route::post('logout', [UserController::class, 'logout']);
+});

@@ -155,4 +155,97 @@ class UserController extends Controller
             'message' => 'Successfully logged out'
         ], 200);
     }
+
+    /**
+     * Get the users that the authenticated user has referred.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMyReferrals(Request $request)
+    {
+        $id = $request->query('id');
+        $user = User::find($id);
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        // Get users referred by the user
+        $referredUsers = User::where('referred_by', $user->id)
+            ->select([
+                'id',
+                'name',
+                'email',
+                'phone_number',
+                'institution_type',
+                'institution_name',
+                'status',
+                'created_at',
+                'last_login_at'
+            ])
+            ->with(['type:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get referral statistics
+        $totalReferrals = $referredUsers->count();
+        $activeReferrals = $referredUsers->where('status', 'active')->count();
+        $totalEarnings = Referral::where('referrer_id', $user->id)
+            ->sum('bonus_amount');
+        $paidEarnings = Referral::where('referrer_id', $user->id)
+            ->where('is_paid', true)
+            ->sum('bonus_amount');
+
+        return response()->json([
+            'message' => 'Referrals retrieved successfully',
+            'data' => [
+                'referred_users' => $referredUsers,
+                'statistics' => [
+                    'total_referrals' => $totalReferrals,
+                    'active_referrals' => $activeReferrals,
+                    'total_earnings' => $totalEarnings,
+                    'paid_earnings' => $paidEarnings,
+                    'pending_earnings' => $totalEarnings - $paidEarnings,
+                ],
+                'referral_code' => $user->referral_code,
+            ]
+        ], 200);
+    }
+
+    /**
+     * Get detailed referral information including referral records.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getReferralDetails(Request $request)
+    {
+        $id = $request->query('id');
+        $user = User::find($id);
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        // Get referral records
+        $referralRecords = Referral::where('referrer_id', $user->id)
+            ->with(['referred:id,name,email,phone_number,created_at'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Referral details retrieved successfully',
+            'data' => [
+                'referral_records' => $referralRecords,
+                'referral_code' => $user->referral_code,
+            ]
+        ], 200);
+    }
+
+    
 }
