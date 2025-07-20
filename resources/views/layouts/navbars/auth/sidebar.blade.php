@@ -123,133 +123,184 @@
      class="fixed inset-0 bg-black/50 lg:hidden hidden z-[50]">
 </div>
 
-<!-- Update the JavaScript with mobile-friendly implementation -->
+<!-- Update the JavaScript with Livewire-compatible implementation -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    let sidebarState = {
-        isOpen: false,
-        isAnimating: false,
-        init: function() {
-            this.sidebar = document.getElementById('sidenav-main');
-            this.toggle = document.getElementById('sidebarToggle');
-            this.backdrop = document.getElementById('sidebarBackdrop');
-            
-            if (!this.sidebar || !this.toggle) {
-                console.error('Sidebar elements not found');
-                return;
-            }
-            
-            this.bindEvents();
-            this.setInitialState();
-        },
+// Global sidebar state
+window.sidebarState = {
+    isOpen: false,
+    isAnimating: false,
+    isInitialized: false,
+    
+    init: function() {
+        if (this.isInitialized) {
+            this.cleanup();
+        }
         
-        setInitialState: function() {
-            // Ensure sidebar starts closed on mobile
-            if (window.innerWidth < 1024) {
-                this.sidebar.classList.add('-translate-x-full');
-                this.backdrop.classList.add('hidden');
-                this.isOpen = false;
-            }
-        },
+        this.sidebar = document.getElementById('sidenav-main');
+        this.toggle = document.getElementById('sidebarToggle');
+        this.backdrop = document.getElementById('sidebarBackdrop');
         
-        bindEvents: function() {
-            // Handle click events
-            this.toggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleSidebar();
-            });
-            
-            // Handle backdrop click
-            this.backdrop.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.closeSidebar();
-            });
-            
-            // Handle touch events for mobile
-            this.toggle.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            
-            this.toggle.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleSidebar();
-            });
-            
-            // Handle escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isOpen) {
-                    this.closeSidebar();
-                }
-            });
-            
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                if (window.innerWidth >= 1024) {
-                    this.openSidebar();
-                } else {
-                    this.closeSidebar();
-                }
-            });
-            
-            // Handle navigation clicks to close sidebar on mobile
-            document.addEventListener('click', (e) => {
-                if (this.isOpen && window.innerWidth < 1024) {
-                    const navLink = e.target.closest('.nav-link');
-                    if (navLink) {
-                        setTimeout(() => this.closeSidebar(), 100);
-                    }
-                }
-            });
-        },
+        if (!this.sidebar || !this.toggle) {
+            console.error('Sidebar elements not found');
+            return;
+        }
         
-        toggleSidebar: function() {
-            if (this.isAnimating) return;
-            
-            if (this.isOpen) {
-                this.closeSidebar();
-            } else {
-                this.openSidebar();
-            }
-        },
+        this.bindEvents();
+        this.setInitialState();
+        this.isInitialized = true;
+    },
+    
+    cleanup: function() {
+        // Remove all event listeners
+        if (this.toggle) {
+            this.toggle.removeEventListener('click', this.handleToggleClick);
+            this.toggle.removeEventListener('touchstart', this.handleTouchStart);
+            this.toggle.removeEventListener('touchend', this.handleTouchEnd);
+        }
         
-        openSidebar: function() {
-            if (this.isAnimating) return;
-            
-            this.isAnimating = true;
-            this.isOpen = true;
-            
-            this.sidebar.classList.remove('-translate-x-full');
-            this.backdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            
-            // Add a small delay to prevent rapid toggling
-            setTimeout(() => {
-                this.isAnimating = false;
-            }, 300);
-        },
+        if (this.backdrop) {
+            this.backdrop.removeEventListener('click', this.handleBackdropClick);
+        }
         
-        closeSidebar: function() {
-            if (this.isAnimating) return;
-            
-            this.isAnimating = true;
-            this.isOpen = false;
-            
+        document.removeEventListener('keydown', this.handleKeydown);
+        document.removeEventListener('click', this.handleDocumentClick);
+        window.removeEventListener('resize', this.handleResize);
+    },
+    
+    setInitialState: function() {
+        // Ensure sidebar starts closed on mobile
+        if (window.innerWidth < 1024) {
             this.sidebar.classList.add('-translate-x-full');
             this.backdrop.classList.add('hidden');
-            document.body.style.overflow = '';
-            
-            // Add a small delay to prevent rapid toggling
-            setTimeout(() => {
-                this.isAnimating = false;
-            }, 300);
+            this.isOpen = false;
         }
-    };
+    },
+    
+    bindEvents: function() {
+        // Bind events with proper context
+        this.handleToggleClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleSidebar();
+        };
+        
+        this.handleBackdropClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeSidebar();
+        };
+        
+        this.handleTouchStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        };
+        
+        this.handleTouchEnd = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleSidebar();
+        };
+        
+        this.handleKeydown = (e) => {
+            if (e.key === 'Escape' && this.isOpen) {
+                this.closeSidebar();
+            }
+        };
+        
+        this.handleDocumentClick = (e) => {
+            if (this.isOpen && window.innerWidth < 1024) {
+                const navLink = e.target.closest('.nav-link');
+                if (navLink) {
+                    setTimeout(() => this.closeSidebar(), 100);
+                }
+            }
+        };
+        
+        this.handleResize = () => {
+            if (window.innerWidth >= 1024) {
+                this.openSidebar();
+            } else {
+                this.closeSidebar();
+            }
+        };
+        
+        // Add event listeners
+        this.toggle.addEventListener('click', this.handleToggleClick);
+        this.toggle.addEventListener('touchstart', this.handleTouchStart);
+        this.toggle.addEventListener('touchend', this.handleTouchEnd);
+        
+        this.backdrop.addEventListener('click', this.handleBackdropClick);
+        
+        document.addEventListener('keydown', this.handleKeydown);
+        document.addEventListener('click', this.handleDocumentClick);
+        window.addEventListener('resize', this.handleResize);
+    },
+    
+    toggleSidebar: function() {
+        if (this.isAnimating) return;
+        
+        if (this.isOpen) {
+            this.closeSidebar();
+        } else {
+            this.openSidebar();
+        }
+    },
+    
+    openSidebar: function() {
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        this.isOpen = true;
+        
+        this.sidebar.classList.remove('-translate-x-full');
+        this.backdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 300);
+    },
+    
+    closeSidebar: function() {
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        this.isOpen = false;
+        
+        this.sidebar.classList.add('-translate-x-full');
+        this.backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 300);
+    }
+};
 
-    sidebarState.init();
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    window.sidebarState.init();
+});
+
+// Initialize on Livewire navigation
+document.addEventListener('livewire:navigated', function() {
+    setTimeout(() => {
+        window.sidebarState.init();
+    }, 100);
+});
+
+// Initialize on Livewire page loads
+document.addEventListener('livewire:load', function() {
+    setTimeout(() => {
+        window.sidebarState.init();
+    }, 100);
+});
+
+// Initialize on any Livewire updates
+document.addEventListener('livewire:update', function() {
+    setTimeout(() => {
+        window.sidebarState.init();
+    }, 100);
 });
 </script>
 
