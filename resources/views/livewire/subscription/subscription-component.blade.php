@@ -74,11 +74,11 @@
                                             <button wire:click="showImage({{ $subscription->id }})" class="relative w-fit">
                                                 <img src="{{ asset('storage/'.$subscription->image) }}"
                                                      alt="Payment Proof"
-                                                     class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 object-cover cursor-pointer rounded-lg border border-gray-200 shadow hover:scale-105 transition-transform duration-300"
+                                                     class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 object-cover cursor-pointer rounded border border-gray-200 shadow hover:scale-105 transition-transform duration-300"
                                                       />
                                                 <!-- Eye icon overlay on hover -->
                                                 <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                                    <i class="fas fa-eye text-white text-sm sm:text-lg md:text-xl lg:text-2xl"></i>
+                                                    <i class="fas fa-eye text-white text-xs sm:text-sm md:text-base"></i>
                                                 </div>
                                             </button>
                                         @else
@@ -159,22 +159,6 @@
                             Close
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    <!-- Full-screen Image Modal -->
-    @if($showImageModal)
-        <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-75">
-            <div class="bg-white rounded shadow-lg p-4 w-54 h-54 flex flex-col">
-                <div class="flex-grow flex items-center justify-center">
-                    <img src="{{ asset('storage/'.$fullScreenImage) }}" alt="Half Size Image" class="max-h-full max-w-full object-contain">
-                </div>
-                <div class="mt-4 text-center">
-                    <button type="button" wire:click="$set('showImageModal', false)" class="px-4 py-2 bg-gray-800 text-white rounded">
-                        Close
-                    </button>
                 </div>
             </div>
         </div>
