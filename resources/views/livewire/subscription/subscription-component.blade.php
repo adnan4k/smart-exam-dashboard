@@ -163,4 +163,32 @@
             </div>
         </div>
     @endif
+
+    <!-- Half-screen Image Modal -->
+    @if($showImageModal)
+        <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+            <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h5 class="text-lg font-semibold">Payment Proof</h5>
+                    <button type="button" wire:click="$set('showImageModal', false)" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="flex-1 p-4 overflow-auto">
+                    <div class="flex justify-center">
+                        <img src="{{ asset('storage/'.$fullScreenImage) }}" 
+                             alt="Payment Proof" 
+                             class="max-w-full max-h-full object-contain rounded-lg shadow-md">
+                    </div>
+                </div>
+                <div class="p-4 border-t bg-gray-50">
+                    <button type="button" 
+                            wire:click="$set('showImageModal', false)" 
+                            class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
