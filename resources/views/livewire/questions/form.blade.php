@@ -1,9 +1,93 @@
-<div x-data="{ openModal: @entangle('openModal') }" class="flex justify-center px-8">
-    <!-- PlateJS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/platejs@latest/dist/plate.min.css" rel="stylesheet">
-    
+<div x-data="{
+        openModal: @entangle('openModal'),
+        initQuill() {
+            console.log('Initializing Quill editor...');
+            
+            // Function to initialize question editor only
+            const initEditor = (elementId, editorName, propertyName, placeholder) => {
+                const element = document.getElementById(elementId);
+                if (!element) {
+                    console.error(`${elementId} element not found!`);
+                    return false;
+                }
+                
+                if (window[editorName]) {
+                    console.log(`${editorName} already exists, skipping...`);
+                    return true;
+                }
+                
+                try {
+                    console.log(`Initializing ${editorName}...`);
+                    window[editorName] = new Quill(`#${elementId}`, {
+                        theme: 'snow',
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline'],
+                                ['link'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['clean']
+                            ]
+                        },
+                        placeholder: placeholder
+                    });
+                    
+                    window[editorName].on('text-change', function() {
+                        window.Livewire.find('{{ $this->getId() }}').set(propertyName, window[editorName].root.innerHTML);
+                    });
+                    
+                    console.log(`${editorName} initialized successfully`);
+                    return true;
+                } catch (error) {
+                    console.error(`Error initializing ${editorName}:`, error);
+                    return false;
+                }
+            };
+            
+            // Initialize only question editor
+            return initEditor('questionTextEditor', 'questionEditor', 'questionText', 'Enter question text...');
+        },
+        
+        // Retry initialization with multiple attempts
+        initQuillWithRetry() {
+            let attempts = 0;
+            const maxAttempts = 5;
+            
+            const tryInit = () => {
+                attempts++;
+                console.log(`Attempt ${attempts} to initialize Quill editor...`);
+                
+                if (this.initQuill()) {
+                    console.log('Quill editor initialized successfully!');
+                    return;
+                }
+                
+                if (attempts < maxAttempts) {
+                    console.log(`Retrying in ${attempts * 100}ms...`);
+                    setTimeout(tryInit, attempts * 100);
+                } else {
+                    console.error('Failed to initialize Quill editor after multiple attempts');
+                }
+            };
+            
+            tryInit();
+        }
+    }"
+    x-init="$watch('openModal', value => { 
+        if(value) { 
+            console.log('Modal opened, initializing editor...');
+            setTimeout(() => initQuillWithRetry(), 100); 
+        } 
+    })"
+    class="flex justify-center px-8"
+>
+    @assets
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    @endassets
+
     <div @click.away="openModal = false" x-cloak x-show="openModal" id="default-modal" tabindex="-1" aria-hidden="true"
-        class="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 overflow-y-auto">
+        class="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 overflow-y-auto"
+        wire:ignore.self>
         <div x-data="{ isEdit: @entangle('is_edit') }" class="relative p-4 w-full max-w-2xl max-h-full">
             <form class="relative bg-white rounded-lg shadow dark:bg-gray-700" wire:submit.prevent="saveQuestion">
                 <div class="flex flex-wrap border shadow rounded-lg p-3 dark:bg-gray-600">
@@ -11,76 +95,50 @@
                         x-text="isEdit ? 'Edit Question' : 'Create Question'"></h2>
 
                     <div class="flex flex-col gap-2 w-full border-gray-400">
-                      <!-- Exam Type -->
-<div>
-    <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
-    <select wire:model="type" wire:change="loadSubjects()"
-        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-        <option value="">Select Exam Type</option>
-        @foreach ($types as $type)
-            <option value="{{ $type->id }}">{{ $type->name }}</option>
-        @endforeach
-    </select>
-</div>
-
-<!-- Subject -->
-<div>
-    <label class="text-gray-600 dark:text-gray-400">Subject</label>
-    <select wire:model="subjectId" wire:change="loadChapters()"
-        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-        <option value="">Select Subject</option>
-        @foreach ($subjects as $subject)
-            <option value="{{ $subject->id }}">{{ $subject->name }} - {{ $subject->year }} - {{ $subject->region }}</option>
-        @endforeach
-    </select>
-</div>
-
-<!-- Chapters -->
-<div>
-    <label class="text-gray-600 dark:text-gray-400">Chapters</label>
-    <select wire:model="chapterId"
-        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-        <option value="">Select Chapters</option>
-        @foreach ($chapters as $chapter)
-            <option value="{{ $chapter->id }}">{{ $chapter->name }}</option>
-        @endforeach
-    </select>
-</div>
-
-                        <!-- Exam Duration -->
-                        {{-- <div>
-                            <label class="text-gray-600 dark:text-gray-400">Exam Duration (in minutes)</label>
-                            <input type="number" wire:model="duration"
+                        <!-- Exam Type -->
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
+                            <select wire:model="type" wire:change="loadSubjects()"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                            @error('duration')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div> --}}
-                        
-                        {{-- <div>
-                            <label class="text-gray-600 dark:text-gray-400">Year Group</label>
-                            <select wire:model="yearGroupId"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Year Group</option>
-                                @foreach ($yearGroups as $yearGroup)
-                                    <option value="{{ $yearGroup->id }}">{{ $yearGroup->year }}</option>
+                                <option value="">Select Exam Type</option>
+                                @foreach ($types as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
-                            @error('yearGroupId')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div> --}}
+                        </div>
+
+                        <!-- Subject -->
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Subject</label>
+                            <select wire:model="subjectId" wire:change="loadChapters()"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Subject</option>
+                                @foreach ($subjects as $subject)
+                                <option value="{{ $subject->id }}">{{ $subject->name }} - {{ $subject->year }} - {{ $subject->region }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Chapters -->
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Chapters</label>
+                            <select wire:model="chapterId"
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                <option value="">Select Chapters</option>
+                                @foreach ($chapters as $chapter)
+                                <option value="{{ $chapter->id }}">{{ $chapter->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
                         <!-- Question Text -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Question Text</label>
-                            <div class="plate-editor" wire:ignore>
-                                <textarea wire:model="questionText" 
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                    placeholder="Enter question text..."></textarea>
+                            <div wire:ignore>
+                                <div id="questionTextEditor" class="w-full border border-slate-200 rounded-lg focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" style="height: 200px;"></div>
                             </div>
                             @error('questionText')
-                                <span class="text-red-500">{{ $message }}</span>
+                            <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -90,7 +148,7 @@
                             <input type="file" wire:model="questionImage"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                             @error('questionImage')
-                                <span class="text-red-500">{{ $message }}</span>
+                            <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -98,26 +156,26 @@
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Choices</label>
                             @foreach ($choices as $index => $choice)
-                                <div class="mb-4">
-                                    <div class="flex gap-2 mb-1">
-                                        <textarea wire:model="choices.{{ $index }}.text" placeholder="Choice Text"
-                                            class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"></textarea>
-                                        <button type="button" wire:click="removeChoice({{ $index }})"
-                                            class="text-red-500">
-                                            Remove
-                                        </button>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input type="radio" wire:model="correctChoiceId" value="{{ $index }}" 
-                                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                        <label class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                            Mark as Correct Answer
-                                        </label>
-                                    </div>
-                                    @error('choices.'.$index.'.text')
-                                        <span class="text-red-500">Choice text is required</span>
-                                    @enderror
+                            <div class="mb-4">
+                                <div class="flex gap-2 mb-1">
+                                    <textarea wire:model="choices.{{ $index }}.text" placeholder="Choice Text"
+                                        class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" rows="2"></textarea>
+                                    <button type="button" wire:click="removeChoice({{ $index }})"
+                                        class="text-red-500">
+                                        Remove
+                                    </button>
                                 </div>
+                                <div class="flex items-center">
+                                    <input type="radio" wire:model="correctChoiceId" value="{{ $index }}"
+                                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                    <label class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                        Mark as Correct Answer
+                                    </label>
+                                </div>
+                                @error('choices.'.$index.'.text')
+                                <span class="text-red-500">Choice text is required</span>
+                                @enderror
+                            </div>
                             @endforeach
                             <button type="button" wire:click="addChoice"
                                 class="py-2.5 px-2 bg-[#56C596] text-sm font-medium text-white focus:outline-none rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
@@ -128,13 +186,10 @@
                         <!-- Explanation -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Explanation</label>
-                            <div class="plate-editor" wire:ignore>
-                                <textarea wire:model="explanation" 
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                    placeholder="Enter detailed explanation..."></textarea>
-                            </div>
+                            <textarea wire:model="explanation" placeholder="Enter detailed explanation..."
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" rows="4"></textarea>
                             @error('explanation')
-                                <span class="text-red-500">{{ $message }}</span>
+                            <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -144,14 +199,14 @@
                             <input type="file" wire:model="explanationImage"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                             @error('explanationImage')
-                                <span class="text-red-500">{{ $message }}</span>
+                            <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
 
                         <!-- Show region field only if exam type is regional -->
                         <div x-show="$wire.type === 'regional'">
                             <label class="text-gray-600 dark:text-gray-400">Region</label>
-                            <select wire:model="region" 
+                            <select wire:model="region"
                                 class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
                                 <option value="">Select Region</option>
                                 <option value="addis_ababa">Addis Ababa</option>
@@ -168,10 +223,10 @@
                                 <option value="tigray">Tigray</option>
                             </select>
                             @error('region')
-                                <span class="text-red-500">{{ $message }}</span>
+                            <span class="text-red-500">{{ $message }}</span>
                             @enderror
                         </div>
-                   
+
                         <!-- Submit Button -->
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <button style="background-color:#56C596;" type="submit"
@@ -187,26 +242,3 @@
         </div>
     </div>
 </div>
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/platejs@latest/dist/plate.min.js"></script>
-<script>
-    document.addEventListener('livewire:load', function() {
-        // Initialize PlateJS editors
-        Plate.init({
-            selector: '.plate-editor',
-            plugins: ['basic'],
-            toolbar: ['bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList']
-        });
-        
-        // Reinitialize after Livewire updates
-        Livewire.hook('message.processed', () => {
-            Plate.init({
-                selector: '.plate-editor',
-                plugins: ['basic'],
-                toolbar: ['bold', 'italic', 'underline', 'link', 'bulletedList', 'numberedList']
-            });
-        });
-    });
-</script>
-@endpush

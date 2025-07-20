@@ -69,7 +69,9 @@
                                             <tr>
                                                 <td class="ps-4 text-xs">{{ $num + 1 }}</td>
                                                 <td>
-                                                    <p class="text-xs font-weight-bold mb-0">{{ Str::limit($question->question_text, 50) }}</p>
+                                                    <div class="text-xs font-weight-bold mb-0">
+                                                        {!! Str::limit(strip_tags($question->question_text), 50) !!}
+                                                    </div>
                                                 </td>
                                                 <td class="text-center">
                                                     <span class="badge bg-primary text-white">{{ $question->subject->name }}</span>
