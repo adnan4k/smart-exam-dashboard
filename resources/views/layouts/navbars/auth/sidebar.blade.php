@@ -123,35 +123,129 @@
      class="fixed inset-0 bg-black/50 lg:hidden hidden z-[50]">
 </div>
 
-<!-- Update the JavaScript with a more robust implementation -->
+<!-- Update the JavaScript with mobile-friendly implementation -->
 <script>
-window.addEventListener('load', function() {
+document.addEventListener('DOMContentLoaded', function() {
     let sidebarState = {
         isOpen: false,
+        isAnimating: false,
         init: function() {
             this.sidebar = document.getElementById('sidenav-main');
             this.toggle = document.getElementById('sidebarToggle');
             this.backdrop = document.getElementById('sidebarBackdrop');
+            
+            if (!this.sidebar || !this.toggle) {
+                console.error('Sidebar elements not found');
+                return;
+            }
+            
             this.bindEvents();
+            this.setInitialState();
         },
+        
+        setInitialState: function() {
+            // Ensure sidebar starts closed on mobile
+            if (window.innerWidth < 1024) {
+                this.sidebar.classList.add('-translate-x-full');
+                this.backdrop.classList.add('hidden');
+                this.isOpen = false;
+            }
+        },
+        
         bindEvents: function() {
-            if (this.toggle) {
-                this.toggle.addEventListener('click', () => this.toggleSidebar());
-            }
-            if (this.backdrop) {
-                this.backdrop.addEventListener('click', () => this.toggleSidebar());
-            }
+            // Handle click events
+            this.toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleSidebar();
+            });
+            
+            // Handle backdrop click
+            this.backdrop.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.closeSidebar();
+            });
+            
+            // Handle touch events for mobile
+            this.toggle.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            this.toggle.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleSidebar();
+            });
+            
+            // Handle escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && this.isOpen) {
-                    this.toggleSidebar();
+                    this.closeSidebar();
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    this.openSidebar();
+                } else {
+                    this.closeSidebar();
+                }
+            });
+            
+            // Handle navigation clicks to close sidebar on mobile
+            document.addEventListener('click', (e) => {
+                if (this.isOpen && window.innerWidth < 1024) {
+                    const navLink = e.target.closest('.nav-link');
+                    if (navLink) {
+                        setTimeout(() => this.closeSidebar(), 100);
+                    }
                 }
             });
         },
+        
         toggleSidebar: function() {
-            this.isOpen = !this.isOpen;
-            this.sidebar.classList.toggle('-translate-x-full');
-            this.backdrop.classList.toggle('hidden');
-            document.body.style.overflow = this.isOpen ? 'hidden' : '';
+            if (this.isAnimating) return;
+            
+            if (this.isOpen) {
+                this.closeSidebar();
+            } else {
+                this.openSidebar();
+            }
+        },
+        
+        openSidebar: function() {
+            if (this.isAnimating) return;
+            
+            this.isAnimating = true;
+            this.isOpen = true;
+            
+            this.sidebar.classList.remove('-translate-x-full');
+            this.backdrop.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Add a small delay to prevent rapid toggling
+            setTimeout(() => {
+                this.isAnimating = false;
+            }, 300);
+        },
+        
+        closeSidebar: function() {
+            if (this.isAnimating) return;
+            
+            this.isAnimating = true;
+            this.isOpen = false;
+            
+            this.sidebar.classList.add('-translate-x-full');
+            this.backdrop.classList.add('hidden');
+            document.body.style.overflow = '';
+            
+            // Add a small delay to prevent rapid toggling
+            setTimeout(() => {
+                this.isAnimating = false;
+            }, 300);
         }
     };
 
@@ -170,6 +264,16 @@ window.addEventListener('load', function() {
         display: block !important;
         right: 1rem !important;
         z-index: 999 !important;
+        /* Improve touch target size on mobile */
+        min-width: 44px !important;
+        min-height: 44px !important;
+        /* Prevent text selection */
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        /* Improve touch responsiveness */
+        -webkit-tap-highlight-color: transparent !important;
     }
 
     @media (min-width: 1024px) {
@@ -194,16 +298,23 @@ window.addEventListener('load', function() {
             margin: 1rem !important;
             transform: translateX(-100%);
             border-radius: 1rem;
+            /* Improve mobile performance */
+            -webkit-transform: translateX(-100%);
+            -webkit-transition: -webkit-transform 0.3s ease-in-out;
+            transition: transform 0.3s ease-in-out;
         }
 
         #sidenav-main:not(.-translate-x-full) {
             transform: translateX(0);
+            -webkit-transform: translateX(0);
         }
 
         #sidebar-container {
             height: 100% !important;
             overflow-y: auto !important;
             padding: 1rem;
+            /* Improve scrolling on mobile */
+            -webkit-overflow-scrolling: touch;
         }
     }
 
