@@ -74,11 +74,11 @@
                                             <button wire:click="showImage({{ $subscription->id }})" class="relative w-fit">
                                                 <img src="{{ asset('storage/'.$subscription->image) }}"
                                                      alt="Payment Proof"
-                                                     class="w-14 h-14 object-cover cursor-pointer rounded-lg border border-gray-200 shadow hover:scale-105 transition-transform duration-300"
+                                                     class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 object-cover cursor-pointer rounded-lg border border-gray-200 shadow hover:scale-105 transition-transform duration-300"
                                                       />
                                                 <!-- Eye icon overlay on hover -->
                                                 <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                                                    <i class="fas fa-eye text-white text-2xl"></i>
+                                                    <i class="fas fa-eye text-white text-sm sm:text-lg md:text-xl lg:text-2xl"></i>
                                                 </div>
                                             </button>
                                         @else
