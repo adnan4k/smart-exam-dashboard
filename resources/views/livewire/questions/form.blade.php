@@ -1,50 +1,44 @@
 <div x-data="{
         openModal: @entangle('openModal'),
         initQuill() {
-            console.log('Initializing Quill editor...');
-            
-            // Function to initialize question editor only
-            const initEditor = (elementId, editorName, propertyName, placeholder) => {
-                const element = document.getElementById(elementId);
-                if (!element) {
-                    console.error(`${elementId} element not found!`);
-                    return false;
+            // Always destroy and re-create the Quill instance and DOM node
+            if (window.explanationEditor) {
+                if (window.explanationEditor.root && window.explanationEditor.root.parentNode) {
+                    window.explanationEditor.root.parentNode.innerHTML = '<div id=\'explanationEditor\' class=\'w-full border border-slate-200 rounded-lg focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100\' style=\'height: 200px;\'></div>';
                 }
-                
-                if (window[editorName]) {
-                    console.log(`${editorName} already exists, skipping...`);
-                    return true;
-                }
-                
-                try {
-                    console.log(`Initializing ${editorName}...`);
-                    window[editorName] = new Quill(`#${elementId}`, {
-                        theme: 'snow',
-                        modules: {
-                            toolbar: [
-                                ['bold', 'italic', 'underline'],
-                                ['link'],
-                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                ['clean']
-                            ]
-                        },
-                        placeholder: placeholder
-                    });
-                    
-                    window[editorName].on('text-change', function() {
-                        window.Livewire.find('{{ $this->getId() }}').set(propertyName, window[editorName].root.innerHTML);
-                    });
-                    
-                    console.log(`${editorName} initialized successfully`);
-                    return true;
-                } catch (error) {
-                    console.error(`Error initializing ${editorName}:`, error);
-                    return false;
-                }
-            };
-            
-            // Initialize only question editor
-            return initEditor('questionTextEditor', 'questionEditor', 'questionText', 'Enter question text...');
+                window.explanationEditor = null;
+            }
+
+            const element = document.getElementById('explanationEditor');
+            if (!element) {
+                console.error('explanationEditor element not found!');
+                return false;
+            }
+
+            try {
+                window.explanationEditor = new Quill('#explanationEditor', {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            ['link'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'color': [] }, { 'background': [] }], // Color and background color options
+                            ['clean']
+                        ]
+                    },
+                    placeholder: 'Enter detailed explanation...'
+                });
+
+                window.explanationEditor.on('text-change', function() {
+                    window.Livewire.find('{{ $this->getId() }}').set('explanation', window.explanationEditor.root.innerHTML);
+                });
+
+                return true;
+            } catch (error) {
+                console.error('Error initializing explanationEditor:', error);
+                return false;
+            }
         },
         
         // Retry initialization with multiple attempts
@@ -54,27 +48,18 @@
             
             const tryInit = () => {
                 attempts++;
-                console.log(`Attempt ${attempts} to initialize Quill editor...`);
-                
                 if (this.initQuill()) {
-                    console.log('Quill editor initialized successfully!');
                     return;
                 }
-                
                 if (attempts < maxAttempts) {
-                    console.log(`Retrying in ${attempts * 100}ms...`);
                     setTimeout(tryInit, attempts * 100);
-                } else {
-                    console.error('Failed to initialize Quill editor after multiple attempts');
                 }
             };
-            
             tryInit();
         }
     }"
     x-init="$watch('openModal', value => { 
         if(value) { 
-            console.log('Modal opened, initializing editor...');
             setTimeout(() => initQuillWithRetry(), 100); 
         } 
     })"
@@ -134,9 +119,8 @@
                         <!-- Question Text -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Question Text</label>
-                            <div wire:ignore>
-                                <div id="questionTextEditor" class="w-full border border-slate-200 rounded-lg focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" style="height: 200px;"></div>
-                            </div>
+                            <textarea wire:model="questionText" placeholder="Enter question text..."
+                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" rows="4"></textarea>
                             @error('questionText')
                             <span class="text-red-500">{{ $message }}</span>
                             @enderror
@@ -186,8 +170,9 @@
                         <!-- Explanation -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Explanation</label>
-                            <textarea wire:model="explanation" placeholder="Enter detailed explanation..."
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" rows="4"></textarea>
+                            <div wire:ignore>
+                                <div id="explanationEditor" class="w-full border border-slate-200 rounded-lg focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100" style="height: 200px;"></div>
+                            </div>
                             @error('explanation')
                             <span class="text-red-500">{{ $message }}</span>
                             @enderror
