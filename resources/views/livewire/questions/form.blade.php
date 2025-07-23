@@ -24,6 +24,7 @@
                             ['link'],
                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                             [{ 'color': [] }, { 'background': [] }], // Color and background color options
+                            ['formula'], // Add formula support
                             ['clean']
                         ]
                     },
@@ -68,6 +69,8 @@
     @assets
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     @endassets
 
     <div @click.away="openModal = false" x-cloak x-show="openModal" id="default-modal" tabindex="-1" aria-hidden="true"
