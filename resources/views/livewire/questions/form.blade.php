@@ -1,19 +1,33 @@
 <div x-data="{
         openModal: @entangle('openModal'),
         initQuill() {
-            // Always destroy and re-create the Quill instance and DOM node
+            // First, completely destroy any existing Quill instance
             if (window.explanationEditor) {
-                if (window.explanationEditor.root && window.explanationEditor.root.parentNode) {
-                    window.explanationEditor.root.parentNode.innerHTML = '<div id=\'explanationEditor\' class=\'w-full border border-slate-200 rounded-lg focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100\' style=\'height: 200px;\'></div>';
+                try {
+                    window.explanationEditor.destroy();
+                } catch (e) {
+                    console.log('Error destroying existing editor:', e);
                 }
                 window.explanationEditor = null;
             }
 
-            const element = document.getElementById('explanationEditor');
-            if (!element) {
-                console.error('explanationEditor element not found!');
+            // Remove any existing Quill elements from the DOM
+            const existingQuillElements = document.querySelectorAll('.ql-editor, .ql-toolbar');
+            existingQuillElements.forEach(el => {
+                if (el.closest('#explanationEditor')) {
+                    el.remove();
+                }
+            });
+
+            // Recreate the editor container
+            const container = document.getElementById('explanationEditor');
+            if (!container) {
+                console.error('explanationEditor container not found!');
                 return false;
             }
+
+            // Clear the container and recreate the editor div
+            container.innerHTML = '';
 
             try {
                 window.explanationEditor = new Quill('#explanationEditor', {
@@ -30,6 +44,17 @@
                     },
                     placeholder: 'Enter detailed explanation...'
                 });
+
+                // Set content if editing (explanation exists)
+                const explanation = window.Livewire.find('{{ $this->getId() }}').get('explanation');
+                if (explanation && explanation.trim() !== '') {
+                    // Use setTimeout to ensure the editor is fully ready
+                    setTimeout(() => {
+                        if (window.explanationEditor && window.explanationEditor.root) {
+                            window.explanationEditor.root.innerHTML = explanation;
+                        }
+                    }, 50);
+                }
 
                 window.explanationEditor.on('text-change', function() {
                     window.Livewire.find('{{ $this->getId() }}').set('explanation', window.explanationEditor.root.innerHTML);
@@ -57,12 +82,42 @@
                 }
             };
             tryInit();
+        },
+
+        // Clear Quill editor content
+        clearQuill() {
+            if (window.explanationEditor) {
+                window.explanationEditor.setText('');
+            }
+        },
+
+        // Clean up Quill editor completely
+        cleanupQuill() {
+            if (window.explanationEditor) {
+                try {
+                    window.explanationEditor.destroy();
+                } catch (e) {
+                    console.log('Error destroying editor during cleanup:', e);
+                }
+                window.explanationEditor = null;
+            }
         }
     }"
     x-init="$watch('openModal', value => { 
         if(value) { 
+            // Clear the editor content first if it's a new question (not editing)
+            if (!window.Livewire.find('{{ $this->getId() }}').get('is_edit')) {
+                setTimeout(() => {
+                    this.clearQuill();
+                }, 50);
+            }
             setTimeout(() => initQuillWithRetry(), 100); 
-        } 
+        } else {
+            // Clean up when modal is closed
+            setTimeout(() => {
+                this.cleanupQuill();
+            }, 100);
+        }
     })"
     class="flex justify-center px-8"
 >

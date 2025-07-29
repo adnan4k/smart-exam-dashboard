@@ -51,6 +51,8 @@ class Form extends Component
     public $subjects = [];
     public function questionModal()
     {
+        // Reset form for new question
+        $this->resetForm();
         $this->openModal = true;
     }
     public function loadSubjects()
@@ -210,7 +212,6 @@ class Form extends Component
             'correctChoiceId',
             'explanation',
             'explanationImage',
-            'choices',
             'type',
             'duration',
             'chapterId',
@@ -218,6 +219,12 @@ class Form extends Component
             'region',
             'isSample'
         ]);
+        
+        // Reset choices to default structure
+        $this->choices = [
+            ['text' => '', 'image' => null, 'formula' => '']
+        ];
+        
         $this->is_edit = false;
     }
 
