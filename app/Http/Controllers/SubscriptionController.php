@@ -41,18 +41,30 @@ class SubscriptionController extends Controller
             ->first();
 
         if ($existingSubscription) {
-            // Update the existing subscription
-            $existingSubscription->update([
-                'start_date' => now(),
-                'end_date' => now()->addYears(3),
-                'image' => $imagePath,
-                'amount' => $type->price, // Use price from separately queried type
-            ]);
+            // Check if the existing subscription is already paid
+            if ($existingSubscription->payment_status === 'paid') {
+                return response()->json([
+                    'message' => 'User already has an active subscription.',
+                    'subscription' => $existingSubscription,
+                ], 400);
+            }
 
-            return response()->json([
-                'message' => 'Subscription updated successfully.',
-                'subscription' => $existingSubscription,
-            ], 200);
+            // Allow resubmission for pending or failed subscriptions
+            if (in_array($existingSubscription->payment_status, ['pending', 'failed'])) {
+                $existingSubscription->update([
+                    'start_date' => now(),
+                    'end_date' => now()->addYear(),
+                    'image' => $imagePath,
+                    'amount' => $type->price,
+                    'payment_status' => 'pending', // Reset to pending on resubmission
+                    'failure_reason' => null, // Clear any previous failure reason
+                ]);
+
+                return response()->json([
+                    'message' => 'Subscription resubmitted successfully.',
+                    'subscription' => $existingSubscription,
+                ], 200);
+            }
         }
 
         // Create a new subscription
