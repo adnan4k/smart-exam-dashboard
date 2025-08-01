@@ -57,7 +57,7 @@ class SubscriptionController extends Controller
                     'image' => $imagePath,
                     'amount' => $type->price,
                     'payment_status' => 'pending', // Reset to pending on resubmission
-                    'failure_reason' => null, // Clear any previous failure reason
+                    // 'failure_reason' => null, // Clear any previous failure reason
                 ]);
 
                 return response()->json([
