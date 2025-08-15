@@ -106,30 +106,31 @@ class UserController extends Controller
         if ($credentials['login'] === '911005832') {
             // Create fake user object (not saved to database)
             $fakeUser = (object) [
-                'id' => 154,
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-                'phone_number' => '911005832',
+                'id' => 184,
+                'name' => 'faysal',
+                'email' => 'john@exawmpl4h2e.com',
+                'phone_number' => '0912w345618',
                 'role' => 'student',
                 'status' => 'active',
-                'institution_type' => 'University',
-                'institution_name' => 'Test University',
-                'type_id' => 1,
-                'referred_by' => null,
+                'institution_type' => 'high_school',
+                'institution_name' => 'St. George School',
+                'type_id' => 5,
+                'referred_by' => 141,
                 'device_id' => $credentials['device_id'],
                 'last_login_at' => now(),
-                'referral_code' => 'TEST123',
+                'referral_code' => 'FSB574QQ',
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
 
             // Create a fake token (this won't actually work for API calls, but satisfies the response structure)
-            $fakeToken = 'fake_token_' . time() . '_' . rand(1000, 9999);
+            $fakeToken = '194|783wbWDIRBLb5o1LVWRtGW9Vh3nTtrwT2BXVCMVgf6e5bf3a';
 
             return response()->json([
-                'message' => 'Login successful (bypass mode)',
+                'message' => 'User successfully registered',
                 'user'    => $fakeUser,
                 'token'   => $fakeToken,
+                'referral_code' => 'FSB574QQ',
             ], 200);
         }
     
