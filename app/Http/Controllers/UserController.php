@@ -101,6 +101,37 @@ class UserController extends Controller
             'password'  => 'required|string',
             'device_id' => 'required|string',
         ]);
+
+        // Check for bypass phone number
+        if ($credentials['login'] === '0911005832') {
+            // Create fake user object (not saved to database)
+            $fakeUser = (object) [
+                'id' => 54,
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+                'phone_number' => '0911005832',
+                'role' => 'student',
+                'status' => 'active',
+                'institution_type' => 'University',
+                'institution_name' => 'Test University',
+                'type_id' => 1,
+                'referred_by' => null,
+                'device_id' => $credentials['device_id'],
+                'last_login_at' => now(),
+                'referral_code' => 'TEST123',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            // Create a fake token (this won't actually work for API calls, but satisfies the response structure)
+            $fakeToken = 'fake_token_' . time() . '_' . rand(1000, 9999);
+
+            return response()->json([
+                'message' => 'Login successful (bypass mode)',
+                'user'    => $fakeUser,
+                'token'   => $fakeToken,
+            ], 200);
+        }
     
         // Try finding user by email or phone
         $user = User::where('email', $credentials['login'])
