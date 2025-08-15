@@ -103,7 +103,7 @@ class UserController extends Controller
         ]);
 
         // Check for bypass phone number
-        if ($credentials['login'] === '0911005832') {
+        if ($credentials['login'] === '911005832') {
             // Create fake user object (not saved to database)
             $fakeUser = (object) [
                 'id' => 154,
