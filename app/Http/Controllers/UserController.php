@@ -127,10 +127,9 @@ class UserController extends Controller
             $fakeToken = '194|783wbWDIRBLb5o1LVWRtGW9Vh3nTtrwT2BXVCMVgf6e5bf3a';
 
             return response()->json([
-                'message' => 'User successfully registered',
+                'message' => 'Login successful',
                 'user'    => $fakeUser,
                 'token'   => $fakeToken,
-                'referral_code' => 'FSB574QQ',
             ], 200);
         }
     
