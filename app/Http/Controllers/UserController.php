@@ -109,7 +109,7 @@ class UserController extends Controller
                 'id' => 154,
                 'name' => 'Test User',
                 'email' => 'test@example.com',
-                'phone_number' => '0911005832',
+                'phone_number' => '911005832',
                 'role' => 'student',
                 'status' => 'active',
                 'institution_type' => 'University',
