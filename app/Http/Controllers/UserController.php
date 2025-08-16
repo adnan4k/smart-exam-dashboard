@@ -114,7 +114,7 @@ class UserController extends Controller
                 'status' => 'active',
                 'institution_type' => 'high_school',
                 'institution_name' => 'St. George School',
-                'type_id' => 5,
+                'type_id' => "5",
                 'referred_by' => 141,
                 'device_id' => $credentials['device_id'],
                 'last_login_at' => now(),
