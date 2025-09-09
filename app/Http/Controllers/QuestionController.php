@@ -144,7 +144,7 @@ class QuestionController extends Controller
             // For non-subscribed users, get only 5 random questions as samples
             $questions = Question::where('type_id', $user->type_id)
                 ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-                ->inRandomOrder()
+                ->orderBy('id', 'asc')
                 ->limit(5)
                 ->get();
         }
@@ -221,7 +221,7 @@ class QuestionController extends Controller
         $questions = Question::where('type_id', $user->type_id)
             ->where('is_sample', true)
             ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-            ->inRandomOrder()
+            ->orderBy('id', 'asc')
             ->limit(5)
             ->get();
     
