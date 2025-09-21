@@ -8,14 +8,11 @@
 
     initQuill() {
         if (window.noteEditor) {
-            try { window.noteEditor.destroy(); } catch (e) {}
-            window.noteEditor = null;
+            try { window.noteEditor = null; } catch (e) {}
         }
-        const existing = document.querySelectorAll('#noteEditor .ql-editor, #noteEditor .ql-toolbar');
-        existing.forEach(el => { if (el.closest('#noteEditor')) el.remove(); });
         const container = document.getElementById('noteEditor');
-        if (!container) { console.error('noteEditor container not found!'); return false; }
-        container.innerHTML = '';
+        if (!container) return false;
+
         try {
             window.noteEditor = new Quill('#noteEditor', {
                 theme: 'snow',
@@ -31,6 +28,7 @@
                 },
                 placeholder: 'Write note content here...'
             });
+
             const lw = window.Livewire.find('{{ $this->getId() }}');
             const contentVal = lw ? lw.get('content') : '';
             if (contentVal && contentVal.trim() !== '') {
@@ -48,8 +46,13 @@
     },
 
     initQuillWithRetry() {
-        let attempts = 0; const maxAttempts = 5;
-        const tryInit = () => { attempts++; if (this.initQuill()) return; if (attempts < maxAttempts) setTimeout(tryInit, attempts * 100); };
+        let attempts = 0;
+        const maxAttempts = 5;
+        const tryInit = () => {
+            attempts++;
+            if (this.initQuill()) return;
+            if (attempts < maxAttempts) setTimeout(tryInit, attempts * 100);
+        };
         tryInit();
     },
 
@@ -70,7 +73,14 @@ x-init="
         } else {
             $wire.call('resetAfterClose');
         }
-    })
+    });
+
+    // Re-init after Livewire updates DOM
+    Livewire.hook('message.processed', () => {
+        if (!window.noteEditor && document.querySelector('#noteEditor')) {
+            setTimeout(() => { initQuillWithRetry(); }, 50);
+        }
+    });
 "
 class="flex justify-center px-8"
 >
@@ -88,7 +98,6 @@ class="flex justify-center px-8"
          tabindex="-1"
          aria-hidden="true"
          class="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 overflow-y-auto"
-         x-bind:wire:ignore="openModal"
          wire:ignore.self>
         <div x-data="{}" class="relative p-4 w-full max-w-2xl max-h-full">
             <form class="relative bg-white rounded-lg shadow dark:bg-gray-700"
@@ -165,10 +174,10 @@ class="flex justify-center px-8"
                         </div>
 
                         <!-- Content Field (Quill) -->
-                        <div>
+                        <div wire:ignore>
                             <label class="text-gray-600 dark:text-gray-400">Content</label>
-                            <div id="noteEditor" wire:ignore class="..." style="height: 200px;"></div>                         
-                               @error('content') <span class="text-red-500">{{ $message }}</span> @enderror
+                            <div id="noteEditor" style="height: 200px;"></div>
+                            @error('content') <span class="text-red-500">{{ $message }}</span> @enderror
                         </div>
 
                         <!-- Submit Buttons -->
