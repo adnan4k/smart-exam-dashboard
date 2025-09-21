@@ -125,11 +125,18 @@
                                         </p>
                                     </td>
                                     <td>
-                                        <button
-                                            wire:click="edit({{ $user->id }})"
-                                            class="btn btn-primary btn-sm">
-                                            Update Status
-                                        </button>
+                                        <div class="d-flex gap-2">
+                                            <button
+                                                wire:click="edit({{ $user->id }})"
+                                                class="btn btn-primary btn-sm">
+                                                Update Status
+                                            </button>
+                                            <button
+                                                wire:click="confirmDelete({{ $user->id }})"
+                                                class="btn btn-danger btn-sm">
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -176,6 +183,51 @@
                     <div class="modal-footer">
                         <button class="btn btn-secondary" wire:click="$set('showModal', false)">
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Confirm User Deletion
+                        </h5>
+                        <button type="button" class="close" wire:click="cancelDelete">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if($userToDelete)
+                            <div class="alert alert-warning">
+                                <strong>Warning!</strong> This action cannot be undone.
+                            </div>
+                            <p>Are you sure you want to delete the following user?</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ $userToDelete->name }}</h6>
+                                    <p class="card-text">
+                                        <strong>Email:</strong> {{ $userToDelete->email }}<br>
+                                        <strong>Institution:</strong> {{ $userToDelete->institution_name }}<br>
+                                        <strong>Role:</strong> {{ ucfirst($userToDelete->role) }}<br>
+                                        <strong>Status:</strong> {{ ucfirst($userToDelete->status) }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="cancelDelete">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteUser">
+                            <i class="fas fa-trash"></i> Delete User
                         </button>
                     </div>
                 </div>

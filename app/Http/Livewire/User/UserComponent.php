@@ -12,8 +12,10 @@ class UserComponent extends Component
     use WithPagination;
 
     public $showModal = false;
+    public $showDeleteModal = false;
     public $selectedUserId;
     public $selectedStatus;
+    public $userToDelete;
 
     protected $rules = [
         'selectedStatus' => 'required|in:active,inactive,suspended',
@@ -35,7 +37,36 @@ class UserComponent extends Component
         ]);
         
         $this->showModal = false;
-        session()->flash('message', 'User status updated successfully.');
+        Toaster::success('User status updated successfully.');
+    }
+
+    public function confirmDelete($userId)
+    {
+        $this->userToDelete = User::find($userId);
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteUser()
+    {
+        if ($this->userToDelete) {
+            try {
+                $userName = $this->userToDelete->name;
+                $this->userToDelete->delete();
+                
+                $this->showDeleteModal = false;
+                $this->userToDelete = null;
+                
+                Toaster::success("User '{$userName}' has been deleted successfully.");
+            } catch (\Exception $e) {
+                Toaster::error('Failed to delete user. Please try again.');
+            }
+        }
+    }
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->userToDelete = null;
     }
 
     public function render()
