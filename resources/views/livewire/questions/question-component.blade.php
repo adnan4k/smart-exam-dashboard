@@ -85,18 +85,20 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <button
-                                                        @click="$dispatch('edit-question', { questionId: {{ $question->id }} })"
-                                                        class="btn btn-sm text-primary"
-                                                        data-bs-toggle="tooltip" title="Edit">
-                                                        <i class="fa-solid fa-pen"></i>
-                                                    </button>
-                                                    <button
-                                                        wire:click="deleteQuestion({{ $question->id }})"
-                                                        class="btn btn-sm text-danger"
-                                                        data-bs-toggle="tooltip" title="Delete">
-                                                        <i class="fa-solid fa-trash"></i>
-                                                    </button>
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        <button
+                                                            @click="$dispatch('edit-question', { questionId: {{ $question->id }} })"
+                                                            class="btn btn-sm text-primary"
+                                                            data-bs-toggle="tooltip" title="Edit">
+                                                            <i class="fa-solid fa-pen"></i>
+                                                        </button>
+                                                        <button
+                                                            wire:click="confirmDelete({{ $question->id }})"
+                                                            class="btn btn-sm text-danger"
+                                                            data-bs-toggle="tooltip" title="Delete">
+                                                            <i class="fa-solid fa-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -117,4 +119,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Confirm Question Deletion
+                        </h5>
+                        <button type="button" class="close" wire:click="cancelDelete">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if($questionToDelete)
+                            <div class="alert alert-warning">
+                                <strong>Warning!</strong> This action cannot be undone. All related choices will also be deleted.
+                            </div>
+                            <p>Are you sure you want to delete the following question?</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Question Details:</h6>
+                                    <div class="mb-2">
+                                        <strong>Question:</strong>
+                                        <div class="border p-2 rounded bg-light">
+                                            {!! Str::limit(strip_tags($questionToDelete->question_text), 200) !!}
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong>Subject:</strong> {{ $questionToDelete->subject->name ?? 'N/A' }}<br>
+                                            <strong>Year:</strong> {{ $questionToDelete->subject->year ?? 'N/A' }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Type:</strong> {{ $questionToDelete->type->name ?? 'N/A' }}<br>
+                                            <strong>Choices:</strong> {{ $questionToDelete->choices->count() }} choices
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="cancelDelete">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteQuestion">
+                            <i class="fas fa-trash"></i> Delete Question
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

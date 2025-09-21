@@ -8,6 +8,7 @@ use App\Models\Type;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\On;
+use Masmerise\Toaster\Toaster;
 
 class QuestionComponent extends Component
 {
@@ -20,6 +21,8 @@ class QuestionComponent extends Component
     public $subjects;
     public $years;
     public $types;
+    public $showDeleteModal = false;
+    public $questionToDelete;
     protected $paginationTheme = 'bootstrap';
 
     public function mount()
@@ -76,20 +79,40 @@ class QuestionComponent extends Component
         $this->resetPage();
     }
 
-    public function deleteQuestion($questionId)
+    public function confirmDelete($questionId)
     {
-        try {
-            $question = Question::findOrFail($questionId);
-            $question->choices()->delete();
+        $this->questionToDelete = Question::with(['subject', 'type'])->find($questionId);
+        $this->showDeleteModal = true;
+    }
 
-            $question->forceDelete();
-    
-            session()->flash('message', 'Question deleted successfully.');
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error deleting question: ' . $e->getMessage());
+    public function deleteQuestion()
+    {
+        if ($this->questionToDelete) {
+            try {
+                $questionText = strip_tags($this->questionToDelete->question_text);
+                $questionText = \Str::limit($questionText, 50);
+                
+                // Delete related choices first
+                $this->questionToDelete->choices()->delete();
+                
+                // Delete the question
+                $this->questionToDelete->forceDelete();
+                
+                $this->showDeleteModal = false;
+                $this->questionToDelete = null;
+                
+                Toaster::success("Question '{$questionText}' has been deleted successfully.");
+            } catch (\Exception $e) {
+                Toaster::error('Failed to delete question. Please try again.');
+            }
         }
     }
-    
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->questionToDelete = null;
+    }
 
     #[On('refreshTable')]
     public function render()
