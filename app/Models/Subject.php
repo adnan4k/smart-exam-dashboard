@@ -28,4 +28,9 @@ class Subject extends Model
     {
         return $this->hasMany(Chapter::class);
     }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class);
+    }
 } 

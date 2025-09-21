@@ -41,17 +41,19 @@ Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQ
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
 Route::post('get-questions',[QuestionController::class,'getQuestionsByType']);
 
-// Notes routes - specific routes first to avoid conflicts
-Route::get('notes/for-user', [NoteController::class, 'forUser']);
-Route::get('notes/for-user-grouped', [NoteController::class, 'forUserGrouped']);
-
-// General notes routes
+// Notes routes
 Route::get('notes', [NoteController::class, 'index']);
 Route::post('notes', [NoteController::class, 'store']);
 Route::get('notes/{note}', [NoteController::class, 'show']);
 Route::put('notes/{note}', [NoteController::class, 'update']);
 Route::patch('notes/{note}', [NoteController::class, 'update']);
 Route::delete('notes/{note}', [NoteController::class, 'destroy']);
+
+// Notes for user (gated by subscription)
+Route::get('notes/for-user', [NoteController::class, 'forUser']);
+
+// Notes grouped by subject and chapter for user (gated by subscription)
+Route::get("notes/for-user-grouped", [NoteController::class, "forUserGrouped"]);
 
 // Referral endpoints (using query parameters)
 Route::get('my-referrals', [UserController::class, 'getMyReferrals']);

@@ -113,6 +113,17 @@
                 </a>
             </li>
 
+            <!-- Notes -->
+            <li class="nav-item pb-2">
+                <a class="nav-link {{ Route::currentRouteName() == 'notes' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                    wire:navigate href="{{ route('notes') }}">
+                    <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-sticky-note text-dark"></i>
+                    </div>
+                    <span class="nav-link-text ms-1">Notes</span>
+                </a>
+            </li>
+
 
         </ul>
     </div>
