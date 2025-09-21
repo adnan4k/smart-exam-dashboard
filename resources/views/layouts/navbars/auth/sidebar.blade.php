@@ -98,7 +98,7 @@
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-credit-card text-dark"></i>
                     </div>
-                    <span class="nav-link-text ms-1">Referral Settings</span>
+                    <span class="nav-link-text ms-1">Referral Setting</span>
                 </a>
             </li>
 
@@ -123,35 +123,39 @@
                     <span class="nav-link-text ms-1">Notes</span>
                 </a>
             </li>
-
-            <!-- Profile -->
             <li class="nav-item pb-2">
                 <a class="nav-link {{ Route::currentRouteName() == 'profile' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('profile') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-user-cog text-dark"></i>
+                        <i class="fas fa-user text-dark"></i>
                     </div>
                     <span class="nav-link-text ms-1">Profile</span>
                 </a>
             </li>
+
 
         </ul>
     </div>
 </aside>
 
 <!-- Update the backdrop to only show when sidebar is open -->
-<div id="sidebarBackdrop"
-     class="fixed inset-0 bg-black bg-opacity-50 z-[998] hidden lg:hidden"
-     onclick="window.sidebarState.closeSidebar()">
+<div id="sidebarBackdrop" 
+     class="fixed inset-0 bg-black/50 lg:hidden hidden z-[50]">
 </div>
 
+<!-- Update the JavaScript with Livewire-compatible implementation -->
 <script>
 // Global sidebar state
 window.sidebarState = {
     isOpen: false,
-    isMobile: false,
+    isAnimating: false,
+    isInitialized: false,
     
     init: function() {
+        if (this.isInitialized) {
+            this.cleanup();
+        }
+        
         this.sidebar = document.getElementById('sidenav-main');
         this.toggle = document.getElementById('sidebarToggle');
         this.backdrop = document.getElementById('sidebarBackdrop');
@@ -161,169 +165,246 @@ window.sidebarState = {
             return;
         }
         
-        // Check if mobile
-        this.isMobile = window.innerWidth < 1024;
-        
-        // Set initial state
-        if (this.isMobile) {
-            // Ensure sidebar starts closed on mobile
-            this.sidebar.classList.add('-translate-x-full');
-            this.isOpen = false;
-        } else {
-            // Desktop: sidebar is always visible
-            this.sidebar.classList.remove('-translate-x-full');
-            this.isOpen = true;
+        this.bindEvents();
+        this.setInitialState();
+        this.isInitialized = true;
+    },
+    
+    cleanup: function() {
+        // Remove all event listeners
+        if (this.toggle) {
+            this.toggle.removeEventListener('click', this.handleToggleClick);
+            this.toggle.removeEventListener('touchstart', this.handleTouchStart);
+            this.toggle.removeEventListener('touchend', this.handleTouchEnd);
         }
         
-        // Add event listeners
-        this.toggle.addEventListener('click', () => {
+        if (this.backdrop) {
+            this.backdrop.removeEventListener('click', this.handleBackdropClick);
+        }
+        
+        document.removeEventListener('keydown', this.handleKeydown);
+        document.removeEventListener('click', this.handleDocumentClick);
+        window.removeEventListener('resize', this.handleResize);
+    },
+    
+    setInitialState: function() {
+        // Ensure sidebar starts closed on mobile
+        if (window.innerWidth < 1024) {
+            this.sidebar.classList.add('-translate-x-full');
+            this.backdrop.classList.add('hidden');
+            this.isOpen = false;
+        }
+    },
+    
+    bindEvents: function() {
+        // Bind events with proper context
+        this.handleToggleClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             this.toggleSidebar();
-        });
+        };
         
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (this.isMobile && this.isOpen) {
-                if (!this.sidebar.contains(e.target) && !this.toggle.contains(e.target)) {
-                    this.closeSidebar();
-                }
-            }
-        });
+        this.handleBackdropClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.closeSidebar();
+        };
         
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            const wasMobile = this.isMobile;
-            this.isMobile = window.innerWidth < 1024;
-            
-            if (wasMobile !== this.isMobile) {
-                // Screen size changed
-                if (this.isMobile) {
-                    // Switched to mobile
-                    this.closeSidebar();
-                } else {
-                    // Switched to desktop
-                    this.openSidebar();
-                }
-            }
-        });
+        this.handleTouchStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        };
         
-        // Handle escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isMobile && this.isOpen) {
+        this.handleTouchEnd = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleSidebar();
+        };
+        
+        this.handleKeydown = (e) => {
+            if (e.key === 'Escape' && this.isOpen) {
                 this.closeSidebar();
             }
-        });
+        };
+        
+        this.handleDocumentClick = (e) => {
+            if (this.isOpen && window.innerWidth < 1024) {
+                const navLink = e.target.closest('.nav-link');
+                if (navLink) {
+                    setTimeout(() => this.closeSidebar(), 100);
+                }
+            }
+        };
+        
+        this.handleResize = () => {
+            if (window.innerWidth >= 1024) {
+                this.openSidebar();
+            } else {
+                this.closeSidebar();
+            }
+        };
+        
+        // Add event listeners
+        this.toggle.addEventListener('click', this.handleToggleClick);
+        this.toggle.addEventListener('touchstart', this.handleTouchStart);
+        this.toggle.addEventListener('touchend', this.handleTouchEnd);
+        
+        this.backdrop.addEventListener('click', this.handleBackdropClick);
+        
+        document.addEventListener('keydown', this.handleKeydown);
+        document.addEventListener('click', this.handleDocumentClick);
+        window.addEventListener('resize', this.handleResize);
     },
     
     toggleSidebar: function() {
-        if (this.isMobile) {
-            if (this.isOpen) {
-                this.closeSidebar();
-            } else {
-                this.openSidebar();
-            }
+        if (this.isAnimating) return;
+        
+        if (this.isOpen) {
+            this.closeSidebar();
+        } else {
+            this.openSidebar();
         }
     },
     
     openSidebar: function() {
-        if (this.isMobile) {
-            this.sidebar.classList.remove('-translate-x-full');
-            this.backdrop.classList.remove('hidden');
-            this.isOpen = true;
-            
-            // Prevent body scroll
-            document.body.style.overflow = 'hidden';
-        }
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        this.isOpen = true;
+        
+        this.sidebar.classList.remove('-translate-x-full');
+        this.backdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 300);
     },
     
     closeSidebar: function() {
-        if (this.isMobile) {
-            this.sidebar.classList.add('-translate-x-full');
-            this.backdrop.classList.add('hidden');
-            this.isOpen = false;
-            
-            // Restore body scroll
-            document.body.style.overflow = '';
-        }
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        this.isOpen = false;
+        
+        this.sidebar.classList.add('-translate-x-full');
+        this.backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 300);
     }
 };
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    window.sidebarState.init();
+});
+
+// Initialize on Livewire navigation
+document.addEventListener('livewire:navigated', function() {
+    setTimeout(() => {
         window.sidebarState.init();
-    });
-} else {
-    window.sidebarState.init();
-}
-
-// Re-initialize after Livewire updates
-document.addEventListener('livewire:navigated', () => {
-    window.sidebarState.init();
+    }, 100);
 });
 
-// Re-initialize after page load
-window.addEventListener('load', () => {
-    window.sidebarState.init();
+// Initialize on Livewire page loads
+document.addEventListener('livewire:load', function() {
+    setTimeout(() => {
+        window.sidebarState.init();
+    }, 100);
 });
 
-// Re-initialize after any DOM changes
-const observer = new MutationObserver(() => {
-    window.sidebarState.init();
+// Initialize on any Livewire updates
+document.addEventListener('livewire:update', function() {
+    setTimeout(() => {
+        window.sidebarState.init();
+    }, 100);
 });
-observer.observe(document.body, { childList: true, subtree: true });
 </script>
 
+<!-- Update the styles to maintain consistent design -->
 <style>
-/* Mobile-first responsive design */
-@media (max-width: 1023px) {
+    #sidenav-main {
+        z-index: 55 !important;
+    }
+
     #sidebarToggle {
-        display: block;
+        position: fixed !important;
+        display: block !important;
+        right: 1rem !important;
+        z-index: 999 !important;
+        /* Improve touch target size on mobile */
+        min-width: 44px !important;
+        min-height: 44px !important;
+        /* Prevent text selection */
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        /* Improve touch responsiveness */
+        -webkit-tap-highlight-color: transparent !important;
     }
-    
-    .sidenav {
-        width: 280px;
-        z-index: 999;
+
+    @media (min-width: 1024px) {
+        #sidebarToggle {
+            display: none !important;
+        }
     }
-}
 
-@media (min-width: 1024px) {
-    #sidebarToggle {
-        display: none;
+    /* Ensure backdrop is below sidebar but above content */
+    #sidebarBackdrop {
+        z-index: 54 !important;
     }
-    
-    .sidenav {
-        width: 280px;
+
+    @media (max-width: 1024px) {
+        #sidenav-main {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            width: 250px !important;
+            max-width: 250px !important;
+            margin: 1rem !important;
+            transform: translateX(-100%);
+            border-radius: 1rem;
+            /* Improve mobile performance */
+            -webkit-transform: translateX(-100%);
+            -webkit-transition: -webkit-transform 0.3s ease-in-out;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #sidenav-main:not(.-translate-x-full) {
+            transform: translateX(0);
+            -webkit-transform: translateX(0);
+        }
+
+        #sidebar-container {
+            height: 100% !important;
+            overflow-y: auto !important;
+            padding: 1rem;
+            /* Improve scrolling on mobile */
+            -webkit-overflow-scrolling: touch;
+        }
     }
-}
 
-/* Ensure backdrop is below sidebar but above content */
-#sidebarBackdrop {
-    z-index: 998;
-}
-
-/* Smooth transitions */
-.sidenav {
-    transition: transform 0.3s ease-in-out;
-}
-
-/* Ensure proper stacking */
-#sidebar-container {
-    position: relative;
-    z-index: 999;
-}
-
-/* Mobile optimizations */
-@media (max-width: 1023px) {
-    .sidenav {
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    /* Remove the black background from main content */
+    .main-content {
+        background: transparent !important;
     }
-}
 
-/* Desktop optimizations */
-@media (min-width: 1024px) {
-    .sidenav {
-        box-shadow: none;
+    @media (min-width: 1024px) {
+        .main-content {
+            margin-left: 17.125rem !important;
+        }
     }
-}
+
+    @media (max-width: 1024px) {
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+    }
 </style>
 
