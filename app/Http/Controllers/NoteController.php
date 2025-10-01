@@ -166,9 +166,10 @@ class NoteController extends Controller
 
         if (!$hasActiveSubscription) {
             return response()->json([
-                'status' => 'error',
+                'status' => 'success',
                 'message' => 'No active subscription found.',
-            ], 403);
+                'data' => [],
+            ], 200);
         }
 
         // Get all subjects for the user's exam type
