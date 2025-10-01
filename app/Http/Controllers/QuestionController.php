@@ -146,7 +146,7 @@ class QuestionController extends Controller
             $questions = Question::where('type_id', $user->type_id)
                 ->with(['choices', 'subject', 'yearGroup', 'chapter'])
                 ->orderBy('id', 'asc')
-                ->limit(5)
+                ->limit(40)
                 ->get();
         }
 

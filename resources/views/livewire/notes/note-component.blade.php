@@ -34,6 +34,9 @@
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                                         Chapter
                                     </th>
+                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                                        Grade
+                                    </th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
                                         Actions
                                     </th>
@@ -53,6 +56,9 @@
                                         </td>
                                         <td class="text-center">
                                             <p class="text-xs font-weight-bold mb-0">{{ optional($note->chapter)->name }}</p>
+                                        </td>
+                                        <td class="text-center">
+                                            <p class="text-xs font-weight-bold mb-0">{{ $note->grade ?? '-' }}</p>
                                         </td>
                                         <td class="text-center">
                                             <button

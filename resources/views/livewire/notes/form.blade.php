@@ -5,6 +5,7 @@
     chapterId: @entangle('chapterId').defer,
     title: @entangle('title').defer,
     isEdit: @entangle('is_edit').defer,
+    grade: @entangle('grade').defer,
 
     initQuill() {
         if (window.noteEditor) {
@@ -108,6 +109,7 @@ class="flex justify-center px-8"
                     $wire.set('subjectId', subjectId);
                     $wire.set('chapterId', chapterId);
                     $wire.set('title', title);
+                    $wire.set('grade', grade);
                   ">
 
                 <div class="flex flex-wrap border shadow rounded-lg p-3 dark:bg-gray-600">
@@ -171,6 +173,16 @@ class="flex justify-center px-8"
                                    type="text"
                                    placeholder="Enter note title">
                             @error('title') <span class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Grade Field -->
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Grade <span class="text-xs text-gray-400">(optional, 1-12)</span></label>
+                            <input x-model.number="grade"
+                                   @input.debounce.300ms="$wire.set('grade', $event.target.value)"
+                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
+                                   type="number" min="1" max="12" placeholder="e.g., 9">
+                            @error('grade') <span class="text-red-500">{{ $message }}</span> @enderror
                         </div>
 
                         <!-- Content Field (Quill) -->

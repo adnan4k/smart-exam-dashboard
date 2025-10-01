@@ -22,6 +22,7 @@ class Form extends Component
     public $chapterId;
     public $title;
     public $content;
+    public $grade; // new optional grade field
 
     public $chaptersForSubject = [];
 
@@ -38,6 +39,7 @@ class Form extends Component
         'chapterId' => 'required|exists:chapters,id',
         'title' => 'required|string|max:255',
         'content' => 'required|string',
+        'grade' => 'nullable|integer|min:1|max:12',
     ];
 
     // ✅ Public method — safe to call via $wire.call()
@@ -76,6 +78,7 @@ class Form extends Component
         $this->chapterId = $note->chapter_id;
         $this->title = $note->title;
         $this->content = $note->content;
+        $this->grade = $note->grade; // load existing grade
         $this->is_edit = true;
 
         // Manually trigger subject update to load chapters
@@ -94,6 +97,7 @@ class Form extends Component
         $chapterId = $this->chapterId;
         $title = $this->title;
         $content = $this->content;
+        $grade = $this->grade;
 
         try {
             validator([
@@ -102,12 +106,14 @@ class Form extends Component
                 'chapterId' => $chapterId,
                 'title' => $title,
                 'content' => $content,
+                'grade' => $grade,
             ], [
                 'typeId' => 'required|exists:types,id',
                 'subjectId' => 'required|exists:subjects,id',
                 'chapterId' => 'required|exists:chapters,id',
                 'title' => 'required|string|max:255',
                 'content' => 'required|string',
+                'grade' => 'nullable|integer|min:1|max:12',
             ])->validate();
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -122,6 +128,7 @@ class Form extends Component
             'chapter_id' => $chapterId,
             'title' => $title,
             'content' => $content,
+            'grade' => $grade,
         ];
 
         try {
@@ -162,6 +169,7 @@ class Form extends Component
             'chapterId',
             'title',
             'content',
+            'grade',
             'isSubmitting'
         ]);
         $this->chaptersForSubject = [];
