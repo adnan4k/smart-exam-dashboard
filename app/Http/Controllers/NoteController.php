@@ -39,6 +39,7 @@ class NoteController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'user_id' => 'nullable|exists:users,id',
+            'grade' => 'nullable|integer|min:1|max:12',
         ]);
 
         $note = Note::create([
@@ -48,6 +49,7 @@ class NoteController extends Controller
             'chapter_id' => $request->input('chapter_id'),
             'title' => $request->input('title'),
             'content' => $request->input('content'),
+            'grade' => $request->input('grade'),
         ]);
 
         return response()->json([
@@ -73,9 +75,10 @@ class NoteController extends Controller
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
             'user_id' => 'sometimes|nullable|exists:users,id',
+            'grade' => 'sometimes|nullable|integer|min:1|max:12',
         ]);
 
-        $note->update($request->only(['user_id', 'type_id', 'subject_id', 'chapter_id', 'title', 'content']));
+        $note->update($request->only(['user_id', 'type_id', 'subject_id', 'chapter_id', 'title', 'content', 'grade']));
 
         return response()->json([
             'status' => 'success',
@@ -208,7 +211,7 @@ class NoteController extends Controller
                         'content' => $note->content,
                         'subjectId' => (string) $note->subject_id,
                         'subjectName' => $note->subject->name,
-                        'grade' => $note->subject->type_id, // Using type_id as grade
+                        'grade' => $note->grade, // now from notes table
                         'chapterId' => (string) $note->chapter_id,
                         'chapterName' => $note->chapter->name,
                         'createdAt' => $note->created_at->toISOString(),
@@ -219,8 +222,6 @@ class NoteController extends Controller
                 $chaptersData[] = [
                     'id' => (string) $chapter->id,
                     'name' => $chapter->name,
-                    'subjectId' => (string) $subject->id,
-                    'grade' => $subject->type_id, // Using type_id as grade
                     'notes' => $notesData,
                 ];
             }
@@ -228,8 +229,6 @@ class NoteController extends Controller
             $subjectsData[] = [
                 'id' => (string) $subject->id,
                 'name' => $subject->name,
-                'grade' => $subject->type_id, // Using type_id as grade
-                'iconName' => 'book', // Default icon, you can customize this
                 'chapters' => $chaptersData,
             ];
         }
@@ -237,7 +236,6 @@ class NoteController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $subjectsData,
-            'is_subscribed' => true,
         ]);
     }
 }
