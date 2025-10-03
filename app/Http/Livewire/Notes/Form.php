@@ -39,7 +39,7 @@ class Form extends Component
         'chapterId' => 'required|exists:chapters,id',
         'title' => 'required|string|max:255',
         'content' => 'required|string',
-        'grade' => 'nullable|integer|min:1|max:12',
+        'grade' => 'nullable|integer|min:0|max:12',
     ];
 
     // ✅ Public method — safe to call via $wire.call()
@@ -90,7 +90,7 @@ class Form extends Component
     public function saveNote()
     {
         $this->isSubmitting = true;
-
+        // dd($this->validate());
         // Capture current state — prevents mid-submit property changes from affecting validation
         $typeId = $this->typeId;
         $subjectId = $this->subjectId;
@@ -113,10 +113,11 @@ class Form extends Component
                 'chapterId' => 'required|exists:chapters,id',
                 'title' => 'required|string|max:255',
                 'content' => 'required|string',
-                'grade' => 'nullable|integer|min:1|max:12',
+                'grade' => 'nullable|integer|min:0|max:12',
             ])->validate();
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            dd($e->errors());
             Toaster::error('Please fill in all required fields correctly.');
             $this->isSubmitting = false;
             return;

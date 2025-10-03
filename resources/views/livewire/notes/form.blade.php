@@ -177,11 +177,11 @@ class="flex justify-center px-8"
 
                         <!-- Grade Field -->
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Grade <span class="text-xs text-gray-400">(optional, 1-12)</span></label>
+                            <label class="text-gray-600 dark:text-gray-400">Grade <span class="text-xs text-gray-400">(optional, 0-12)</span></label>
                             <input x-model.number="grade"
                                    @input.debounce.300ms="$wire.set('grade', $event.target.value)"
                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                   type="number" min="1" max="12" placeholder="e.g., 9">
+                                   type="number" min="0" max="12" placeholder="e.g., 9">
                             @error('grade') <span class="text-red-500">{{ $message }}</span> @enderror
                         </div>
 
