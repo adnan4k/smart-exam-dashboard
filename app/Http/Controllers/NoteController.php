@@ -167,13 +167,13 @@ class NoteController extends Controller
             ->where('payment_status', 'paid')
             ->exists();
 
-        if (!$hasActiveSubscription) {
-            return response()->json([
-                'status' => 'success',
-                'message' => 'No active subscription found.',
-                'data' => [],
-            ], 200);
-        }
+        // if (!$hasActiveSubscription) {
+        //     return response()->json([
+        //         'status' => 'success',
+        //         'message' => 'No active subscription found.',
+        //         'data' => [],
+        //     ], 200);
+        // }
 
         // Get all subjects for the user's exam type
         $subjects = Subject::where('type_id', $user->type_id)

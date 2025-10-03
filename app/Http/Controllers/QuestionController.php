@@ -143,11 +143,18 @@ class QuestionController extends Controller
                 ->get();
         } else {
             // For non-subscribed users, get only 5 random questions as samples
-            $questions = Question::where('type_id', $user->type_id)
-                ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-                ->orderBy('id', 'asc')
-                ->limit(40)
-                ->get();
+            // For non-subscribed users, get up to 40 questions per subject (all subjects for this type)
+            $subjectIds = \App\Models\Subject::where('type_id', $user->type_id)->pluck('id');
+            $questions = collect();
+            foreach ($subjectIds as $subjectId) {
+                $subjectQuestions = Question::where('type_id', $user->type_id)
+                    ->where('subject_id', $subjectId)
+                    ->with(['choices', 'subject', 'yearGroup', 'chapter'])
+                    ->orderBy('id', 'asc')
+                    ->limit(40)
+                    ->get();
+                $questions = $questions->concat($subjectQuestions);
+            }
         }
 
         // Group questions by subject
