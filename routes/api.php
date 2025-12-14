@@ -35,11 +35,9 @@ Route::post('login', [UserController::class,'login']);
 Route::get('/exam-type',[QuestionController::class,'examType']);
 Route::get('/questions/year', [QuestionController::class, 'getQuestionsByYear']);
 Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubject']);
-Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
 Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQuestionsGroupedByType']);
 Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
-Route::post('get-questions',[QuestionController::class,'getQuestionsByType']);
 
 // Notes routes - specific routes first to avoid conflicts
 Route::get('notes/for-user', [NoteController::class, 'forUser']);
@@ -60,4 +58,6 @@ Route::get('referral-details', [UserController::class, 'getReferralDetails']);
 // Protected routes (require authentication)
 Route::middleware('auth:api')->group(function () {
     Route::post('logout', [UserController::class, 'logout']);
+    Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
+    Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
 });

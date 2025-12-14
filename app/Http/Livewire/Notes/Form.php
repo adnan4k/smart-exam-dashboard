@@ -9,6 +9,7 @@ use App\Models\Type;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Masmerise\Toaster\Toaster;
+use Illuminate\Support\Facades\Log;
 
 class Form extends Component
 {
@@ -23,6 +24,7 @@ class Form extends Component
     public $title;
     public $content;
     public $grade; // new optional grade field
+    public $language = 'english'; // language field with default value
 
     public $chaptersForSubject = [];
 
@@ -40,6 +42,7 @@ class Form extends Component
         'title' => 'required|string|max:255',
         'content' => 'required|string',
         'grade' => 'nullable|integer|min:0|max:12',
+        'language' => 'required|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
     ];
 
     // ✅ Public method — safe to call via $wire.call()
@@ -79,6 +82,7 @@ class Form extends Component
         $this->title = $note->title;
         $this->content = $note->content;
         $this->grade = $note->grade; // load existing grade
+        $this->language = $note->language ?? 'english'; // load existing language
         $this->is_edit = true;
 
         // Manually trigger subject update to load chapters
@@ -90,7 +94,7 @@ class Form extends Component
     public function saveNote()
     {
         $this->isSubmitting = true;
-        // dd($this->validate());
+        
         // Capture current state — prevents mid-submit property changes from affecting validation
         $typeId = $this->typeId;
         $subjectId = $this->subjectId;
@@ -98,27 +102,34 @@ class Form extends Component
         $title = $this->title;
         $content = $this->content;
         $grade = $this->grade;
+        $language = $this->language;
 
         try {
-            validator([
-                'typeId' => $typeId,
-                'subjectId' => $subjectId,
-                'chapterId' => $chapterId,
-                'title' => $title,
-                'content' => $content,
-                'grade' => $grade,
-            ], [
-                'typeId' => 'required|exists:types,id',
-                'subjectId' => 'required|exists:subjects,id',
-                'chapterId' => 'required|exists:chapters,id',
-                'title' => 'required|string|max:255',
-                'content' => 'required|string',
-                'grade' => 'nullable|integer|min:0|max:12',
-            ])->validate();
-
+            // Validate using Livewire's validation which automatically adds errors to error bag
+            $this->validate();
+            
         } catch (\Illuminate\Validation\ValidationException $e) {
-            dd($e->errors());
-            Toaster::error('Please fill in all required fields correctly.');
+            $errors = $e->errors();
+            $errorMessages = [];
+            
+            // Collect all error messages
+            foreach ($errors as $field => $messages) {
+                foreach ($messages as $message) {
+                    $errorMessages[] = $message;
+                }
+            }
+            
+            // Show first error as notification, or show all errors
+            if (count($errorMessages) > 0) {
+                $firstError = $errorMessages[0];
+                if (count($errorMessages) > 1) {
+                    $firstError .= ' (and ' . (count($errorMessages) - 1) . ' more error' . (count($errorMessages) > 2 ? 's' : '') . ')';
+                }
+                Toaster::error($firstError);
+            } else {
+                Toaster::error('Please fill in all required fields correctly.');
+            }
+            
             $this->isSubmitting = false;
             return;
         }
@@ -130,6 +141,7 @@ class Form extends Component
             'title' => $title,
             'content' => $content,
             'grade' => $grade,
+            'language' => $language,
         ];
 
         try {
@@ -149,7 +161,10 @@ class Form extends Component
             $this->dispatch('refreshNotes');
 
         } catch (\Exception $e) {
-            Toaster::error('Something went wrong. Please try again.');
+            Toaster::error('Something went wrong: ' . $e->getMessage());
+            Log::error('Note save error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
         } finally {
             $this->isSubmitting = false;
         }
@@ -171,8 +186,10 @@ class Form extends Component
             'title',
             'content',
             'grade',
+            'language',
             'isSubmitting'
         ]);
+        $this->language = 'english'; // reset to default
         $this->chaptersForSubject = [];
     }
 

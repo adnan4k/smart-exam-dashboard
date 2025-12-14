@@ -40,6 +40,7 @@ class NoteController extends Controller
             'content' => 'required|string',
             'user_id' => 'nullable|exists:users,id',
             'grade' => 'nullable|integer|min:1|max:12',
+            'language' => 'required|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
         $note = Note::create([
@@ -50,6 +51,7 @@ class NoteController extends Controller
             'title' => $request->input('title'),
             'content' => $request->input('content'),
             'grade' => $request->input('grade'),
+            'language' => $request->input('language'),
         ]);
 
         return response()->json([
@@ -76,9 +78,10 @@ class NoteController extends Controller
             'content' => 'sometimes|string',
             'user_id' => 'sometimes|nullable|exists:users,id',
             'grade' => 'sometimes|nullable|integer|min:1|max:12',
+            'language' => 'sometimes|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
-        $note->update($request->only(['user_id', 'type_id', 'subject_id', 'chapter_id', 'title', 'content', 'grade']));
+        $note->update($request->only(['user_id', 'type_id', 'subject_id', 'chapter_id', 'title', 'content', 'grade', 'language']));
 
         return response()->json([
             'status' => 'success',
@@ -212,6 +215,7 @@ class NoteController extends Controller
                         'subjectId' => (string) $note->subject_id,
                         'subjectName' => $note->subject->name,
                         'grade' => $note->grade, // now from notes table
+                        'language' => $note->language,
                         'chapterId' => (string) $note->chapter_id,
                         'chapterName' => $note->chapter->name,
                         'createdAt' => $note->created_at->toISOString(),

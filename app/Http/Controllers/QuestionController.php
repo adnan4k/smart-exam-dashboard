@@ -117,11 +117,18 @@ class QuestionController extends Controller
 
     public function getQuestionsByType(Request $request)
     {
-        // Validate type input
-        Log::info('Getting questions for type: ' . $request->type);
+        // Get authenticated user
+        $user = $request->user();
         
-        $user = User::where('id', $request->user_id)->first();
+        // Check if user is authenticated
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Authentication required. Please login first.'
+            ], 401);
+        }
         
+        // Check if user has type_id
         if (!$user->type_id) {
             return response()->json([
                 'status' => 'error',
