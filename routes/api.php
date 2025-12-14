@@ -19,7 +19,7 @@ use App\Http\Controllers\NoteController;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
@@ -56,7 +56,7 @@ Route::get('my-referrals', [UserController::class, 'getMyReferrals']);
 Route::get('referral-details', [UserController::class, 'getReferralDetails']);
 
 // Protected routes (require authentication)
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [UserController::class, 'logout']);
     Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
     Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
