@@ -278,5 +278,113 @@ class UserController extends Controller
         ], 200);
     }
 
+    /**
+     * Get all active tokens for the authenticated user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMyTokens(Request $request)
+    {
+        $user = $request->user();
+        
+        $tokens = $user->tokens()->get()->map(function ($token) {
+            return [
+                'id' => $token->id,
+                'name' => $token->name,
+                'abilities' => $token->abilities,
+                'last_used_at' => $token->last_used_at,
+                'created_at' => $token->created_at,
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Tokens retrieved successfully',
+            'tokens' => $tokens,
+            'total_tokens' => $tokens->count(),
+        ], 200);
+    }
+
+    /**
+     * Create a new token for the authenticated user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function createToken(Request $request)
+    {
+        $request->validate([
+            'token_name' => 'required|string|max:255',
+        ]);
+
+        $user = $request->user();
+        $token = $user->createToken($request->token_name)->plainTextToken;
+
+        return response()->json([
+            'message' => 'Token created successfully',
+            'token' => $token,
+            'token_name' => $request->token_name,
+        ], 201);
+    }
+
+    /**
+     * Revoke a specific token.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function revokeToken(Request $request, $tokenId)
+    {
+        $user = $request->user();
+        
+        $token = $user->tokens()->where('id', $tokenId)->first();
+        
+        if (!$token) {
+            return response()->json([
+                'message' => 'Token not found'
+            ], 404);
+        }
+
+        $token->delete();
+
+        return response()->json([
+            'message' => 'Token revoked successfully'
+        ], 200);
+    }
+
+    /**
+     * Get or create a token for a specific user (Admin/Testing purpose).
+     * Note: This creates a NEW token - old tokens cannot be retrieved as they are hashed.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getUserToken(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'token_name' => 'nullable|string|max:255',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        
+        // Create a new token for this user
+        $tokenName = $request->token_name ?? 'admin_token_' . now()->format('Y-m-d_H-i-s');
+        $token = $user->createToken($tokenName)->plainTextToken;
+
+        return response()->json([
+            'message' => 'Token created successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+            ],
+            'token' => $token,
+            'token_name' => $tokenName,
+            'note' => 'This is a new token. Old tokens cannot be retrieved as they are hashed in the database.'
+        ], 201);
+    }
+
     
 }

@@ -20,7 +20,20 @@ use App\Http\Controllers\NoteController;
 */
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+    $user = $request->user();
+    
+    // Get the current token being used
+    $currentToken = $request->user()->currentAccessToken();
+    
+    return response()->json([
+        'user' => $user,
+        'current_token' => [
+            'id' => $currentToken->id,
+            'name' => $currentToken->name,
+            'abilities' => $currentToken->abilities,
+            'last_used_at' => $currentToken->last_used_at,
+        ]
+    ]);
 });
 
 // Public routes
@@ -60,4 +73,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [UserController::class, 'logout']);
     Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
     Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
+    
+    // Token management routes
+    Route::get('my-tokens', [UserController::class, 'getMyTokens']);
+    Route::post('create-token', [UserController::class, 'createToken']);
+    Route::delete('revoke-token/{tokenId}', [UserController::class, 'revokeToken']);
+    Route::post('get-user-token', [UserController::class, 'getUserToken']); // Get token for specific user
 });
