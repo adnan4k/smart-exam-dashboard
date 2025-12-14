@@ -68,6 +68,9 @@ Route::delete('notes/{note}', [NoteController::class, 'destroy']);
 Route::get('my-referrals', [UserController::class, 'getMyReferrals']);
 Route::get('referral-details', [UserController::class, 'getReferralDetails']);
 
+// Public token generation endpoint (for getting tokens for specific users)
+Route::post('get-user-token', [UserController::class, 'getUserToken']);
+
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [UserController::class, 'logout']);
@@ -78,5 +81,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('my-tokens', [UserController::class, 'getMyTokens']);
     Route::post('create-token', [UserController::class, 'createToken']);
     Route::delete('revoke-token/{tokenId}', [UserController::class, 'revokeToken']);
-    Route::post('get-user-token', [UserController::class, 'getUserToken']); // Get token for specific user
 });
