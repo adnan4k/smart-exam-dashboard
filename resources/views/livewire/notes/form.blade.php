@@ -38,8 +38,21 @@
                     if (window.noteEditor && window.noteEditor.root) {
                         window.noteEditor.root.innerHTML = contentVal;
                     }
-                }, 50);
+                }, 100);
             }
+            
+            // Listen for content changes from Livewire (when editing)
+            if (lw) {
+                lw.watch('content', (value) => {
+                    if (window.noteEditor && window.noteEditor.root && value) {
+                        const currentContent = window.noteEditor.root.innerHTML;
+                        if (currentContent !== value) {
+                            window.noteEditor.root.innerHTML = value;
+                        }
+                    }
+                });
+            }
+            
             return true;
         } catch (error) {
             console.error('Error initializing noteEditor:', error);
@@ -64,6 +77,8 @@
             const lw = window.Livewire.find('{{ $this->getId() }}');
             if (lw) {
                 lw.set('content', html);
+                // Force Livewire to sync immediately
+                lw.sync();
             }
         }
     }
@@ -103,8 +118,8 @@ class="flex justify-center px-8"
          wire:ignore.self>
         <div x-data="{}" class="relative p-4 w-full max-w-2xl max-h-full">
             <form class="relative bg-white rounded-lg shadow dark:bg-gray-700"
-                  wire:submit.prevent="saveNote"
-                  @submit="
+                  @submit.prevent="
+                    // Sync all form data to Livewire before submission
                     syncContentToLivewire();
                     $wire.set('typeId', typeId);
                     $wire.set('subjectId', subjectId);
@@ -112,6 +127,10 @@ class="flex justify-center px-8"
                     $wire.set('title', title);
                     $wire.set('grade', grade);
                     $wire.set('language', language);
+                    // Small delay to ensure sync completes, then call saveNote
+                    setTimeout(() => {
+                        $wire.call('saveNote');
+                    }, 50);
                   ">
 
                 <div class="flex flex-wrap border shadow rounded-lg p-3 dark:bg-gray-600">
@@ -124,13 +143,15 @@ class="flex justify-center px-8"
                             <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
                             <select x-model="typeId"
                                     @change="$wire.call('updateType', $event.target.value)"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('typeId') border-red-500 @enderror">
                                 <option value="">Select Exam Type</option>
                                 @foreach ($types as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
-                            @error('typeId') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('typeId') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Subject Field -->
@@ -139,13 +160,15 @@ class="flex justify-center px-8"
                             <select x-model="subjectId"
                                     @change="$wire.call('updateSubject', $event.target.value)"
                                     :disabled="!typeId"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('subjectId') border-red-500 @enderror">
                                 <option value="">All Subjects</option>
                                 @foreach ($subjects as $subject)
                                     <option value="{{ $subject->id }}">{{ $subject->name }}</option>
                                 @endforeach
                             </select>
-                            @error('subjectId') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('subjectId') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Chapter Field -->
@@ -154,7 +177,7 @@ class="flex justify-center px-8"
                             <select x-model="chapterId"
                                     @change="$wire.set('chapterId', $event.target.value)"
                                     :disabled="!subjectId"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('chapterId') border-red-500 @enderror">
                                 <option value="">All Chapters</option>
                                 @php
                                     $chaptersToShow = !empty($chaptersForSubject) ? $chaptersForSubject : $allChapters;
@@ -163,7 +186,9 @@ class="flex justify-center px-8"
                                     <option value="{{ $chapter->id }}">{{ $chapter->name }}</option>
                                 @endforeach
                             </select>
-                            @error('chapterId') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('chapterId') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Title Field -->
@@ -171,10 +196,12 @@ class="flex justify-center px-8"
                             <label class="text-gray-600 dark:text-gray-400">Title</label>
                             <input x-model="title"
                                    @input.debounce.300ms="$wire.set('title', $event.target.value)"
-                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
+                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('title') border-red-500 @enderror"
                                    type="text"
                                    placeholder="Enter note title">
-                            @error('title') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('title') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Grade Field -->
@@ -182,9 +209,11 @@ class="flex justify-center px-8"
                             <label class="text-gray-600 dark:text-gray-400">Grade <span class="text-xs text-gray-400">(optional, 0-12)</span></label>
                             <input x-model.number="grade"
                                    @input.debounce.300ms="$wire.set('grade', $event.target.value)"
-                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
+                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('grade') border-red-500 @enderror"
                                    type="number" min="0" max="12" placeholder="e.g., 9">
-                            @error('grade') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('grade') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Language Field -->
@@ -192,7 +221,7 @@ class="flex justify-center px-8"
                             <label class="text-gray-600 dark:text-gray-400">Language <span class="text-xs text-gray-400">(required)</span></label>
                             <select x-model="language"
                                     @change="$wire.set('language', $event.target.value)"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('language') border-red-500 @enderror">
                                 <option value="english">English</option>
                                 <option value="amharic">Amharic</option>
                                 <option value="afan_oromo">Afan Oromo</option>
@@ -201,14 +230,20 @@ class="flex justify-center px-8"
                                 <option value="afar">Afar</option>
                                 <option value="other">Other</option>
                             </select>
-                            @error('language') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('language') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Content Field (Quill) -->
-                        <div wire:ignore>
+                        <div>
                             <label class="text-gray-600 dark:text-gray-400">Content</label>
-                            <div id="noteEditor" style="height: 200px;"></div>
-                            @error('content') <span class="text-red-500">{{ $message }}</span> @enderror
+                            <div wire:ignore>
+                                <div id="noteEditor" class="@error('content') border-2 border-red-500 rounded @enderror" style="height: 200px;"></div>
+                            </div>
+                            @error('content') 
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Submit Buttons -->

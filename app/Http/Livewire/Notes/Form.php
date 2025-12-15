@@ -91,6 +91,13 @@ class Form extends Component
         $this->openModal = true;
     }
 
+    public function syncContent()
+    {
+        // This method can be called from JavaScript to ensure content is synced
+        // The content should already be set via $wire.set('content', ...) from the form
+        return ['status' => 'synced'];
+    }
+
     public function saveNote()
     {
         $this->isSubmitting = true;
@@ -104,6 +111,18 @@ class Form extends Component
         $grade = $this->grade;
         $language = $this->language;
 
+        // Clean content - remove empty HTML tags and whitespace
+        if ($content) {
+            $cleanedContent = strip_tags($content);
+            $cleanedContent = trim($cleanedContent);
+            if (empty($cleanedContent)) {
+                $this->addError('content', 'The content field is required.');
+                Toaster::error('Please enter note content.');
+                $this->isSubmitting = false;
+                return;
+            }
+        }
+
         try {
             // Validate using Livewire's validation which automatically adds errors to error bag
             $this->validate();
@@ -112,14 +131,16 @@ class Form extends Component
             $errors = $e->errors();
             $errorMessages = [];
             
-            // Collect all error messages
+            // Collect all error messages and ensure they're in the error bag
             foreach ($errors as $field => $messages) {
                 foreach ($messages as $message) {
                     $errorMessages[] = $message;
+                    // Ensure error is in Livewire's error bag for display
+                    $this->addError($field, $message);
                 }
             }
             
-            // Show first error as notification, or show all errors
+            // Show first error as notification
             if (count($errorMessages) > 0) {
                 $firstError = $errorMessages[0];
                 if (count($errorMessages) > 1) {
@@ -161,9 +182,14 @@ class Form extends Component
             $this->dispatch('refreshNotes');
 
         } catch (\Exception $e) {
-            Toaster::error('Something went wrong: ' . $e->getMessage());
+            $errorMessage = 'Something went wrong while saving the note.';
+            if (config('app.debug')) {
+                $errorMessage .= ' ' . $e->getMessage();
+            }
+            Toaster::error($errorMessage);
             Log::error('Note save error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
             ]);
         } finally {
             $this->isSubmitting = false;
