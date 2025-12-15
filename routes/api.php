@@ -74,8 +74,6 @@ Route::post('get-user-token', [UserController::class, 'getUserToken']);
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [UserController::class, 'logout']);
-    Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
-    Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
     
     // Token management routes
     Route::get('my-tokens', [UserController::class, 'getMyTokens']);
