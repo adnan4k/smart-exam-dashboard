@@ -117,17 +117,25 @@ class QuestionController extends Controller
 
     public function getQuestionsByType(Request $request)
     {
-        // Get authenticated user
-        $user = $request->user();
-        
-        // Check if user is authenticated
+        // Use explicit user id from the request payload instead of auth context
+        $userId = $request->input('user_id');
+
+        if (!$userId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'user_id is required in the request body.'
+            ], 400);
+        }
+
+        $user = User::find($userId);
+
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Authentication required. Please login first.'
-            ], 401);
+                'message' => 'User not found.'
+            ], 404);
         }
-        
+
         // Check if user has type_id
         if (!$user->type_id) {
             return response()->json([
