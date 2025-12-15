@@ -80,3 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('create-token', [UserController::class, 'createToken']);
     Route::delete('revoke-token/{tokenId}', [UserController::class, 'revokeToken']);
 });
+
+// Public question routes (no authentication)
+Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
+Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
