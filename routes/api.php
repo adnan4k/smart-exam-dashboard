@@ -7,6 +7,7 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,12 @@ Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubj
 Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQuestionsGroupedByType']);
 Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
+Route::post('fcm/register-token', [NotificationController::class, 'registerToken']);
+Route::get('notifications', [NotificationController::class, 'index']);
+Route::post('notifications', [NotificationController::class, 'store']);
+Route::post('notifications/{notification}/like', [NotificationController::class, 'like']);
+Route::post('notifications/{notification}/dislike', [NotificationController::class, 'dislike']);
+Route::post('notifications/{notification}/comment', [NotificationController::class, 'comment']);
 
 // Notes routes - specific routes first to avoid conflicts
 Route::get('notes/for-user', [NoteController::class, 'forUser']);

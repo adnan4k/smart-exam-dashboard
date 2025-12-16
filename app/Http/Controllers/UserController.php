@@ -24,35 +24,37 @@ class UserController extends Controller
      {
          Log::info($request->all());
      
-         $validatedData = $request->validate([
-             'name'             => 'required|string|max:255',
-             'email'            => 'nullable|email|unique:users,email',
-             'phone_number'     => 'required|string|max:255|unique:users,phone_number',
-             'password'         => 'required|string|min:6',
-             'referral_code'    => 'nullable',
-             'institution_type' => 'nullable',
-             'institution_name' => 'nullable',
-             'type_id'          => 'required|exists:types,id',
-             'device_id'        => 'required|string',
-         ]);
+        $validatedData = $request->validate([
+            'name'             => 'required|string|max:255',
+            'email'            => 'nullable|email|unique:users,email',
+            'phone_number'     => 'required|string|max:255|unique:users,phone_number',
+            'password'         => 'required|string|min:6',
+            'referral_code'    => 'nullable',
+            'institution_type' => 'nullable',
+            'institution_name' => 'nullable',
+            'type_id'          => 'required|exists:types,id',
+            'device_id'        => 'required|string',
+            'fcm_token'        => 'nullable|string',
+        ]);
      
          DB::beginTransaction();
      
          try {
-             $user = User::create([
-                 'name'             => $validatedData['name'],
-                 'email'            => $validatedData['email'],
-                 'password'         => Hash::make($validatedData['password']),
-                 'phone_number'     => $validatedData['phone_number'],
-                 'role'             => 'student',
-                 'status'           => 'active',
-                 'institution_type' => $validatedData['institution_type'],
-                 'institution_name' => $validatedData['institution_name'],
-                 'type_id'          => $validatedData['type_id'],
-                 'referred_by'      => User::where('referral_code', $request->referral_code)->value('id'),
-                 'device_id'        => $validatedData['device_id'],
-                 'last_login_at'    => now(),
-             ]);
+            $user = User::create([
+                'name'             => $validatedData['name'],
+                'email'            => $validatedData['email'],
+                'password'         => Hash::make($validatedData['password']),
+                'phone_number'     => $validatedData['phone_number'],
+                'role'             => 'student',
+                'status'           => 'active',
+                'institution_type' => $validatedData['institution_type'],
+                'institution_name' => $validatedData['institution_name'],
+                'type_id'          => $validatedData['type_id'],
+                'referred_by'      => User::where('referral_code', $request->referral_code)->value('id'),
+                'device_id'        => $validatedData['device_id'],
+                'last_login_at'    => now(),
+                'fcm_token'        => $validatedData['fcm_token'] ?? null,
+            ]);
      
              if ($user->referred_by) {
                  $referrer = User::find($user->referred_by);

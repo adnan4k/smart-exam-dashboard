@@ -34,7 +34,8 @@ class User extends Authenticatable
         'device_id',
         'last_login_at',
         'phone',
-        'uv'
+        'uv',
+        'fcm_token',
     ];
 
     protected $guarded = [];
@@ -99,5 +100,10 @@ class User extends Authenticatable
     public function referrals()
     {
         return $this->hasMany(User::class, 'referred_by');
+    }
+
+    public function notificationComments()
+    {
+        return $this->hasMany(NotificationComment::class);
     }
 }

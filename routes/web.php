@@ -22,6 +22,7 @@ use App\Http\Livewire\Type\TypeComponent;
 use App\Http\Livewire\User\UserComponent;
 use App\Http\Livewire\YearGroups\YearGroupComponent;
 use App\Http\Livewire\Notes\NoteComponent;
+use App\Http\Livewire\Notifications\NotificationComponent as AppNotificationComponent;
 use App\Models\Referral;
 
 /*
@@ -65,4 +66,5 @@ Route::middleware('auth')->group(function () {
     Route::get('referral-setting', ReferralSettingComponent::class)->name('referral-setting');
     Route::get('chapter', ChapterComponent::class)->name('chapter');
     Route::get('notes', NoteComponent::class)->name('notes');
+    Route::get('notifications', AppNotificationComponent::class)->name('notifications');
 });
