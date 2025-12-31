@@ -3,12 +3,17 @@
 namespace App\Http\Livewire\Subscription;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Log;
 use Masmerise\Toaster\Toaster;
 
 class SubscriptionComponent extends Component
 {
+    use WithPagination;
+
+    protected $paginationTheme = 'bootstrap';
+
     public $subscriptionId;
     public $selectedStatus;
     public $showModal = false;
@@ -27,9 +32,11 @@ class SubscriptionComponent extends Component
      */
     public function render()
     {
-        // Eager load related user and yearGroup data
-        $subscriptions = Subscription::with('user', 'yearGroup')->get();
-        Log::info($subscriptions);
+        // Eager load related user and yearGroup data with pagination
+        $subscriptions = Subscription::with(['user.type', 'yearGroup'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
         return view('livewire.subscription.subscription-component', compact('subscriptions'));
     }
 
@@ -64,6 +71,7 @@ class SubscriptionComponent extends Component
         Toaster::success('Subscription status updated successfully.');
         // Close the modal after updating
         $this->showModal = false;
+        $this->resetPage();
     }
 
     public function showImage($id)

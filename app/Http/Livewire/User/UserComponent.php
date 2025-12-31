@@ -11,6 +11,8 @@ class UserComponent extends Component
 {
     use WithPagination;
 
+    protected $paginationTheme = 'bootstrap';
+
     public $showModal = false;
     public $showDeleteModal = false;
     public $selectedUserId;
@@ -37,6 +39,7 @@ class UserComponent extends Component
         ]);
         
         $this->showModal = false;
+        $this->resetPage();
         Toaster::success('User status updated successfully.');
     }
 
@@ -55,6 +58,7 @@ class UserComponent extends Component
                 
                 $this->showDeleteModal = false;
                 $this->userToDelete = null;
+                $this->resetPage();
                 
                 Toaster::success("User '{$userName}' has been deleted successfully.");
             } catch (\Exception $e) {
@@ -71,7 +75,12 @@ class UserComponent extends Component
 
     public function render()
     {
-        $users = User::with(['type', 'referredBy'])->get()->map(function ($user) {
+        $users = User::with(['type', 'referredBy'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // Decrypt passwords for each user in the current page
+        $users->getCollection()->transform(function ($user) {
             try {
                 $user->password = Crypt::decryptString($user->password);
             } catch (\Exception $e) {

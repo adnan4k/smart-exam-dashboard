@@ -116,6 +116,15 @@
                         </tbody>
                     </table>
                 </div>
+
+                @if($subscriptions->isEmpty())
+                    <div class="text-center p-3 text-muted">No subscriptions found.</div>
+                @endif
+
+                <!-- Pagination Links -->
+                <div class="d-flex justify-content-center mt-3">
+                    {{ $subscriptions->links() }}
+                </div>
             </div>
         </div>
     </div>
