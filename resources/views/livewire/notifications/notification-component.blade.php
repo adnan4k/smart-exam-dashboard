@@ -69,7 +69,7 @@
                                         </td>
                                         <td class="text-center">
                                             <button
-                                                @click="$dispatch('edit-notification', {{ $notification->id }})"
+                                                wire:click="editNotification({{ $notification->id }})"
                                                 class="text-blue-500 me-2">
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>

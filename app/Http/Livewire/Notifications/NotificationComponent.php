@@ -32,6 +32,11 @@ class NotificationComponent extends Component
         $this->selectedNotification = AppNotification::with(['comments.user'])->findOrFail($notificationId);
         $this->selectedComments = $this->selectedNotification->comments;
     }
+
+    public function editNotification($notificationId)
+    {
+        $this->dispatch('edit-notification', notificationId: $notificationId);
+    }
 }
 
 

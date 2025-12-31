@@ -43,8 +43,17 @@ class NotificationController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'body' => 'required|string',
-            'image_url' => 'sometimes|nullable|url',
+            'image' => 'sometimes|nullable|image|max:2048',
+            'type_id' => 'required|exists:types,id',
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $data['image_url'] = $request->file('image')->store('notifications', 'public');
+        }
+
+        // Remove 'image' from data array as it's not a database field
+        unset($data['image']);
 
         $notification = AppNotification::create($data);
 
@@ -188,8 +197,18 @@ class NotificationController extends Controller
             return;
         }
 
+        // If notification doesn't have a type_id, don't send (type_id is required)
+        if (!$notification->type_id) {
+            return;
+        }
+
+        // Get FCM tokens only for users who have an active subscription to the notification's exam type
         $tokens = User::whereNotNull('fcm_token')
             ->where('fcm_token', '!=', '')
+            ->whereHas('subscriptions', function($query) use ($notification) {
+                $query->where('type_id', $notification->type_id)
+                      ->where('payment_status', 'paid');
+            })
             ->pluck('fcm_token')
             ->all();
 
@@ -204,6 +223,7 @@ class NotificationController extends Controller
                 'title' => $notification->title,
                 'body' => $notification->body,
                 'image_url' => $notification->image_url,
+                'type_id' => $notification->type_id,
                 'like_count' => $notification->like_count,
                 'dislike_count' => $notification->dislike_count,
                 'comment_count' => $notification->comment_count,

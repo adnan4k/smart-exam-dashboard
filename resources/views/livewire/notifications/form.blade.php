@@ -33,12 +33,58 @@
                         </div>
 
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Image URL (optional)</label>
-                            <input wire:model="image_url"
-                                   type="url"
-                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                   placeholder="https://example.com/banner.png">
-                            @error('image_url') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <label class="text-gray-600 dark:text-gray-400">Image (optional)</label>
+                            <input wire:model="image"
+                                   type="file"
+                                   accept="image/*"
+                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                            @error('image') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            
+                            @if($existing_image_url)
+                                <div class="mt-2">
+                                    <p class="text-xs text-gray-500 mb-1">Current image:</p>
+                                    @php
+                                        $imageUrl = $existing_image_url;
+                                        // Check if it's already a full URL
+                                        $isFullUrl = filter_var($imageUrl, FILTER_VALIDATE_URL);
+                                        
+                                        // If it's not a full URL and doesn't start with storage/, add it
+                                        if (!$isFullUrl && !str_starts_with($imageUrl, 'storage/') && !str_starts_with($imageUrl, '/storage/')) {
+                                            $imageUrl = asset('storage/' . $imageUrl);
+                                        } elseif (!$isFullUrl) {
+                                            // If it already has storage/ but isn't a full URL, make it one
+                                            $imageUrl = asset($imageUrl);
+                                        }
+                                    @endphp
+                                    <img src="{{ $imageUrl }}" 
+                                         alt="Current notification image" 
+                                         class="max-w-xs h-32 object-cover rounded border"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            @endif
+                            
+                            @if($image)
+                                <div class="mt-2">
+                                    <p class="text-xs text-gray-500 mb-1">New image preview:</p>
+                                    <p class="text-xs text-blue-500 mb-1">File selected: {{ $image->getClientOriginalName() }}</p>
+                                    <p class="text-xs text-gray-400">Preview will be available after upload</p>
+                                </div>
+                            @endif
+                            
+                            <p class="text-xs text-gray-500 mt-1">Max file size: 2MB. Supported formats: JPG, PNG, GIF</p>
+                        </div>
+
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">Exam Type <span class="text-red-500">*</span></label>
+                            <select wire:model="type_id"
+                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('type_id') border-red-500 @enderror">
+                                <option value="">Select Exam Type</option>
+                                @foreach ($types as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('type_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 mt-1">Only users subscribed to this exam type will receive this notification</p>
                         </div>
 
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
