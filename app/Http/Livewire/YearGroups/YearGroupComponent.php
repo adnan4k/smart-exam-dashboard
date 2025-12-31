@@ -5,18 +5,42 @@ namespace App\Http\Livewire\YearGroups;
 use App\Models\YearGroup;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Masmerise\Toaster\Toaster;
 
 class YearGroupComponent extends Component
 {
     public $yearGroups;
+    public $showDeleteModal = false;
+    public $yearGroupToDelete;
 
-
-    public function delete($id)
+    public function confirmDelete($id)
     {
-        $type = YearGroup::findOrFail($id);
-        $type->delete();
+        $this->yearGroupToDelete = YearGroup::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
 
-        $this->dispatch('refreshTable');
+    public function delete()
+    {
+        if ($this->yearGroupToDelete) {
+            try {
+                $yearGroupName = $this->yearGroupToDelete->name ?? "ID: {$this->yearGroupToDelete->id}";
+                $this->yearGroupToDelete->delete();
+                
+                $this->showDeleteModal = false;
+                $this->yearGroupToDelete = null;
+                
+                Toaster::success("Year Group '{$yearGroupName}' has been deleted successfully.");
+                $this->dispatch('refreshTable');
+            } catch (\Exception $e) {
+                Toaster::error('Failed to delete year group. Please try again.');
+            }
+        }
+    }
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->yearGroupToDelete = null;
     }
 
     #[On('refreshTable')]

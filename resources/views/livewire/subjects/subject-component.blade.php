@@ -74,7 +74,7 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                                wire:click="deleteSubject({{ $subject->id }})"
+                                                wire:click="confirmDelete({{ $subject->id }})"
                                                 class="btn btn-sm text-danger"
                                                 data-bs-toggle="tooltip" title="Delete">
                                                 <i class="fa-solid fa-trash"></i>
@@ -89,4 +89,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Confirm Subject Deletion
+                        </h5>
+                        <button type="button" class="close" wire:click="cancelDelete">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if($subjectToDelete)
+                            <div class="alert alert-warning">
+                                <strong>Warning!</strong> This action cannot be undone.
+                            </div>
+                            <p>Are you sure you want to delete the following subject?</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ $subjectToDelete->name }}</h6>
+                                    <p class="card-text">
+                                        <strong>Type:</strong> {{ optional($subjectToDelete->type)->name ?? 'N/A' }}<br>
+                                        <strong>Year:</strong> {{ $subjectToDelete->year ?? 'N/A' }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="cancelDelete">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteSubject">
+                            <i class="fas fa-trash"></i> Delete Subject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

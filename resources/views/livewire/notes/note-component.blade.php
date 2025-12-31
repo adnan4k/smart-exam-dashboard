@@ -67,7 +67,7 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                                wire:click="deleteNote({{ $note->id }})"
+                                                wire:click="confirmDelete({{ $note->id }})"
                                                 class="btn btn-sm text-danger"
                                                 data-bs-toggle="tooltip" title="Delete">
                                                 <i class="fa-solid fa-trash"></i>
@@ -99,4 +99,48 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Confirm Note Deletion
+                        </h5>
+                        <button type="button" class="close" wire:click="cancelDelete">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if($noteToDelete)
+                            <div class="alert alert-warning">
+                                <strong>Warning!</strong> This action cannot be undone.
+                            </div>
+                            <p>Are you sure you want to delete the following note?</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ $noteToDelete->title }}</h6>
+                                    <p class="card-text">
+                                        <strong>Subject:</strong> {{ optional($noteToDelete->subject)->name ?? 'N/A' }}<br>
+                                        <strong>Chapter:</strong> {{ optional($noteToDelete->chapter)->name ?? 'N/A' }}<br>
+                                        <strong>Grade:</strong> {{ $noteToDelete->grade ?? 'N/A' }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="cancelDelete">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteNote">
+                            <i class="fas fa-trash"></i> Delete Note
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div> 

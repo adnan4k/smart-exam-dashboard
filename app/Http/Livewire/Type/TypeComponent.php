@@ -20,6 +20,8 @@ class TypeComponent extends Component
     public $openModal = false;
     public $fullScreenImage;
     public $showImageModal = false;
+    public $showDeleteModal = false;
+    public $typeToDelete;
 
     protected $rules = [
         'name' => 'required|string|max:255',
@@ -92,13 +94,34 @@ class TypeComponent extends Component
         }
     }
 
-    public function delete($id)
+    public function confirmDelete($id)
     {
-        $type = Type::findOrFail($id);
-        $type->delete();
+        $this->typeToDelete = Type::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
 
-        Toaster::success('Type Deleted Successfully!');
-        $this->dispatch('refreshTable');
+    public function delete()
+    {
+        if ($this->typeToDelete) {
+            try {
+                $typeName = $this->typeToDelete->name;
+                $this->typeToDelete->delete();
+                
+                $this->showDeleteModal = false;
+                $this->typeToDelete = null;
+                
+                Toaster::success("Type '{$typeName}' has been deleted successfully.");
+                $this->dispatch('refreshTable');
+            } catch (\Exception $e) {
+                Toaster::error('Failed to delete type. Please try again.');
+            }
+        }
+    }
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->typeToDelete = null;
     }
 
     #[On('refreshTable')]

@@ -55,7 +55,7 @@
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
                                             <button
-                                            wire:click="delete({{ $yearGroup->id }})" class="text-red-500">
+                                            wire:click="confirmDelete({{ $yearGroup->id }})" class="text-red-500">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                         </td>
@@ -68,4 +68,46 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Confirm Year Group Deletion
+                        </h5>
+                        <button type="button" class="close" wire:click="cancelDelete">
+                            &times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if($yearGroupToDelete)
+                            <div class="alert alert-warning">
+                                <strong>Warning!</strong> This action cannot be undone.
+                            </div>
+                            <p>Are you sure you want to delete the following year group?</p>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ $yearGroupToDelete->name ?? "ID: {$yearGroupToDelete->id}" }}</h6>
+                                    <p class="card-text">
+                                        <strong>ID:</strong> {{ $yearGroupToDelete->id }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="cancelDelete">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-danger" wire:click="delete">
+                            <i class="fas fa-trash"></i> Delete Year Group
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
