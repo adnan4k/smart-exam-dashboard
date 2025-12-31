@@ -14,6 +14,17 @@ use Livewire\Attributes\Validate;
 
 class QuestionController extends Controller
 {
+    /**
+     * Helper method to add Content-Length header to JSON response
+     */
+    private function jsonResponse($data, $status = 200)
+    {
+        $json = json_encode($data);
+        $contentLength = strlen($json);
+        
+        return response()->json($data, $status)
+            ->header('Content-Length', $contentLength);
+    }
 
     public function examType()
     {
@@ -27,7 +38,7 @@ class QuestionController extends Controller
             ];
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => true,
             'data' => $types
         ]);
@@ -39,7 +50,7 @@ class QuestionController extends Controller
         // Validate year input
         Log::info('Getting questions for year: ' . $request->year);
         if (!$request->year) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status'  => 'error',
                 'message' => 'Invalid year provided.'
             ], 400);
@@ -82,7 +93,7 @@ class QuestionController extends Controller
             return $question->subject->name;
         });
         
-        return response()->json([
+        return $this->jsonResponse([
             'status'   => 'success',
             'response' => $response
         ]);
@@ -94,7 +105,7 @@ class QuestionController extends Controller
         // Validate subject input
         Log::info('Getting questions for subject: ' . $request->subject);
         if (!$request->subject) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status'  => 'error',
                 'message' => 'Invalid subject provided.'
             ], 400);
@@ -109,7 +120,7 @@ class QuestionController extends Controller
             return $question->yearGroup->year;
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status'   => 'success',
             'response' => $response
         ]);
@@ -121,7 +132,7 @@ class QuestionController extends Controller
         $userId = $request->input('user_id');
 
         if (!$userId) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'user_id is required in the request body.'
             ], 400);
@@ -130,7 +141,7 @@ class QuestionController extends Controller
         $user = User::find($userId);
 
         if (!$user) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'User not found.'
             ], 404);
@@ -138,7 +149,7 @@ class QuestionController extends Controller
 
         // Check if user has type_id
         if (!$user->type_id) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No exam type associated with this user.'
             ], 400);
@@ -219,7 +230,7 @@ class QuestionController extends Controller
             });
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'response' => $response,
             'is_subscribed' => $hasActiveSubscription
@@ -249,7 +260,7 @@ class QuestionController extends Controller
             ->get();
     
         if ($questions->isEmpty()) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No sample questions available for this exam type.'
             ], 404);
@@ -301,7 +312,7 @@ class QuestionController extends Controller
             });
         });
     
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'response' => $response
         ]);
@@ -317,7 +328,7 @@ class QuestionController extends Controller
             return $question->type->name; // Assuming 'name' is the field in the types table
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status'   => 'success',
             'response' => $response
         ]);
@@ -337,10 +348,10 @@ class QuestionController extends Controller
 
     $chapters = Chapter::whereIn('id', $chapterIds)->get();
 
-    return response()->json([
-        'status' => 'success',
-        'chapters' => $chapters,
-    ]);
+        return $this->jsonResponse([
+            'status' => 'success',
+            'chapters' => $chapters,
+        ]);
 }
 
 
@@ -359,7 +370,7 @@ class QuestionController extends Controller
 
         $subjects = Subject::whereIn('id', $subjectIds)->get();
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'subjects' => $subjects,
         ]);
@@ -379,7 +390,7 @@ class QuestionController extends Controller
             return $question->subject->name; // Grouping by subject name
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status'   => 'success',
             'response' => $response
         ]);

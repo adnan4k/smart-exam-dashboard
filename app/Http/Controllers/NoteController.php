@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\Validator;
 
 class NoteController extends Controller
 {
+    /**
+     * Helper method to add Content-Length header to JSON response
+     */
+    private function jsonResponse($data, $status = 200)
+    {
+        $json = json_encode($data);
+        $contentLength = strlen($json);
+        
+        return response()->json($data, $status)
+            ->header('Content-Length', $contentLength);
+    }
+
     public function index(Request $request)
     {
         // Validate filter parameters
@@ -80,7 +92,7 @@ class NoteController extends Controller
         $perPage = $request->input('per_page', 15);
         $notes = $query->paginate($perPage);
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $notes->items(),
             'pagination' => [
@@ -118,7 +130,7 @@ class NoteController extends Controller
             'language' => $request->input('language'),
         ]);
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $note->load(['subject', 'chapter', 'user', 'type']),
         ], 201);
@@ -126,7 +138,7 @@ class NoteController extends Controller
 
     public function show(Note $note)
     {
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $note->load(['subject', 'chapter', 'user', 'type']),
         ]);
@@ -147,7 +159,7 @@ class NoteController extends Controller
 
         $note->update($request->only(['user_id', 'type_id', 'subject_id', 'chapter_id', 'title', 'content', 'grade', 'language']));
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $note->load(['subject', 'chapter', 'user', 'type']),
         ]);
@@ -157,7 +169,7 @@ class NoteController extends Controller
     {
         $note->delete();
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'message' => 'Note deleted successfully',
         ]);
@@ -173,7 +185,7 @@ class NoteController extends Controller
 
         $user = User::findOrFail($request->input('user_id'));
         if (!$user->type_id) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No exam type associated with this user.',
             ], 400);
@@ -185,7 +197,7 @@ class NoteController extends Controller
             ->exists();
 
         if (!$hasActiveSubscription) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No active subscription found.',
             ], 403);
@@ -193,7 +205,7 @@ class NoteController extends Controller
 
         $subject = Subject::findOrFail($request->input('subject_id'));
         if ((int) $subject->type_id !== (int) $user->type_id) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'Subject does not match user\'s exam type.',
             ], 403);
@@ -208,7 +220,7 @@ class NoteController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $notes,
             'is_subscribed' => true,
@@ -223,7 +235,7 @@ class NoteController extends Controller
 
         $user = User::findOrFail($request->input('user_id'));
         if (!$user->type_id) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No exam type associated with this user.',
             ], 400);
@@ -301,7 +313,7 @@ class NoteController extends Controller
             ];
         }
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $subjectsData,
         ]);
@@ -385,7 +397,7 @@ class NoteController extends Controller
         $perPage = $request->input('per_page', 15);
         $notes = $query->paginate($perPage);
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => $notes->items(),
             'pagination' => [
