@@ -43,10 +43,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($notes as $index => $note)
+                                @forelse ($notes as $index => $note)
                                     <tr>
                                         <td class="ps-4">
-                                            <p class="text-xs font-weight-bold mb-0">{{ $index + 1 }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ $notes->firstItem() + $index }}</p>
                                         </td>
                                         <td class="text-center">
                                             <p class="text-xs font-weight-bold mb-0">{{ $note->title }}</p>
@@ -62,7 +62,7 @@
                                         </td>
                                         <td class="text-center">
                                             <button
-                                                @click="$dispatch('edit-note', { noteId: {{ $note->id }} })"
+                                                wire:click="editNote({{ $note->id }})"
                                                 class="text-blue-500">
                                                 <i class="fa-regular fa-pen-to-square"></i>
                                             </button>
@@ -74,9 +74,26 @@
                                             </button>
                                         </td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <p class="text-muted mb-0">No notes found.</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
+                    </div>
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center px-4 py-3">
+                        <div>
+                            <p class="text-sm text-muted mb-0">
+                                Showing {{ $notes->firstItem() ?? 0 }} to {{ $notes->lastItem() ?? 0 }} of {{ $notes->total() }} results
+                            </p>
+                        </div>
+                        <div>
+                            {{ $notes->links() }}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -71,5 +71,14 @@ class DatabaseSeeder extends Seeder
             
             DB::table('users')->insert($testUserData);
         }
+
+        // Seed types first (required for subjects)
+        $this->call(TypeSeeder::class);
+        
+        // Seed subjects (requires types)
+        $this->call(SubjectSeeder::class);
+        
+        // Seed notes (requires subjects, types, and chapters to exist)
+        $this->call(NoteSeeder::class);
     }
 }

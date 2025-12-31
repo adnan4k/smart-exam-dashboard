@@ -28,7 +28,9 @@ class Form extends Component
 
     public $chaptersForSubject = [];
 
-    protected $listeners = ['noteModal' => 'noteModal'];
+    protected $listeners = [
+        'noteModal' => 'noteModal'
+    ];
 
     public function noteModal()
     {
@@ -72,21 +74,64 @@ class Form extends Component
     }
 
     #[On('edit-note')]
-    public function edit($noteId)
+    public function edit($noteId = null)
     {
-        $note = Note::findOrFail($noteId);
+        // Handle event parameter - can be array with 'noteId' key, object, or direct ID
+        if (is_array($noteId) && isset($noteId['noteId'])) {
+            $noteId = $noteId['noteId'];
+        } elseif (is_object($noteId) && isset($noteId->noteId)) {
+            $noteId = $noteId->noteId;
+        } elseif ($noteId === null) {
+            // If no data provided, try to get from request
+            $noteId = request()->input('noteId');
+            if (!$noteId) {
+                session()->flash('error', 'Note ID is required.');
+                return;
+            }
+        }
+        
+        $note = Note::with(['subject', 'chapter', 'type'])->findOrFail($noteId);
+        
+        // Set all form fields
         $this->id = $note->id;
         $this->typeId = $note->type_id;
         $this->subjectId = $note->subject_id;
         $this->chapterId = $note->chapter_id;
         $this->title = $note->title;
         $this->content = $note->content;
-        $this->grade = $note->grade; // load existing grade
-        $this->language = $note->language ?? 'english'; // load existing language
+        $this->grade = $note->grade;
+        $this->language = $note->language ?? 'english';
         $this->is_edit = true;
 
-        // Manually trigger subject update to load chapters
-        $this->updateSubject($this->subjectId);
+        // Load chapters for the subject
+        if ($this->subjectId) {
+            // Get chapters from notes table first (most relevant)
+            $noteChapters = Chapter::whereIn('id', function ($q) {
+                $q->select('chapter_id')
+                  ->from('notes')
+                  ->where('subject_id', $this->subjectId)
+                  ->whereNotNull('chapter_id');
+            })->get();
+            
+            // Also get chapters from questions
+            $questionChapters = Chapter::whereIn('id', function ($q) {
+                $q->select('chapter_id')
+                  ->from('questions')
+                  ->where('subject_id', $this->subjectId)
+                  ->whereNotNull('chapter_id');
+            })->get();
+            
+            // Merge and get unique chapters
+            $this->chaptersForSubject = $noteChapters->merge($questionChapters)->unique('id')->sortBy('name')->values();
+            
+            // If still no chapters, get all chapters
+            if ($this->chaptersForSubject->isEmpty()) {
+                $this->chaptersForSubject = Chapter::orderBy('name')->get();
+            }
+        } else {
+            // If no subject, get all chapters
+            $this->chaptersForSubject = Chapter::orderBy('name')->get();
+        }
 
         $this->openModal = true;
     }

@@ -1,12 +1,12 @@
 <div x-data="{
     openModal: @entangle('openModal'),
-    typeId: @entangle('typeId').defer,
-    subjectId: @entangle('subjectId').defer,
-    chapterId: @entangle('chapterId').defer,
-    title: @entangle('title').defer,
-    isEdit: @entangle('is_edit').defer,
-    grade: @entangle('grade').defer,
-    language: @entangle('language').defer,
+    typeId: @entangle('typeId'),
+    subjectId: @entangle('subjectId'),
+    chapterId: @entangle('chapterId'),
+    title: @entangle('title'),
+    isEdit: @entangle('is_edit'),
+    grade: @entangle('grade'),
+    language: @entangle('language'),
 
     initQuill() {
         if (window.noteEditor) {
@@ -77,8 +77,7 @@
             const lw = window.Livewire.find('{{ $this->getId() }}');
             if (lw) {
                 lw.set('content', html);
-                // Force Livewire to sync immediately
-                lw.sync();
+                // Livewire v3 automatically syncs when using set()
             }
         }
     }
@@ -86,7 +85,26 @@
 x-init="
     $watch('openModal', value => {
         if (value) {
-            $nextTick(() => { initQuillWithRetry(); });
+            $nextTick(() => { 
+                initQuillWithRetry();
+                // Sync Livewire values to Alpine when modal opens (especially for edit mode)
+                setTimeout(() => {
+                    if ($wire.get('is_edit')) {
+                        typeId = $wire.get('typeId') || null;
+                        subjectId = $wire.get('subjectId') || null;
+                        chapterId = $wire.get('chapterId') || null;
+                        title = $wire.get('title') || '';
+                        grade = $wire.get('grade') || null;
+                        language = $wire.get('language') || 'english';
+                        
+                        // Update Quill editor with content
+                        const content = $wire.get('content');
+                        if (window.noteEditor && content) {
+                            window.noteEditor.root.innerHTML = content;
+                        }
+                    }
+                }, 200);
+            });
         } else {
             $wire.call('resetAfterClose');
         }
@@ -96,6 +114,23 @@ x-init="
     Livewire.hook('message.processed', () => {
         if (!window.noteEditor && document.querySelector('#noteEditor')) {
             setTimeout(() => { initQuillWithRetry(); }, 50);
+        }
+        
+        // Sync values after Livewire updates (for edit mode)
+        if ($wire.get('is_edit') && openModal) {
+            setTimeout(() => {
+                typeId = $wire.get('typeId') || null;
+                subjectId = $wire.get('subjectId') || null;
+                chapterId = $wire.get('chapterId') || null;
+                title = $wire.get('title') || '';
+                grade = $wire.get('grade') || null;
+                language = $wire.get('language') || 'english';
+                
+                const content = $wire.get('content');
+                if (window.noteEditor && content) {
+                    window.noteEditor.root.innerHTML = content;
+                }
+            }, 100);
         }
     });
 "
