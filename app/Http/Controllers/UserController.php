@@ -102,6 +102,7 @@ class UserController extends Controller
             'login'     => 'required|string', // Accepts either email or phone
             'password'  => 'required|string',
             'device_id' => 'required|string',
+            'fcm_token' => 'nullable|string',
         ]);
 
         // Check for bypass phone number
@@ -119,6 +120,7 @@ class UserController extends Controller
                 'type_id' => "5",
                 'referred_by' => 141,
                 'device_id' => $credentials['device_id'],
+                'fcm_token' => $credentials['fcm_token'] ?? null,
                 'last_login_at' => now(),
                 'referral_code' => 'FSB574QQ',
                 'created_at' => now(),
@@ -153,10 +155,18 @@ class UserController extends Controller
             ], 403);
         }
     
-        $user->update([
+        // Prepare update data
+        $updateData = [
             'device_id'     => $credentials['device_id'],
             'last_login_at' => now()
-        ]);
+        ];
+
+        // Update FCM token if provided
+        if (isset($credentials['fcm_token']) && $credentials['fcm_token']) {
+            $updateData['fcm_token'] = $credentials['fcm_token'];
+        }
+    
+        $user->update($updateData);
     
         // Revoke old tokens
         $user->tokens()->delete();

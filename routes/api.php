@@ -62,6 +62,7 @@ Route::post('notifications/{notification}/comment', [NotificationController::cla
 // Notes routes - specific routes first to avoid conflicts
 Route::get('notes/for-user', [NoteController::class, 'forUser']);
 Route::get('notes/for-user-grouped', [NoteController::class, 'forUserGrouped']);
+Route::get('notes/filter', [NoteController::class, 'filter']);
 
 // General notes routes
 Route::get('notes', [NoteController::class, 'index']);

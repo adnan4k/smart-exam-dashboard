@@ -7,6 +7,7 @@ use App\Models\NotificationComment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class NotificationController extends Controller
@@ -55,9 +56,51 @@ class NotificationController extends Controller
         ], 201);
     }
 
-    public function like(AppNotification $notification)
+    public function like(Request $request, AppNotification $notification)
     {
-        $notification->increment('like_count');
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $userId = $data['user_id'];
+
+        // Check if user has already reacted
+        $existingReaction = DB::table('notification_reactions')
+            ->where('app_notification_id', $notification->id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($existingReaction) {
+            if ($existingReaction->reaction_type === 'like') {
+                // User already liked, return without doing anything
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'You have already liked this notification.',
+                    'data' => $notification->fresh(),
+                ], 200);
+            } else {
+                // User previously disliked, change to like
+                DB::table('notification_reactions')
+                    ->where('app_notification_id', $notification->id)
+                    ->where('user_id', $userId)
+                    ->update(['reaction_type' => 'like']);
+
+                // Decrement dislike, increment like
+                $notification->decrement('dislike_count');
+                $notification->increment('like_count');
+            }
+        } else {
+            // New like
+            DB::table('notification_reactions')->insert([
+                'app_notification_id' => $notification->id,
+                'user_id' => $userId,
+                'reaction_type' => 'like',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $notification->increment('like_count');
+        }
 
         return response()->json([
             'status' => 'success',
@@ -65,9 +108,51 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function dislike(AppNotification $notification)
+    public function dislike(Request $request, AppNotification $notification)
     {
-        $notification->increment('dislike_count');
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $userId = $data['user_id'];
+
+        // Check if user has already reacted
+        $existingReaction = DB::table('notification_reactions')
+            ->where('app_notification_id', $notification->id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($existingReaction) {
+            if ($existingReaction->reaction_type === 'dislike') {
+                // User already disliked, return without doing anything
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'You have already disliked this notification.',
+                    'data' => $notification->fresh(),
+                ], 200);
+            } else {
+                // User previously liked, change to dislike
+                DB::table('notification_reactions')
+                    ->where('app_notification_id', $notification->id)
+                    ->where('user_id', $userId)
+                    ->update(['reaction_type' => 'dislike']);
+
+                // Decrement like, increment dislike
+                $notification->decrement('like_count');
+                $notification->increment('dislike_count');
+            }
+        } else {
+            // New dislike
+            DB::table('notification_reactions')->insert([
+                'app_notification_id' => $notification->id,
+                'user_id' => $userId,
+                'reaction_type' => 'dislike',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $notification->increment('dislike_count');
+        }
 
         return response()->json([
             'status' => 'success',

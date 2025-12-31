@@ -13,20 +13,84 @@ class NoteController extends Controller
 {
     public function index(Request $request)
     {
+        // Validate filter parameters
         $request->validate([
-            'subject_id' => 'required|exists:subjects,id',
-            'chapter_id' => 'required|exists:chapters,id',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'chapter_id' => 'nullable|exists:chapters,id',
+            'type_id' => 'nullable|exists:types,id',
+            'user_id' => 'nullable|exists:users,id',
+            'grade' => 'nullable|integer|min:0|max:12',
+            'language' => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
+            'search' => 'nullable|string|max:255',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
         ]);
 
-        $notes = Note::with(['subject', 'chapter', 'user', 'type'])
-            ->where('subject_id', $request->input('subject_id'))
-            ->where('chapter_id', $request->input('chapter_id'))
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Note::with(['subject', 'chapter', 'user', 'type']);
+
+        // Apply filters
+        if ($request->has('subject_id') && $request->input('subject_id')) {
+            $query->where('subject_id', $request->input('subject_id'));
+        }
+
+        if ($request->has('chapter_id') && $request->input('chapter_id')) {
+            $query->where('chapter_id', $request->input('chapter_id'));
+        }
+
+        if ($request->has('type_id') && $request->input('type_id')) {
+            $query->where('type_id', $request->input('type_id'));
+        }
+
+        if ($request->has('user_id') && $request->input('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+
+        if ($request->has('grade') && $request->input('grade') !== null) {
+            $query->where('grade', $request->input('grade'));
+        }
+
+        if ($request->has('language') && $request->input('language')) {
+            $query->where('language', $request->input('language'));
+        }
+
+        // Search filter (searches in title and content)
+        if ($request->has('search') && $request->input('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('content', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Date range filters
+        if ($request->has('date_from') && $request->input('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->has('date_to') && $request->input('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        // Order by
+        $query->orderBy('created_at', 'desc');
+
+        // Pagination
+        $perPage = $request->input('per_page', 15);
+        $notes = $query->paginate($perPage);
 
         return response()->json([
             'status' => 'success',
-            'data' => $notes,
+            'data' => $notes->items(),
+            'pagination' => [
+                'current_page' => $notes->currentPage(),
+                'last_page' => $notes->lastPage(),
+                'per_page' => $notes->perPage(),
+                'total' => $notes->total(),
+                'from' => $notes->firstItem(),
+                'to' => $notes->lastItem(),
+            ],
         ]);
     }
 
@@ -240,6 +304,102 @@ class NoteController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $subjectsData,
+        ]);
+    }
+
+    /**
+     * Advanced filtering endpoint for notes
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function filter(Request $request)
+    {
+        $request->validate([
+            'type_id' => 'nullable|exists:types,id',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'chapter_id' => 'nullable|exists:chapters,id',
+            'user_id' => 'nullable|exists:users,id',
+            'grade' => 'nullable|integer|min:0|max:12',
+            'language' => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
+            'search' => 'nullable|string|max:255',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'sort_by' => 'nullable|in:created_at,updated_at,title,grade',
+            'sort_order' => 'nullable|in:asc,desc',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1',
+        ]);
+
+        $query = Note::with(['subject', 'chapter', 'user', 'type']);
+
+        // Apply filters
+        if ($request->has('type_id') && $request->input('type_id')) {
+            $query->where('type_id', $request->input('type_id'));
+        }
+
+        if ($request->has('subject_id') && $request->input('subject_id')) {
+            $query->where('subject_id', $request->input('subject_id'));
+        }
+
+        if ($request->has('chapter_id') && $request->input('chapter_id')) {
+            $query->where('chapter_id', $request->input('chapter_id'));
+        }
+
+        if ($request->has('user_id') && $request->input('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+
+        if ($request->has('grade') && $request->input('grade') !== null) {
+            $query->where('grade', $request->input('grade'));
+        }
+
+        if ($request->has('language') && $request->input('language')) {
+            $query->where('language', $request->input('language'));
+        }
+
+        // Search filter (searches in title and content)
+        if ($request->has('search') && $request->input('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('content', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Date range filters
+        if ($request->has('date_from') && $request->input('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->has('date_to') && $request->input('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        // Sorting
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Pagination
+        $perPage = $request->input('per_page', 15);
+        $notes = $query->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $notes->items(),
+            'pagination' => [
+                'current_page' => $notes->currentPage(),
+                'last_page' => $notes->lastPage(),
+                'per_page' => $notes->perPage(),
+                'total' => $notes->total(),
+                'from' => $notes->firstItem(),
+                'to' => $notes->lastItem(),
+            ],
+            'filters_applied' => $request->only([
+                'type_id', 'subject_id', 'chapter_id', 'user_id', 
+                'grade', 'language', 'search', 'date_from', 'date_to'
+            ]),
         ]);
     }
 }
