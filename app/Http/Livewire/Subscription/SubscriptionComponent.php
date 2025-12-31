@@ -34,7 +34,8 @@ class SubscriptionComponent extends Component
     {
         // Eager load related user and yearGroup data with pagination
         $subscriptions = Subscription::with(['user.type', 'yearGroup'])
-            ->orderBy('created_at', 'desc')
+            ->latest('created_at')
+            ->orderBy('id', 'desc')
             ->paginate(10);
         
         return view('livewire.subscription.subscription-component', compact('subscriptions'));

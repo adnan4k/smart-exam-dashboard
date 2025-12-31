@@ -76,7 +76,8 @@ class UserComponent extends Component
     public function render()
     {
         $users = User::with(['type', 'referredBy'])
-            ->orderBy('created_at', 'desc')
+            ->latest('created_at')
+            ->orderBy('id', 'desc')
             ->paginate(10);
 
         // Decrypt passwords for each user in the current page
