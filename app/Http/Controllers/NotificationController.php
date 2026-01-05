@@ -24,20 +24,22 @@ class NotificationController extends Controller
         $user = User::find($data['user_id']);
         $user->update(['fcm_token' => $data['fcm_token']]);
 
-        // Return topics that client should subscribe to
-        $topics = $this->getUserTopics($user);
+        // Get the user's topic (single subscription)
+        $topicData = $this->getUserTopic($user);
 
         return response()->json([
             'status' => 'success',
             'message' => 'FCM token registered successfully.',
-            'topics' => $topics,
+            'topic' => $topicData['topic'],
+            'type_id' => $topicData['type_id'],
         ]);
     }
 
     /**
-     * Get topics that user should subscribe to based on their active subscriptions
+     * Get topic that user should subscribe to based on their active subscription
+     * Users only have one exam type subscription
      */
-    public function getUserTopics(Request $request = null)
+    public function getUserTopic(Request $request = null)
     {
         // Handle both direct call with User object and API request
         if ($request instanceof User) {
@@ -49,26 +51,35 @@ class NotificationController extends Controller
             $user = User::find($data['user_id']);
         }
 
-        // Get all exam types the user has paid subscriptions for
-        $activeTypeIds = $user->subscriptions()
+        // Get the user's active paid subscription (only one exam type per user)
+        $subscription = $user->subscriptions()
             ->where('payment_status', 'paid')
-            ->pluck('type_id')
-            ->unique()
-            ->values()
-            ->toArray();
+            ->first();
 
-        $topics = array_map(function($typeId) {
-            return FcmService::getTopicName($typeId);
-        }, $activeTypeIds);
+        if (!$subscription) {
+            if ($request instanceof User) {
+                return ['topic' => null, 'type_id' => null];
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'topic' => null,
+                'type_id' => null,
+                'message' => 'No active subscription found.',
+            ]);
+        }
+
+        $typeId = $subscription->type_id;
+        $topic = FcmService::getTopicName($typeId);
 
         if ($request instanceof User) {
-            return $topics;
+            return ['topic' => $topic, 'type_id' => $typeId];
         }
 
         return response()->json([
             'status' => 'success',
-            'topics' => $topics,
-            'type_ids' => $activeTypeIds,
+            'topic' => $topic,
+            'type_id' => $typeId,
         ]);
     }
 

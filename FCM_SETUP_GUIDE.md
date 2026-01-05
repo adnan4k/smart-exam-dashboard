@@ -5,9 +5,9 @@ This application uses **Firebase Cloud Messaging HTTP v1 API** (100% modern, zer
 ## Overview
 
 - **Modern Approach**: Pure FCM HTTP v1 API - NO legacy server keys
-- **Topics**: Users subscribe client-side to topics (e.g., `exam_type_1`, `exam_type_2`)
+- **Topics**: Each user subscribes to ONE topic based on their exam type (e.g., `1`, `2`, `3`)
 - **Authentication**: OAuth 2.0 using Firebase service account
-- **Scalability**: Topic-based messaging (unlimited subscribers)
+- **Scalability**: Topic-based messaging (unlimited subscribers per topic)
 - **Security**: Comprehensive error handling and logging
 
 ---
@@ -21,9 +21,9 @@ This application uses **Firebase Cloud Messaging HTTP v1 API** (100% modern, zer
 - ✅ NO legacy server keys required
 
 ### Client-Side (Mobile Apps)
-- ✅ Handles topic subscription/unsubscription using Firebase SDK
-- ✅ Gets topic list from server when registering FCM token
-- ✅ Manages own subscriptions locally
+- ✅ Handles topic subscription using Firebase SDK
+- ✅ Gets single topic from server when registering FCM token
+- ✅ Subscribes to one topic per user (based on their exam type)
 - ✅ Full control over topic management
 
 ---
@@ -99,20 +99,18 @@ Content-Type: application/json
 {
   "status": "success",
   "message": "FCM token registered successfully.",
-  "topics": [
-    "exam_type_1",
-    "exam_type_3"
-  ]
+  "topic": "1",
+  "type_id": 1
 }
 ```
 
-**Important**: The response contains the list of topics the client should subscribe to based on user's active paid subscriptions.
+**Important**: The response contains the single topic the client should subscribe to based on the user's active paid subscription. Each user has only ONE exam type.
 
 ---
 
-### 2. Get User Topics
+### 2. Get User Topic
 ```http
-POST /api/fcm/user-topics
+POST /api/fcm/user-topic
 Content-Type: application/json
 
 {
@@ -124,15 +122,12 @@ Content-Type: application/json
 ```json
 {
   "status": "success",
-  "topics": [
-    "exam_type_1",
-    "exam_type_3"
-  ],
-  "type_ids": [1, 3]
+  "topic": "1",
+  "type_id": 1
 }
 ```
 
-**Use Case**: Fetch current topics when user's subscription changes.
+**Use Case**: Fetch current topic when user's subscription changes.
 
 ---
 
@@ -167,7 +162,7 @@ Content-Type: multipart/form-data
 }
 ```
 
-**Behavior**: Automatically sends FCM notification to topic `exam_type_2`.
+**Behavior**: Automatically sends FCM notification to topic `2` (all users subscribed to exam type 2).
 
 ---
 
@@ -186,7 +181,7 @@ dependencies {
 
 Add `google-services.json` to `app/` directory.
 
-#### 2. Register Token and Subscribe to Topics
+#### 2. Register Token and Subscribe to Topic
 
 ```kotlin
 import com.google.firebase.messaging.FirebaseMessaging
@@ -200,21 +195,27 @@ class FCMManager {
         // Register with server
         val response = apiService.registerFcmToken(userId, token)
 
-        // Subscribe to topics returned by server
-        response.topics.forEach { topic ->
+        // Subscribe to the topic returned by server (only one topic per user)
+        response.topic?.let { topic ->
             FirebaseMessaging.getInstance().subscribeToTopic(topic).await()
-            Log.d("FCM", "Subscribed to: $topic")
+            Log.d("FCM", "Subscribed to topic: $topic")
         }
     }
 
-    suspend fun syncTopics(userId: Int) {
-        // Get current topics from server
-        val response = apiService.getUserTopics(userId)
+    suspend fun syncTopic(userId: Int, oldTopic: String? = null) {
+        // Unsubscribe from old topic if subscription changed
+        oldTopic?.let {
+            FirebaseMessaging.getInstance().unsubscribeFromTopic(it).await()
+            Log.d("FCM", "Unsubscribed from old topic: $it")
+        }
 
-        // Unsubscribe from all old topics first (optional)
-        // Then subscribe to new topics
-        response.topics.forEach { topic ->
+        // Get current topic from server
+        val response = apiService.getUserTopic(userId)
+
+        // Subscribe to new topic
+        response.topic?.let { topic ->
             FirebaseMessaging.getInstance().subscribeToTopic(topic).await()
+            Log.d("FCM", "Subscribed to new topic: $topic")
         }
     }
 }
@@ -276,7 +277,7 @@ pod 'Firebase/Messaging'
 
 Add `GoogleService-Info.plist` to your Xcode project.
 
-#### 2. Register Token and Subscribe to Topics
+#### 2. Register Token and Subscribe to Topic
 
 ```swift
 import FirebaseMessaging
@@ -292,20 +293,27 @@ class FCMManager {
         // Register with server
         let response = try await apiService.registerFcmToken(userId: userId, token: token)
 
-        // Subscribe to topics returned by server
-        for topic in response.topics {
+        // Subscribe to the topic returned by server (only one topic per user)
+        if let topic = response.topic {
             try await Messaging.messaging().subscribe(toTopic: topic)
-            print("Subscribed to: \(topic)")
+            print("Subscribed to topic: \(topic)")
         }
     }
 
-    func syncTopics(userId: Int) async throws {
-        // Get current topics from server
-        let response = try await apiService.getUserTopics(userId: userId)
+    func syncTopic(userId: Int, oldTopic: String? = nil) async throws {
+        // Unsubscribe from old topic if subscription changed
+        if let oldTopic = oldTopic {
+            try await Messaging.messaging().unsubscribe(fromTopic: oldTopic)
+            print("Unsubscribed from old topic: \(oldTopic)")
+        }
 
-        // Subscribe to new topics
-        for topic in response.topics {
+        // Get current topic from server
+        let response = try await apiService.getUserTopic(userId: userId)
+
+        // Subscribe to new topic
+        if let topic = response.topic {
             try await Messaging.messaging().subscribe(toTopic: topic)
+            print("Subscribed to new topic: \(topic)")
         }
     }
 }
@@ -359,29 +367,29 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
    ↓
 3. App calls POST /api/fcm/register-token
    ↓
-4. Server returns topics: ["exam_type_1", "exam_type_3"]
+4. Server returns topic: "1" (for exam type 1)
    ↓
-5. App subscribes to topics using Firebase SDK
+5. App subscribes to topic "1" using Firebase SDK
    ↓
 6. Admin creates notification with type_id=1
    ↓
-7. Server sends to topic "exam_type_1" using HTTP v1 API
+7. Server sends to topic "1" using HTTP v1 API
    ↓
-8. All devices subscribed to "exam_type_1" receive notification
+8. All devices subscribed to topic "1" receive notification
 ```
 
 ### Topic Naming Convention
 
-- Topics are named: `exam_type_1`, `exam_type_2`, etc.
-- Generated by: `FcmService::getTopicName($typeId)`
-- Users only get topics for active **paid** subscriptions
+- Topics are named simply by their type ID: `1`, `2`, `3`, etc.
+- Generated by: `FcmService::getTopicName($typeId)` which returns `(string)$typeId`
+- Each user subscribes to only ONE topic based on their active **paid** subscription
 
-### When to Sync Topics
+### When to Sync Topic
 
-Call `syncTopics()` when:
-- ✅ User purchases new subscription
-- ✅ User's subscription expires
-- ✅ User logs in
+Call `syncTopic()` when:
+- ✅ User purchases a new subscription (different exam type)
+- ✅ User's subscription changes from one exam type to another
+- ✅ User logs in (to ensure topic is up to date)
 - ✅ App launches
 
 ---
@@ -405,8 +413,8 @@ Call `syncTopics()` when:
 ### NotificationController Updates
 
 **Methods**:
-- `registerToken()` - Save token and return topics
-- `getUserTopics()` - Get topics for user
+- `registerToken()` - Save token and return single topic
+- `getUserTopic()` - Get topic for user based on their subscription
 - `dispatchFcm()` - Send notification to topic
 
 ---
@@ -444,9 +452,9 @@ curl -X POST http://yourapp.com/api/fcm/register-token \
 
 Expected response with topics list.
 
-### 2. Test Get Topics
+### 2. Test Get Topic
 ```bash
-curl -X POST http://yourapp.com/api/fcm/user-topics \
+curl -X POST http://yourapp.com/api/fcm/user-topic \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": 1
@@ -485,7 +493,8 @@ tail -f storage/logs/laravel.log
 
 ### Notifications not received
 - ✅ Verify device token is registered
-- ✅ Check client subscribed to correct topics
+- ✅ Check client subscribed to correct topic
+- ✅ Verify user has active paid subscription
 - ✅ Verify notification has valid `type_id`
 - ✅ Check Firebase Cloud Messaging API is enabled
 - ✅ Review logs in `storage/logs/laravel.log`
@@ -517,9 +526,9 @@ tail -f storage/logs/laravel.log
 
 ✅ **Added**:
 - Pure FCM HTTP v1 API
-- Client-side topic management
+- Client-side topic management (one topic per user)
 - OAuth 2.0 authentication
-- Topic list endpoint for clients
+- Topic endpoint for clients
 
 ✅ **Result**:
 - 100% modern implementation
