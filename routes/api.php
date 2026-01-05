@@ -92,3 +92,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // Public question routes (no authentication)
 Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
 Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
+
+// Test routes for debugging Content-Length
+Route::get('test/content-length/small', [\App\Http\Controllers\TestContentLengthController::class, 'testSmall']);
+Route::get('test/content-length/large', [\App\Http\Controllers\TestContentLengthController::class, 'testLarge']);
+Route::get('test/content-length/buffering', [\App\Http\Controllers\TestContentLengthController::class, 'testWithBuffering']);
+Route::get('test/content-length/gzip', [\App\Http\Controllers\TestContentLengthController::class, 'testWithGzip']);
