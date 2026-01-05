@@ -83,7 +83,70 @@ That's it! **No legacy server keys needed!** 🎉
 
 ## API Endpoints
 
-### 1. Register FCM Token
+### 1. User Registration (Recommended)
+```http
+POST /api/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "phone_number": "1234567890",
+  "password": "password123",
+  "type_id": 1,
+  "device_id": "unique_device_id",
+  "fcm_token": "device_fcm_token_here",  // Optional but recommended
+  "referral_code": "ABC123",             // Optional
+  "institution_type": "university",      // Optional
+  "institution_name": "ABC University"   // Optional
+}
+```
+
+**Response:**
+```json
+{
+  "message": "User successfully registered",
+  "user": {...},
+  "token": "auth_token_here",
+  "referral_code": "XYZ789",
+  "fcm_topic": "1",
+  "fcm_type_id": 1
+}
+```
+
+**Important**: Registration automatically returns the FCM topic. Just subscribe to it!
+
+---
+
+### 2. User Login (Recommended)
+```http
+POST /api/login
+Content-Type: application/json
+
+{
+  "login": "john@example.com",  // Email or phone number
+  "password": "password123",
+  "device_id": "unique_device_id",
+  "fcm_token": "device_fcm_token_here"  // Optional but recommended
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "user": {...},
+  "token": "auth_token_here",
+  "fcm_topic": "1",
+  "fcm_type_id": 1
+}
+```
+
+**Important**: Login automatically returns and updates the FCM topic. Just subscribe to it!
+
+---
+
+### 3. Register/Update FCM Token (Alternative)
 ```http
 POST /api/fcm/register-token
 Content-Type: application/json
@@ -104,11 +167,11 @@ Content-Type: application/json
 }
 ```
 
-**Important**: The response contains the single topic the client should subscribe to based on the user's active paid subscription. Each user has only ONE exam type.
+**Use Case**: Update FCM token without logging in again (e.g., token refresh).
 
 ---
 
-### 2. Get User Topic
+### 4. Get User Topic (Alternative)
 ```http
 POST /api/fcm/user-topic
 Content-Type: application/json
@@ -127,11 +190,11 @@ Content-Type: application/json
 }
 ```
 
-**Use Case**: Fetch current topic when user's subscription changes.
+**Use Case**: Fetch current topic when needed.
 
 ---
 
-### 3. Send Notification (Admin)
+### 5. Send Notification (Admin)
 ```http
 POST /api/notifications
 Content-Type: multipart/form-data
@@ -181,29 +244,81 @@ dependencies {
 
 Add `google-services.json` to `app/` directory.
 
-#### 2. Register Token and Subscribe to Topic
+#### 2. Handle Registration/Login with FCM
 
 ```kotlin
 import com.google.firebase.messaging.FirebaseMessaging
 
 class FCMManager {
 
-    suspend fun registerTokenAndSubscribe(userId: Int) {
+    // RECOMMENDED: Subscribe during login
+    suspend fun loginAndSubscribe(login: String, password: String, deviceId: String) {
         // Get FCM token
-        val token = FirebaseMessaging.getInstance().token.await()
+        val fcmToken = FirebaseMessaging.getInstance().token.await()
 
-        // Register with server
+        // Login with FCM token
+        val response = apiService.login(
+            login = login,
+            password = password,
+            deviceId = deviceId,
+            fcmToken = fcmToken
+        )
+
+        // Subscribe to the topic returned in login response
+        response.fcmTopic?.let { topic ->
+            FirebaseMessaging.getInstance().subscribeToTopic(topic).await()
+            Log.d("FCM", "Subscribed to topic: $topic after login")
+        }
+
+        return response
+    }
+
+    // RECOMMENDED: Subscribe during registration
+    suspend fun registerAndSubscribe(
+        name: String,
+        email: String,
+        phoneNumber: String,
+        password: String,
+        typeId: Int,
+        deviceId: String
+    ) {
+        // Get FCM token
+        val fcmToken = FirebaseMessaging.getInstance().token.await()
+
+        // Register with FCM token
+        val response = apiService.register(
+            name = name,
+            email = email,
+            phoneNumber = phoneNumber,
+            password = password,
+            typeId = typeId,
+            deviceId = deviceId,
+            fcmToken = fcmToken
+        )
+
+        // Subscribe to the topic returned in registration response
+        response.fcmTopic?.let { topic ->
+            FirebaseMessaging.getInstance().subscribeToTopic(topic).await()
+            Log.d("FCM", "Subscribed to topic: $topic after registration")
+        }
+
+        return response
+    }
+
+    // ALTERNATIVE: Update FCM token separately
+    suspend fun updateFcmToken(userId: Int) {
+        val token = FirebaseMessaging.getInstance().token.await()
         val response = apiService.registerFcmToken(userId, token)
 
-        // Subscribe to the topic returned by server (only one topic per user)
         response.topic?.let { topic ->
             FirebaseMessaging.getInstance().subscribeToTopic(topic).await()
             Log.d("FCM", "Subscribed to topic: $topic")
         }
     }
 
+    // When user changes exam type (if ever)
     suspend fun syncTopic(userId: Int, oldTopic: String? = null) {
-        // Unsubscribe from old topic if subscription changed
+        // Unsubscribe from old topic
         oldTopic?.let {
             FirebaseMessaging.getInstance().unsubscribeFromTopic(it).await()
             Log.d("FCM", "Unsubscribed from old topic: $it")
@@ -277,31 +392,88 @@ pod 'Firebase/Messaging'
 
 Add `GoogleService-Info.plist` to your Xcode project.
 
-#### 2. Register Token and Subscribe to Topic
+#### 2. Handle Registration/Login with FCM
 
 ```swift
 import FirebaseMessaging
 
 class FCMManager {
 
-    func registerTokenAndSubscribe(userId: Int) async throws {
+    // RECOMMENDED: Subscribe during login
+    func loginAndSubscribe(login: String, password: String, deviceId: String) async throws -> LoginResponse {
         // Get FCM token
+        guard let fcmToken = try await Messaging.messaging().token() else {
+            throw FCMError.noToken
+        }
+
+        // Login with FCM token
+        let response = try await apiService.login(
+            login: login,
+            password: password,
+            deviceId: deviceId,
+            fcmToken: fcmToken
+        )
+
+        // Subscribe to the topic returned in login response
+        if let topic = response.fcmTopic {
+            try await Messaging.messaging().subscribe(toTopic: topic)
+            print("Subscribed to topic: \(topic) after login")
+        }
+
+        return response
+    }
+
+    // RECOMMENDED: Subscribe during registration
+    func registerAndSubscribe(
+        name: String,
+        email: String,
+        phoneNumber: String,
+        password: String,
+        typeId: Int,
+        deviceId: String
+    ) async throws -> RegisterResponse {
+        // Get FCM token
+        guard let fcmToken = try await Messaging.messaging().token() else {
+            throw FCMError.noToken
+        }
+
+        // Register with FCM token
+        let response = try await apiService.register(
+            name: name,
+            email: email,
+            phoneNumber: phoneNumber,
+            password: password,
+            typeId: typeId,
+            deviceId: deviceId,
+            fcmToken: fcmToken
+        )
+
+        // Subscribe to the topic returned in registration response
+        if let topic = response.fcmTopic {
+            try await Messaging.messaging().subscribe(toTopic: topic)
+            print("Subscribed to topic: \(topic) after registration")
+        }
+
+        return response
+    }
+
+    // ALTERNATIVE: Update FCM token separately
+    func updateFcmToken(userId: Int) async throws {
         guard let token = try await Messaging.messaging().token() else {
             throw FCMError.noToken
         }
 
-        // Register with server
         let response = try await apiService.registerFcmToken(userId: userId, token: token)
 
-        // Subscribe to the topic returned by server (only one topic per user)
         if let topic = response.topic {
             try await Messaging.messaging().subscribe(toTopic: topic)
             print("Subscribed to topic: \(topic)")
         }
     }
 
+    // When user changes exam type (if ever)
     func syncTopic(userId: Int, oldTopic: String? = nil) async throws {
-        // Unsubscribe from old topic if subscription changed
+        // Unsubscribe from old topic
         if let oldTopic = oldTopic {
             try await Messaging.messaging().unsubscribe(fromTopic: oldTopic)
             print("Unsubscribed from old topic: \(oldTopic)")
@@ -361,21 +533,33 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 ### Flow Diagram
 
 ```
-1. User Login/Subscription
+RECOMMENDED FLOW (Login/Registration):
+1. App gets FCM token from Firebase SDK
+   ↓
+2. App calls POST /api/login with FCM token
+   ↓
+3. Server returns topic: "1" in login response
+   ↓
+4. App subscribes to topic "1" using Firebase SDK
+   ↓
+5. Admin creates notification with type_id=1
+   ↓
+6. Server sends to topic "1" using HTTP v1 API
+   ↓
+7. All devices subscribed to topic "1" receive notification
+
+ALTERNATIVE FLOW (Separate Token Registration):
+1. User logs in (without FCM token)
    ↓
 2. App gets FCM token from Firebase SDK
    ↓
 3. App calls POST /api/fcm/register-token
    ↓
-4. Server returns topic: "1" (for exam type 1)
+4. Server returns topic: "1"
    ↓
 5. App subscribes to topic "1" using Firebase SDK
    ↓
-6. Admin creates notification with type_id=1
-   ↓
-7. Server sends to topic "1" using HTTP v1 API
-   ↓
-8. All devices subscribed to topic "1" receive notification
+6. (Notifications flow same as above)
 ```
 
 ### Topic Naming Convention
@@ -384,13 +568,16 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 - Generated by: `FcmService::getTopicName($typeId)` which returns `(string)$typeId`
 - Each user subscribes to only ONE topic based on their active **paid** subscription
 
-### When to Sync Topic
+### When to Subscribe/Sync Topic
 
-Call `syncTopic()` when:
-- ✅ User purchases a new subscription (different exam type)
-- ✅ User's subscription changes from one exam type to another
-- ✅ User logs in (to ensure topic is up to date)
-- ✅ App launches
+**Recommended Approach (Automatic):**
+- ✅ During registration - Topic is returned, subscribe immediately
+- ✅ During login - Topic is returned, subscribe immediately
+- ✅ On app launch - Login again or check if already subscribed
+
+**Alternative Approach:**
+- ✅ Call `updateFcmToken()` when FCM token refreshes
+- ✅ Call `syncTopic()` when user changes exam type (if this ever happens)
 
 ---
 
@@ -440,7 +627,38 @@ All FCM operations are logged to `storage/logs/laravel.log`:
 
 ## Testing
 
-### 1. Test Token Registration
+### 1. Test Registration with FCM
+```bash
+curl -X POST http://yourapp.com/api/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test User",
+    "email": "test@example.com",
+    "phone_number": "1234567890",
+    "password": "password123",
+    "type_id": 1,
+    "device_id": "test_device",
+    "fcm_token": "test_token_123"
+  }'
+```
+
+Expected response includes `fcm_topic` and `fcm_type_id`.
+
+### 2. Test Login with FCM
+```bash
+curl -X POST http://yourapp.com/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "login": "test@example.com",
+    "password": "password123",
+    "device_id": "test_device",
+    "fcm_token": "test_token_123"
+  }'
+```
+
+Expected response includes `fcm_topic` and `fcm_type_id`.
+
+### 3. Test Token Registration (Alternative)
 ```bash
 curl -X POST http://yourapp.com/api/fcm/register-token \
   -H "Content-Type: application/json" \
@@ -450,9 +668,7 @@ curl -X POST http://yourapp.com/api/fcm/register-token \
   }'
 ```
 
-Expected response with topics list.
-
-### 2. Test Get Topic
+### 4. Test Get Topic
 ```bash
 curl -X POST http://yourapp.com/api/fcm/user-topic \
   -H "Content-Type: application/json" \
@@ -461,7 +677,7 @@ curl -X POST http://yourapp.com/api/fcm/user-topic \
   }'
 ```
 
-### 3. Test Notification Send
+### 5. Test Notification Send
 ```bash
 curl -X POST http://yourapp.com/api/notifications \
   -H "Content-Type: application/json" \
@@ -472,7 +688,7 @@ curl -X POST http://yourapp.com/api/notifications \
   }'
 ```
 
-### 4. Check Logs
+### 6. Check Logs
 ```bash
 tail -f storage/logs/laravel.log
 ```
