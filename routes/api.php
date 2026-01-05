@@ -52,7 +52,11 @@ Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubj
 Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQuestionsGroupedByType']);
 Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
+// FCM routes
 Route::post('fcm/register-token', [NotificationController::class, 'registerToken']);
+Route::post('fcm/user-topics', [NotificationController::class, 'getUserTopics']);
+
+// Notification routes
 Route::get('notifications', [NotificationController::class, 'index']);
 Route::post('notifications', [NotificationController::class, 'store']);
 Route::post('notifications/{notification}/like', [NotificationController::class, 'like']);

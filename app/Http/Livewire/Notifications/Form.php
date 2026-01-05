@@ -5,11 +5,13 @@ namespace App\Http\Livewire\Notifications;
 use App\Models\AppNotification;
 use App\Models\Type;
 use App\Models\User;
+use App\Services\FcmService;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class Form extends Component
@@ -124,33 +126,20 @@ class Form extends Component
 
     private function dispatchFcm(AppNotification $notification): void
     {
-        $serverKey = Config::get('services.fcm.server_key');
-        if (!$serverKey) {
-            return;
-        }
-
         // If notification doesn't have a type_id, don't send (type_id is required)
         if (!$notification->type_id) {
+            Log::warning('Notification missing type_id, skipping FCM dispatch', [
+                'notification_id' => $notification->id,
+            ]);
             return;
         }
 
-        // Get FCM tokens only for users who have an active subscription to the notification's exam type
-        $tokens = User::whereNotNull('fcm_token')
-            ->where('fcm_token', '!=', '')
-            ->whereHas('subscriptions', function($query) use ($notification) {
-                $query->where('type_id', $notification->type_id)
-                      ->where('payment_status', 'paid');
-            })
-            ->pluck('fcm_token')
-            ->all();
+        try {
+            $fcmService = new FcmService();
+            $topic = FcmService::getTopicName($notification->type_id);
 
-        if (empty($tokens)) {
-            return;
-        }
-
-        $payload = [
-            'registration_ids' => $tokens,
-            'data' => [
+            // Prepare data payload
+            $data = [
                 'id' => (string) $notification->id,
                 'title' => $notification->title,
                 'body' => $notification->body,
@@ -160,13 +149,39 @@ class Form extends Component
                 'dislike_count' => (string) $notification->dislike_count,
                 'comment_count' => (string) $notification->comment_count,
                 'created_at' => $notification->created_at->toIso8601String(),
-            ],
-        ];
+            ];
 
-        Http::withHeaders([
-            'Authorization' => 'key=' . $serverKey,
-            'Content-Type' => 'application/json',
-        ])->post('https://fcm.googleapis.com/fcm/send', $payload);
+            // Prepare notification payload (shows as system notification)
+            $notificationPayload = [
+                'title' => $notification->title,
+                'body' => $notification->body,
+            ];
+
+            if ($notification->image_url) {
+                $notificationPayload['image'] = $notification->image_url;
+            }
+
+            // Send to topic
+            $success = $fcmService->sendToTopic($topic, $data, $notificationPayload);
+
+            if ($success) {
+                Log::info('FCM notification dispatched successfully from Livewire', [
+                    'notification_id' => $notification->id,
+                    'topic' => $topic,
+                ]);
+            } else {
+                Log::error('FCM notification dispatch failed from Livewire', [
+                    'notification_id' => $notification->id,
+                    'topic' => $topic,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('FCM dispatch exception from Livewire', [
+                'notification_id' => $notification->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
     public function render()
