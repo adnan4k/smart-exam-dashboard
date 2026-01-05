@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Referral;
 use App\Models\ReferralSetting;
 use App\Models\User; // Make sure this path matches your User model location
+use App\Services\FcmService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -70,14 +71,19 @@ class UserController extends Controller
              }
      
              DB::commit();
-     
+
              $token = $user->createToken('authToken')->plainTextToken;
-     
+
+             // Get FCM topic for the user
+             $fcmTopic = $this->getFcmTopicForUser($user);
+
              return response()->json([
                  'message'       => 'User successfully registered',
                  'user'          => $user,
                  'token'         => $token,
                  'referral_code' => $user->referral_code,
+                 'fcm_topic'     => $fcmTopic['topic'],
+                 'fcm_type_id'   => $fcmTopic['type_id'],
              ], 201);
          } catch (\Exception $e) {
              DB::rollBack();
@@ -170,21 +176,49 @@ class UserController extends Controller
     
         // Revoke old tokens
         $user->tokens()->delete();
-    
+
         $token = $user->createToken('authToken')->plainTextToken;
-    
+
+        // Get FCM topic for the user
+        $fcmTopic = $this->getFcmTopicForUser($user);
+
         return response()->json([
-            'message' => 'Login successful',
-            'user'    => $user,
-            'token'   => $token,
+            'message'     => 'Login successful',
+            'user'        => $user,
+            'token'       => $token,
+            'fcm_topic'   => $fcmTopic['topic'],
+            'fcm_type_id' => $fcmTopic['type_id'],
         ], 200);
     }
     
+    /**
+     * Get FCM topic for a user based on their subscription
+     *
+     * @param User $user
+     * @return array
+     */
+    private function getFcmTopicForUser(User $user): array
+    {
+        // Users have a type_id directly, no need to check subscriptions
+        if ($user->type_id) {
+            return [
+                'topic' => FcmService::getTopicName($user->type_id),
+                'type_id' => $user->type_id,
+            ];
+        }
+
+        // If no type_id, return null
+        return [
+            'topic' => null,
+            'type_id' => null,
+        ];
+    }
+
     public function logout(Request $request)
     {
         // Get the authenticated user
         $user = $request->user();
-        
+
         // Clear the device_id
         $user->update([
             'device_id' => null,
