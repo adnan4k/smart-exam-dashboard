@@ -15,15 +15,51 @@ use Livewire\Attributes\Validate;
 class QuestionController extends Controller
 {
     /**
-     * Helper method to add Content-Length header to JSON response
+     * Helper method to add Content-Length header to JSON response with gzip compression
      */
     private function jsonResponse($data, $status = 200)
     {
-        $json = json_encode($data);
-        $contentLength = strlen($json);
-        
-        return response()->json($data, $status)
-            ->header('Content-Length', $contentLength);
+        // Disable any output buffering
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Encode to JSON with consistent options
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        // Calculate uncompressed size
+        $uncompressedLength = strlen($json);
+
+        // Check if client accepts gzip (most modern clients do)
+        $acceptEncoding = request()->header('Accept-Encoding', '');
+        $useGzip = stripos($acceptEncoding, 'gzip') !== false;
+
+        if ($useGzip) {
+            // Compress the JSON using gzip
+            $compressed = gzencode($json, 6); // Level 6 is good balance between speed and compression
+
+            // Calculate compressed size
+            $contentLength = strlen($compressed);
+
+            // Create response with compressed JSON
+            $response = response($compressed, $status)
+                ->header('Content-Type', 'application/json; charset=UTF-8')
+                ->header('Content-Encoding', 'gzip')
+                ->header('Content-Length', (string)$contentLength)
+                ->header('X-Uncompressed-Size', (string)$uncompressedLength); // Debug header
+        } else {
+            // No compression - send as-is
+            $contentLength = $uncompressedLength;
+
+            $response = response($json, $status)
+                ->header('Content-Type', 'application/json; charset=UTF-8')
+                ->header('Content-Length', (string)$contentLength);
+        }
+
+        // Force the response to not use chunked encoding
+        $response->headers->remove('Transfer-Encoding');
+
+        return $response;
     }
 
     public function examType()
