@@ -154,13 +154,13 @@ class NotificationController extends Controller
         if ($existingReaction) {
             if ($existingReaction->reaction_type === 'like') {
                 // User already liked, return without doing anything
-            //     DB::table('notification_reactions')->insert([
-            //     'app_notification_id' => $notification->id,
-            //     'user_id' => $userId,
-            //     'reaction_type' => 'like',
-            //     'created_at' => now(),
-            //     'updated_at' => now(),
-            // ]);
+                DB::table('notification_reactions')->insert([
+                'app_notification_id' => $notification->id,
+                'user_id' => $userId,
+                'reaction_type' => 'like',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
             $notification->increment('like_count');
 
                 return response()->json([
