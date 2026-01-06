@@ -62,6 +62,8 @@ Route::post('notifications', [NotificationController::class, 'store']);
 Route::post('notifications/{notification}/like', [NotificationController::class, 'like']);
 Route::post('notifications/{notification}/dislike', [NotificationController::class, 'dislike']);
 Route::post('notifications/{notification}/comment', [NotificationController::class, 'comment']);
+Route::post('notifications/{notification}/mark-as-read', [NotificationController::class, 'markAsRead']);
+Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
 
 // Notes routes - specific routes first to avoid conflicts
 Route::get('notes/for-user', [NoteController::class, 'forUser']);

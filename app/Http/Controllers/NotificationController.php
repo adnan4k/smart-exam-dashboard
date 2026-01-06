@@ -83,9 +83,26 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $notifications = AppNotification::orderBy('created_at', 'desc')->get();
+
+        // If user_id is provided, include read status for each notification
+        if ($request->has('user_id')) {
+            $userId = $request->input('user_id');
+            
+            // Get all read notification IDs for this user
+            $readNotificationIds = DB::table('notification_reads')
+                ->where('user_id', $userId)
+                ->pluck('app_notification_id')
+                ->toArray();
+            
+            // Add is_read property to each notification
+            $notifications = $notifications->map(function ($notification) use ($readNotificationIds) {
+                $notification->is_read = in_array($notification->id, $readNotificationIds);
+                return $notification;
+            });
+        }
 
         return response()->json([
             'status' => 'success',
@@ -242,6 +259,96 @@ class NotificationController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => $notification->fresh()->load('comments.user'),
+        ]);
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'type_id' => 'sometimes|nullable|exists:types,id',
+        ]);
+
+        $userId = $data['user_id'];
+        $typeId = $data['type_id'] ?? null;
+
+        $inserted = 0;
+        $now = now();
+
+        $query = AppNotification::query();
+
+        if ($typeId) {
+            $query->where('type_id', $typeId);
+        }
+
+        // Chunk to avoid loading all notifications into memory for large datasets
+        $query->orderBy('id')->chunkById(500, function ($chunk) use ($userId, $now, &$inserted) {
+            $ids = $chunk->pluck('id');
+
+            // Skip notifications already marked as read by this user
+            $alreadyRead = DB::table('notification_reads')
+                ->where('user_id', $userId)
+                ->whereIn('app_notification_id', $ids)
+                ->pluck('app_notification_id')
+                ->all();
+
+            $toInsert = $ids->diff($alreadyRead);
+
+            if ($toInsert->isEmpty()) {
+                return;
+            }
+
+            $rows = [];
+
+            foreach ($toInsert as $id) {
+                $rows[] = [
+                    'app_notification_id' => $id,
+                    'user_id' => $userId,
+                    'read_at' => $now,
+                ];
+            }
+
+            DB::table('notification_reads')->insertOrIgnore($rows);
+
+            $inserted += count($toInsert);
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Notifications marked as read.',
+            'data' => [
+                'marked_count' => $inserted,
+                'type_id' => $typeId,
+            ],
+        ]);
+    }
+
+    public function markAsRead(Request $request, AppNotification $notification)
+    {
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $userId = $data['user_id'];
+
+        // Use insert ignore pattern to avoid duplicates (unique constraint on table)
+        DB::table('notification_reads')->updateOrInsert(
+            [
+                'app_notification_id' => $notification->id,
+                'user_id' => $userId,
+            ],
+            [
+                'read_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Notification marked as read.',
+            'data' => [
+                'notification_id' => $notification->id,
+                'is_read' => true,
+            ],
         ]);
     }
 
