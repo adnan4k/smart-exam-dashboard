@@ -59,9 +59,9 @@ class Form extends Component
         $this->reset('subjectId', 'chapterId', 'chapters');
         
         if ($this->type) {
-            $this->subjects = Subject::where('type_id', $this->type)->get();
+            $this->filteredSubjects = Subject::where('type_id', $this->type)->get();
         } else {
-            $this->subjects = Subject::all();
+            $this->filteredSubjects = collect(); // Empty collection - render will use Subject::all()
         }
     }
     public function loadChapters()
@@ -240,6 +240,14 @@ class Form extends Component
         $this->duration = $question->duration;
         $this->scienceType = $question->science_type;
         $this->region = $question->region;
+
+        // Load subjects filtered by type
+        if ($this->type) {
+            $this->filteredSubjects = Subject::where('type_id', $this->type)->get();
+        }
+
+        // Load chapters (always load all chapters)
+        $this->chapters = Chapter::all();
 
         // Load choices
         $this->choices = $question->choices->map(function ($choice) use ($question) {
