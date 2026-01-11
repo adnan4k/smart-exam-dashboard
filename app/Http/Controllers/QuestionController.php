@@ -289,7 +289,9 @@ class QuestionController extends Controller
         }
     
         $questions = Question::where('type_id', $user->type_id)
-            ->where('is_sample', true)
+            ->whereHas('subject', function($q) {
+                $q->where('is_sample', true);
+            })
             ->with(['choices', 'subject', 'yearGroup', 'chapter'])
             ->orderBy('id', 'asc')
             ->limit(5)
@@ -327,7 +329,6 @@ class QuestionController extends Controller
                     'updated_at' => $question->updated_at,
                     'type_id' => $question->type_id,
                     'duration' => $question->duration,
-                    'is_sample' => $question->is_sample,
                     'choices' => $question->choices->map(function ($choice) {
                         return [
                             'id' => $choice->id,

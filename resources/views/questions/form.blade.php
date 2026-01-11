@@ -106,21 +106,6 @@
                             @enderror
                         </div>
 
-                        <!-- Sample Question -->
-                        <div class="flex items-center p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
-                            <div class="flex items-center h-5">
-                                <input type="checkbox" wire:model="isSample" id="isSample"
-                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            </div>
-                            <div class="ml-2 text-sm">
-                                <label for="isSample" class="font-medium text-gray-900 dark:text-gray-300">Mark as Sample Question</label>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">This question will be available in the sample questions section</p>
-                            </div>
-                            @error('isSample')
-                                <span class="text-red-500">{{ $message }}</span>
-                            @enderror
-                        </div>
-
                         <!-- Answer Text -->
                         <div>
                             <label class="text-gray-600 dark:text-gray-400">Answer</label>

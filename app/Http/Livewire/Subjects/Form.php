@@ -19,6 +19,7 @@ class Form extends Component
     public $year;
     public $region;
     public $isRegional = false; // Add this as a regular property
+    public $isSample = false;
 
     protected $listeners = ['subjectModal' => 'subjectModal'];
 
@@ -55,7 +56,8 @@ class Form extends Component
         'typeId' => 'required|exists:types,id',
         'defaultDuration' => 'required|integer|min:1',
         'region' => 'required_if:isRegional,true',
-         'year' => 'required'
+         'year' => 'required',
+         'isSample' => 'boolean'
     ];
 
     public function saveSubject()
@@ -67,7 +69,7 @@ class Form extends Component
             'default_duration' => $this->defaultDuration,
             'region' => $this->isRegional ? $this->region : null,
             'year' => $this->year, // Store the year directly
-
+            'is_sample' => $this->isSample,
         ];
         //   dd($subjectData);
         if ($this->is_edit) {
@@ -89,7 +91,7 @@ class Form extends Component
 
     public function resetForm()
     {
-        $this->reset(['name', 'typeId', 'year','defaultDuration', 'is_edit', 'id', 'region', 'isRegional']);
+        $this->reset(['name', 'typeId', 'year','defaultDuration', 'is_edit', 'id', 'region', 'isRegional', 'isSample']);
     }
 
     #[On('edit-subject')]
@@ -103,6 +105,7 @@ class Form extends Component
         $this->region = $subject->region;
         $this->isRegional = $this->checkIfRegional($subject->type_id);
         $this->year = $subject->year;
+        $this->isSample = $subject->is_sample;
         $this->is_edit = true;
         $this->openModal = true;
     }
