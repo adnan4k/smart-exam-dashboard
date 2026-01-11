@@ -113,7 +113,7 @@ Route::get('test/content-length/gzip', [\App\Http\Controllers\TestContentLengthC
 Route::get('/test-email', function () {
     try {
         \Mail::raw('This is a test email from Laravel', function ($message) {
-            $message->to('your-test-email@gmail.com')
+            $message->to('fayomuhe5@gmail.com')
                     ->subject('Test Email from Laravel');
         });
         return 'Email sent successfully!';
