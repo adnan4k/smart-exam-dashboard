@@ -8,6 +8,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Auth\PasswordResetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +46,12 @@ Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear
 Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
 Route::post('register',[UserController::class,'register']);
-Route::post('login', [UserController::class,'login']);  
+Route::post('login', [UserController::class,'login']);
+
+// Password reset routes
+Route::post('auth/password-reset/request', [PasswordResetController::class, 'request']);
+Route::post('auth/password-reset/verify', [PasswordResetController::class, 'verify']);
+Route::post('auth/password-reset/confirm', [PasswordResetController::class, 'confirm']);  
 Route::get('/exam-type',[QuestionController::class,'examType']);
 Route::get('/questions/year', [QuestionController::class, 'getQuestionsByYear']);
 Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubject']);
