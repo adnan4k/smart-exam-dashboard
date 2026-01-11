@@ -58,12 +58,18 @@ Route::get('/questions/subject', [QuestionController::class, 'getQuestionsBySubj
 Route::get('/questions/grouped-by-type', [QuestionController::class, 'getAllQuestionsGroupedByType']);
 Route::get('/questions/grouped-by-subject', [QuestionController::class, 'getAllQuestionsGroupedBySubject']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
+// FCM routes
 Route::post('fcm/register-token', [NotificationController::class, 'registerToken']);
+Route::post('fcm/user-topic', [NotificationController::class, 'getUserTopic']);
+
+// Notification routes
 Route::get('notifications', [NotificationController::class, 'index']);
 Route::post('notifications', [NotificationController::class, 'store']);
 Route::post('notifications/{notification}/like', [NotificationController::class, 'like']);
 Route::post('notifications/{notification}/dislike', [NotificationController::class, 'dislike']);
 Route::post('notifications/{notification}/comment', [NotificationController::class, 'comment']);
+Route::post('notifications/{notification}/mark-as-read', [NotificationController::class, 'markAsRead']);
+Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
 
 // Notes routes - specific routes first to avoid conflicts
 Route::get('notes/for-user', [NoteController::class, 'forUser']);
@@ -98,3 +104,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // Public question routes (no authentication)
 Route::get('/questions/type', [QuestionController::class, 'getQuestionsByType']);
 Route::post('get-questions', [QuestionController::class, 'getQuestionsByType']);
+
+// Test routes for debugging Content-Length
+Route::get('test/content-length/small', [\App\Http\Controllers\TestContentLengthController::class, 'testSmall']);
+Route::get('test/content-length/large', [\App\Http\Controllers\TestContentLengthController::class, 'testLarge']);
+Route::get('test/content-length/buffering', [\App\Http\Controllers\TestContentLengthController::class, 'testWithBuffering']);
+Route::get('test/content-length/gzip', [\App\Http\Controllers\TestContentLengthController::class, 'testWithGzip']);
