@@ -110,3 +110,14 @@ Route::get('test/content-length/small', [\App\Http\Controllers\TestContentLength
 Route::get('test/content-length/large', [\App\Http\Controllers\TestContentLengthController::class, 'testLarge']);
 Route::get('test/content-length/buffering', [\App\Http\Controllers\TestContentLengthController::class, 'testWithBuffering']);
 Route::get('test/content-length/gzip', [\App\Http\Controllers\TestContentLengthController::class, 'testWithGzip']);
+Route::get('/test-email', function () {
+    try {
+        \Mail::raw('This is a test email from Laravel', function ($message) {
+            $message->to('your-test-email@gmail.com')
+                    ->subject('Test Email from Laravel');
+        });
+        return 'Email sent successfully!';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
