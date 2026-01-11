@@ -33,7 +33,7 @@ class NoteController extends Controller
 
         if ($useGzip) {
             // Compress the JSON using gzip
-            $compressed = gzencode($json, 9); // Level 9 is maximum compression
+            $compressed = gzencode($json, 6); // Level 6 is good balance between speed and compression
 
             // Calculate compressed size
             $contentLength = strlen($compressed);
