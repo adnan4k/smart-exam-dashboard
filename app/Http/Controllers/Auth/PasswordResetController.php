@@ -93,11 +93,12 @@ class PasswordResetController extends Controller
         // Generate single-use reset token
         $resetToken = Str::random(64);
 
-        // Update OTP record with reset token
+        // Update OTP record with reset token and extend expiration
         DB::table('password_reset_otps')
             ->where('id', $otpRecord->id)
             ->update([
                 'reset_token' => $resetToken,
+                'expires_at' => Carbon::now()->addMinutes(30), // Reset token expires in 30 minutes
                 'updated_at' => Carbon::now(),
             ]);
 
