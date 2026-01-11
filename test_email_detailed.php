@@ -71,43 +71,31 @@ if (strpos($fromAddress, $expectedDomain) === false && $fromAddress !== 'noreply
 }
 
 try {
-    echo "Step 1: Testing SMTP connection...\n";
+    echo "Step 1: Preparing to send email...\n";
     
-    // Get the mailer instance and test connection
-    $mailer = app('mailer');
-    $transport = $mailer->getSwiftMailer()->getTransport();
-    
-    // Test connection
-    try {
-        $transport->start();
-        echo "✓ SMTP connection successful!\n\n";
-        $transport->stop();
-    } catch (\Exception $e) {
-        echo "✗ SMTP connection failed: " . $e->getMessage() . "\n";
-        throw $e;
-    }
-    
-    echo "Step 2: Sending email...\n";
-    
-    // Use the SMTP username as From address if they match domain
+    // Use the SMTP username as From address if From address is placeholder
     $useFrom = strpos($fromAddress, 'yourdomain.com') !== false || strpos($fromAddress, 'example.com') !== false 
         ? $username 
         : $fromAddress;
     
     if ($useFrom !== $fromAddress) {
-        echo "  Using SMTP username as From address: $useFrom\n";
+        echo "  ⚠ Auto-correcting From address: $fromAddress → $useFrom\n";
+        echo "  (Using SMTP username because From address contains placeholder)\n";
     }
+    
+    echo "\nStep 2: Sending email...\n";
     
     // Enable verbose logging
     Log::info('Email test started', [
         'recipient' => $recipient,
         'host' => config('mail.mailers.smtp.host'),
         'port' => config('mail.mailers.smtp.port'),
-        'from' => $useFrom
+        'from' => $useFrom,
+        'original_from' => $fromAddress
     ]);
     
     // Send email with corrected from address
-    Mail::raw('This is a test email sent at ' . date('Y-m-d H:i:s') . "\n\nIf you receive this, email is working correctly!", function ($message) use ($recipient, $useFrom) {
+    Mail::raw('This is a test email sent at ' . date('Y-m-d H:i:s') . "\n\nIf you receive this, email is working correctly!\n\nThis email was sent using From address: $useFrom", function ($message) use ($recipient, $useFrom) {
         $message->from($useFrom, config('mail.from.name'))
                 ->to($recipient)
                 ->subject('Test Email - ' . date('Y-m-d H:i:s'));
@@ -115,20 +103,26 @@ try {
     
     echo "✓ Laravel reported: Email sent successfully!\n";
     echo "\n";
-    echo "IMMEDIATE ACTION REQUIRED:\n";
-    echo "  1. Fix your .env file - Update MAIL_FROM_ADDRESS:\n";
+    echo "═══════════════════════════════════════════════════\n";
+    echo "⚠ CRITICAL: You MUST fix your .env file!\n";
+    echo "═══════════════════════════════════════════════════\n";
+    echo "  1. Edit your .env file\n";
+    echo "  2. Change this line:\n";
     echo "     MAIL_FROM_ADDRESS=noreply@ethioexamhub.com\n";
-    echo "     Then run: php artisan config:clear\n\n";
-    echo "  2. Check Spam/Junk folder (emails often go there)\n";
-    echo "  3. Wait 2-3 minutes and check again\n";
-    echo "  4. Check cPanel email logs for delivery status\n";
-    echo "\n";
-    echo "If still not received after fixing .env, check:\n";
-    echo "  - cPanel email account quota/limits\n";
-    echo "  - cPanel email logs (Track Delivery in cPanel)\n";
-    echo "  - Verify noreply@ethioexamhub.com email account exists\n";
+    echo "  3. Run: php artisan config:clear\n";
+    echo "  4. Run: php artisan cache:clear\n\n";
+    echo "  The From address MUST match your domain for emails to work!\n";
+    echo "═══════════════════════════════════════════════════\n\n";
+    echo "NOW CHECK:\n";
+    echo "  1. ✓ Check Spam/Junk folder (check it NOW!)\n";
+    echo "  2. Wait 2-3 minutes and check inbox again\n";
+    echo "  3. Check cPanel email logs (Track Delivery)\n";
+    echo "  4. Verify noreply@ethioexamhub.com email account exists\n\n";
+    echo "If email is in spam folder:\n";
+    echo "  - This confirms email is working but needs proper From address\n";
+    echo "  - Fix .env file and test again\n";
     
-} catch (\Swift_TransportException $e) {
+} catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
     echo "✗ SMTP TRANSPORT ERROR:\n";
     echo "  Message: " . $e->getMessage() . "\n";
     echo "\nCommon issues:\n";
