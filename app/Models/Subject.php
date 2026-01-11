@@ -11,6 +11,10 @@ class Subject extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'is_sample' => 'boolean',
+    ];
+
     /**
      * A subject can have many questions.
      */

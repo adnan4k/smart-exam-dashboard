@@ -105,7 +105,7 @@ class Form extends Component
         $this->region = $subject->region;
         $this->isRegional = $this->checkIfRegional($subject->type_id);
         $this->year = $subject->year;
-        $this->isSample = $subject->is_sample;
+        $this->isSample = (bool) $subject->is_sample; // Ensure it's a boolean
         $this->is_edit = true;
         $this->openModal = true;
     }
