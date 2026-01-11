@@ -85,11 +85,17 @@ class NotificationController extends Controller
 
     public function index(Request $request)
     {
-        $notifications = AppNotification::orderBy('created_at', 'desc')->get();
+        $query = AppNotification::query()->orderBy('created_at', 'desc');
 
         // If user_id is provided, include read status for each notification
         if ($request->has('user_id')) {
             $userId = $request->input('user_id');
+            $user = User::find($userId);
+            
+            // If the user has a type_id, filter notifications by it
+            if ($user && $user->type_id) {
+                $query->where('type_id', $user->type_id);
+            }
             
             // Get all read notification IDs for this user
             $readNotificationIds = DB::table('notification_reads')
@@ -98,10 +104,13 @@ class NotificationController extends Controller
                 ->toArray();
             
             // Add is_read property to each notification
-            $notifications = $notifications->map(function ($notification) use ($readNotificationIds) {
+            $notifications = $query->get()->map(function ($notification) use ($readNotificationIds) {
                 $notification->is_read = in_array($notification->id, $readNotificationIds);
                 return $notification;
             });
+        } else {
+            // No user_id provided: return all notifications without read status
+            $notifications = $query->get();
         }
 
         return response()->json([
