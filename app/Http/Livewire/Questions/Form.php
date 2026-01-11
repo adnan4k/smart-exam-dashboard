@@ -246,9 +246,6 @@ class Form extends Component
             $this->filteredSubjects = Subject::where('type_id', $this->type)->get();
         }
 
-        // Load chapters (always load all chapters)
-        $this->chapters = Chapter::all();
-
         // Load choices
         $this->choices = $question->choices->map(function ($choice) use ($question) {
             return [
