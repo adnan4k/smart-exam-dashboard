@@ -47,7 +47,7 @@ class Form extends Component
     public $correctChoiceId;
 
     public $filteredSubjects = [];
-    public $subjects = [];
+    
     public function questionModal()
     {
         // Reset form for new question
@@ -56,13 +56,9 @@ class Form extends Component
     }
     public function loadSubjects()
     {
-        $this->reset('subjectId', 'chapterId', 'chapters');
-        
-        if ($this->type) {
-            $this->filteredSubjects = Subject::where('type_id', $this->type)->get();
-        } else {
-            $this->filteredSubjects = collect(); // Empty collection - render will use Subject::all()
-        }
+        // When exam type changes, clear current subject and chapter selection.
+        // Subjects list is always loaded fresh in render() from Subject::all().
+        $this->reset('subjectId', 'chapterId');
     }
     public function loadChapters()
     {
@@ -213,8 +209,12 @@ class Form extends Component
             'duration',
             'chapterId',
             'scienceType',
-            'region'
+            'region',
+            'filteredSubjects'
         ]);
+
+        $this->filteredSubjects = collect();
+        $this->chapters = Chapter::all();
         
         // Reset choices to default structure
         $this->choices = [
@@ -304,7 +304,9 @@ class Form extends Component
     {
         return view('livewire.questions.form', [
             'types' => Type::all(),
-            'subjects' => $this->filteredSubjects ?: Subject::all(),
+            // Always show all subjects for now so the dropdown is never empty.
+            // If type-based filtering is needed later, we can add it back with a clear UX.
+            'subjects' => Subject::all(),
             'yearGroups' => YearGroup::all(),
             'chapters' =>   Chapter::all(),
         ]);
