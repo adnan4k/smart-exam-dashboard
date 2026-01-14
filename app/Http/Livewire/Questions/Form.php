@@ -302,13 +302,14 @@ class Form extends Component
     }
     public function render()
     {
+        // Always load all subjects - ensure they're available
+        $subjects = Subject::all();
+        
         return view('livewire.questions.form', [
             'types' => Type::all(),
-            // Always show all subjects for now so the dropdown is never empty.
-            // If type-based filtering is needed later, we can add it back with a clear UX.
-            'subjects' => Subject::all(),
+            'subjects' => $subjects,
             'yearGroups' => YearGroup::all(),
-            'chapters' =>   Chapter::all(),
+            'chapters' => Chapter::all(),
         ]);
     }
 }
