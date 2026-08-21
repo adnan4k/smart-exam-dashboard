@@ -3,6 +3,7 @@
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
@@ -38,7 +39,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     ]);
 });
 
+// Per-subject download (offline-first mobile app).
+// `catalogue` is small and polled on launch; `content` is the one-subject payload.
+Route::get('subjects/catalogue', [SubjectController::class, 'catalogue']);
+Route::get('subjects/content', [SubjectController::class, 'content']);
+
 // Public routes
+// Deprecated: superseded by subjects/catalogue above.
 Route::post('subjects',[QuestionController::class,'availableSubjects']);
 Route::post('/available-chapters', [QuestionController::class, 'availableChapters']);
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
