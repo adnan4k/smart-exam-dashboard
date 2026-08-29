@@ -7,6 +7,7 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\VideoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
 
@@ -83,6 +84,20 @@ Route::get('notes/{note}', [NoteController::class, 'show']);
 Route::put('notes/{note}', [NoteController::class, 'update']);
 Route::patch('notes/{note}', [NoteController::class, 'update']);
 Route::delete('notes/{note}', [NoteController::class, 'destroy']);
+
+// Videos routes - specific routes first to avoid conflicts
+Route::get('videos/by-subject', [VideoController::class, 'bySubject']);
+Route::get('videos/by-chapter', [VideoController::class, 'byChapter']);
+Route::get('videos/for-user-grouped', [VideoController::class, 'forUserGrouped']);
+
+// General video routes
+Route::get('videos', [VideoController::class, 'index']);
+Route::post('videos', [VideoController::class, 'store']);
+Route::get('videos/{video}', [VideoController::class, 'show']);
+Route::post('videos/{video}', [VideoController::class, 'update']); // multipart updates (use _method=PUT or this)
+Route::put('videos/{video}', [VideoController::class, 'update']);
+Route::patch('videos/{video}', [VideoController::class, 'update']);
+Route::delete('videos/{video}', [VideoController::class, 'destroy']);
 
 // Referral endpoints (using query parameters)
 Route::get('my-referrals', [UserController::class, 'getMyReferrals']);
