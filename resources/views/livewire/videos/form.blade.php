@@ -73,23 +73,33 @@
                             <label class="text-gray-600 dark:text-gray-400">
                                 Video File <span class="text-xs text-gray-400">(mp4, mov, avi, mkv, webm — max 500MB)</span>
                             </label>
-                            <input type="file" accept="video/*" wire:model="videoFile"
-                                   class="w-full py-2 border border-slate-200 rounded-lg px-3 dark:bg-gray-600 dark:text-gray-100">
 
-                            <div wire:loading wire:target="videoFile" class="mt-2 text-sm text-gray-500">
-                                Uploading video…
-                            </div>
-
-                            <div x-data="{ progress: 0, uploading: false }"
-                                 x-on:livewire-upload-start="uploading = true"
-                                 x-on:livewire-upload-finish="uploading = false; progress = 0"
-                                 x-on:livewire-upload-error="uploading = false"
+                            {{-- Livewire fires its upload events on the <input> itself and lets them bubble,
+                                 so these listeners have to sit on an ancestor of the input, never a sibling. --}}
+                            <div x-data="{ uploading: false, progress: 0, sizeMb: 0 }"
+                                 x-on:livewire-upload-start="uploading = true; progress = 0"
                                  x-on:livewire-upload-progress="progress = $event.detail.progress"
-                                 class="mt-2">
-                                <div x-show="uploading" class="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div class="h-2.5 rounded-full" style="background-color:#56C596" :style="`width: ${progress}%`"></div>
+                                 x-on:livewire-upload-finish="uploading = false; progress = 100"
+                                 x-on:livewire-upload-error="uploading = false; progress = 0"
+                                 x-on:livewire-upload-cancel="uploading = false; progress = 0">
+
+                                <input type="file" accept="video/*" wire:model="videoFile"
+                                       x-on:change="sizeMb = ($event.target.files[0]?.size ?? 0) / 1048576"
+                                       class="w-full py-2 border border-slate-200 rounded-lg px-3 dark:bg-gray-600 dark:text-gray-100">
+
+                                <div x-show="uploading" style="display:none" class="mt-2">
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden dark:bg-gray-500"
+                                         role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                                         :aria-valuenow="progress" aria-label="Video upload progress">
+                                        <div class="h-2.5 rounded-full transition-all duration-150 ease-out"
+                                             style="background-color:#56C596" :style="`width: ${progress}%`"></div>
+                                    </div>
+                                    <div class="flex justify-between gap-2 text-xs text-gray-500 mt-1">
+                                        <span x-text="progress < 100 ? `Uploading… ${progress}%` : 'Finishing upload…'"></span>
+                                        <span x-show="sizeMb > 0"
+                                              x-text="`${(sizeMb * progress / 100).toFixed(1)} / ${sizeMb.toFixed(1)} MB`"></span>
+                                    </div>
                                 </div>
-                                <p x-show="uploading" class="text-xs text-gray-500 mt-1" x-text="`${progress}%`"></p>
                             </div>
 
                             @if ($videoFile)
