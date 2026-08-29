@@ -5,11 +5,18 @@
     RewriteCond %{THE_REQUEST} \s/+public/(\S*) [NC]
     RewriteRule ^ /%1 [R=301,L]
 
-    # Block direct access to application internals
+    # Serve anything that really exists inside public/ (published assets such as
+    # public/vendor/livewire/*, public/resources/css/*, images, build output).
+    # This MUST run before the block rules below, which share those names.
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Block direct access to application internals in the project root
     RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$) - [F,L]
     RewriteRule ^(\.env(\..*)?|artisan|server\.php|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|webpack\.mix\.js|.*\.md)$ - [F,L]
 
-    # Route every request into public/ (public/.htaccess takes over from there)
+    # Route everything else into public/ (public/.htaccess takes over from there)
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
 
