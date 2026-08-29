@@ -58,7 +58,7 @@
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Video</th>
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Subject</th>
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Chapter</th>
-                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Source</th>
+                                    <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Size</th>
                                     <th class="text-uppercase text-center text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Status</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Actions</th>
                                 </tr>
@@ -98,16 +98,12 @@
                                             <p class="text-xs font-weight-bold mb-0">{{ $video->chapter?->name ?? '—' }}</p>
                                         </td>
                                         <td class="text-center">
-                                            @if ($video->source === 'upload')
-                                                <span class="badge badge-sm bg-gradient-info">
-                                                    Upload
-                                                    @if ($video->file_size)
-                                                        ({{ number_format($video->file_size / 1048576, 1) }} MB)
-                                                    @endif
-                                                </span>
-                                            @else
-                                                <span class="badge badge-sm bg-gradient-secondary">Link</span>
-                                            @endif
+                                            <p class="text-xs font-weight-bold mb-0">
+                                                {{ $video->file_size ? number_format($video->file_size / 1048576, 1) . ' MB' : '—' }}
+                                            </p>
+                                            @unless ($video->fileExists())
+                                                <span class="badge badge-sm bg-gradient-danger">File missing</span>
+                                            @endunless
                                         </td>
                                         <td class="text-center">
                                             <button wire:click="toggleActive({{ $video->id }})"
@@ -162,15 +158,14 @@
                         <button type="button" class="close btn btn-link" wire:click="closePlayer">&times;</button>
                     </div>
                     <div class="modal-body">
-                        @if ($videoToPlay->source === 'upload' && $videoToPlay->stream_url)
-                            <video src="{{ $videoToPlay->stream_url }}" controls class="w-100 rounded"></video>
-                        @elseif ($videoToPlay->stream_url)
-                            <p class="text-sm mb-2">External link — opens in a new tab:</p>
-                            <a href="{{ $videoToPlay->stream_url }}" target="_blank" rel="noopener noreferrer" class="text-primary">
-                                {{ $videoToPlay->stream_url }}
-                            </a>
+                        @if ($videoToPlay->fileExists())
+                            <video src="{{ route('videos.preview', $videoToPlay) }}" controls class="w-100 rounded"></video>
+                            <p class="text-xs text-secondary mt-2 mb-0">
+                                {{ number_format($videoToPlay->file_size / 1048576, 1) }} MB
+                                @if ($videoToPlay->checksum) · MD5 {{ $videoToPlay->checksum }} @endif
+                            </p>
                         @else
-                            <p class="text-muted mb-0">No playable source set for this video.</p>
+                            <p class="text-muted mb-0">The video file is missing from storage.</p>
                         @endif
 
                         @if ($videoToPlay->description)
@@ -207,7 +202,7 @@
                                     <p class="card-text text-sm mb-0">
                                         <strong>Subject:</strong> {{ $videoToDelete->subject?->name ?? 'N/A' }}<br>
                                         <strong>Chapter:</strong> {{ $videoToDelete->chapter?->name ?? 'N/A' }}<br>
-                                        <strong>Source:</strong> {{ ucfirst($videoToDelete->source) }}
+                                        <strong>Size:</strong> {{ $videoToDelete->file_size ? number_format($videoToDelete->file_size / 1048576, 1) . ' MB' : 'N/A' }}
                                     </p>
                                 </div>
                             </div>

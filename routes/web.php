@@ -68,5 +68,16 @@ Route::middleware('auth')->group(function () {
     Route::get('chapter', ChapterComponent::class)->name('chapter');
     Route::get('notes', NoteComponent::class)->name('notes');
     Route::get('videos', VideoComponent::class)->name('videos');
+
+    // Video files live on the private disk, so the dashboard streams them
+    // through an authenticated route rather than a public storage URL.
+    Route::get('videos/{video}/preview', function (\App\Models\Video $video) {
+        abort_unless($video->fileExists(), 404, 'Video file is missing on the server.');
+
+        return response()->file($video->absolutePath(), [
+            'Content-Type'  => $video->mime_type ?: 'video/mp4',
+            'Accept-Ranges' => 'bytes',
+        ]);
+    })->name('videos.preview');
     Route::get('notifications', AppNotificationComponent::class)->name('notifications');
 });

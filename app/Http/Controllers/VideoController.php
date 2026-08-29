@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class VideoController extends Controller
 {
@@ -52,23 +54,159 @@ class VideoController extends Controller
     }
 
     /* ------------------------------------------------------------------ */
+    /* Entitlement                                                         */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Mirrors NoteController::forUser — an active paid subscription for the
+     * user's own exam type. Downloads leave our control permanently, so this
+     * is checked again at the moment the file is served, never trusted from
+     * an earlier listing call.
+     */
+    private function isEntitled(?User $user): bool
+    {
+        if (!$user || !$user->type_id) {
+            return false;
+        }
+
+        return $user->subscriptions()
+            ->where('type_id', $user->type_id)
+            ->where('payment_status', 'paid')
+            ->exists();
+    }
+
+    private function resolveUser(Request $request): ?User
+    {
+        return $request->filled('user_id')
+            ? User::find($request->input('user_id'))
+            : null;
+    }
+
+    /**
+     * Shape a video for the client: metadata always, the download link only
+     * when the caller is entitled to it.
+     */
+    private function present(Video $video, bool $entitled, ?int $userId): array
+    {
+        $data = $video->toArray();
+
+        $data['locked']       = !$entitled;
+        $data['download_url'] = $entitled ? $video->downloadUrl($userId) : null;
+
+        return $data;
+    }
+
+    private function presentMany($videos, bool $entitled, ?int $userId): array
+    {
+        return collect($videos)->map(fn ($v) => $this->present($v, $entitled, $userId))->values()->all();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Download — the gate                                                 */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Serve the file itself. Supports HTTP range requests, so an interrupted
+     * download resumes instead of restarting — which matters a lot on mobile
+     * data. Symfony's BinaryFileResponse handles Range/206 for us.
+     */
+    public function download(Request $request, Video $video)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->input('user_id'));
+
+        if (!$user->type_id) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'No exam type associated with this user.',
+            ], 400);
+        }
+
+        if (!$this->isEntitled($user)) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'An active subscription is required to download this video.',
+            ], 403);
+        }
+
+        // A video scoped to another exam type is not this user's to download.
+        if ($video->type_id && (int) $video->type_id !== (int) $user->type_id) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'This video is not available for your exam type.',
+            ], 403);
+        }
+
+        if (!$video->is_active) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'This video is not currently available.',
+            ], 404);
+        }
+
+        if (!$video->fileExists()) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'Video file is missing on the server.',
+            ], 404);
+        }
+
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $response = new BinaryFileResponse($video->absolutePath());
+        $response->headers->set('Content-Type', $video->mime_type ?: 'video/mp4');
+        $response->headers->set('Accept-Ranges', 'bytes');
+
+        if ($video->checksum) {
+            // Lets the client verify a completed download and skip re-downloads.
+            $response->headers->set('X-Checksum-MD5', $video->checksum);
+            $response->setEtag($video->checksum);
+        }
+
+        $response->setContentDisposition(
+            $request->boolean('inline')
+                ? ResponseHeaderBag::DISPOSITION_INLINE
+                : ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $this->downloadFilename($video)
+        );
+
+        return $response;
+    }
+
+    private function downloadFilename(Video $video): string
+    {
+        $extension = pathinfo($video->file_path, PATHINFO_EXTENSION) ?: 'mp4';
+        $safeTitle = preg_replace('/[^A-Za-z0-9 _-]/', '', $video->title) ?: 'video';
+
+        return trim($safeTitle) . '.' . $extension;
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Listing                                                             */
     /* ------------------------------------------------------------------ */
 
     public function index(Request $request)
     {
         $request->validate([
+            'user_id'    => 'nullable|exists:users,id',
             'subject_id' => 'nullable|exists:subjects,id',
             'chapter_id' => 'nullable|exists:chapters,id',
             'type_id'    => 'nullable|exists:types,id',
             'grade'      => 'nullable|integer|min:0|max:12',
             'language'   => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
-            'source'     => 'nullable|in:url,upload',
             'search'     => 'nullable|string|max:255',
             'include_hidden' => 'nullable|boolean',
             'per_page'   => 'nullable|integer|min:1|max:100',
             'page'       => 'nullable|integer|min:1',
         ]);
+
+        $user = $this->resolveUser($request);
+        $entitled = $this->isEntitled($user);
 
         $query = Video::with(['subject', 'chapter', 'type', 'user']);
 
@@ -76,7 +214,7 @@ class VideoController extends Controller
             $query->active();
         }
 
-        foreach (['subject_id', 'chapter_id', 'type_id', 'grade', 'language', 'source'] as $field) {
+        foreach (['subject_id', 'chapter_id', 'type_id', 'grade', 'language'] as $field) {
             if ($request->filled($field)) {
                 $query->where($field, $request->input($field));
             }
@@ -93,8 +231,9 @@ class VideoController extends Controller
         $videos = $query->ordered()->paginate($request->input('per_page', 15));
 
         return $this->jsonResponse([
-            'status' => 'success',
-            'data'   => $videos->items(),
+            'status'   => 'success',
+            'entitled' => $entitled,
+            'data'     => $this->presentMany($videos->items(), $entitled, $user?->id),
             'pagination' => [
                 'current_page' => $videos->currentPage(),
                 'last_page'    => $videos->lastPage(),
@@ -115,8 +254,11 @@ class VideoController extends Controller
     {
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
+            'user_id'    => 'nullable|exists:users,id',
         ]);
 
+        $user = $this->resolveUser($request);
+        $entitled = $this->isEntitled($user);
         $subject = Subject::findOrFail($request->input('subject_id'));
 
         $videos = Video::with(['chapter', 'type'])
@@ -125,39 +267,36 @@ class VideoController extends Controller
             ->ordered()
             ->get();
 
-        $subjectLevel = $videos->whereNull('chapter_id')->values();
-
         $chapters = $videos->whereNotNull('chapter_id')
             ->groupBy('chapter_id')
-            ->map(function ($group, $chapterId) {
-                return [
-                    'chapter_id'   => (string) $chapterId,
-                    'chapter_name' => optional($group->first()->chapter)->name,
-                    'videos'       => $group->values(),
-                ];
-            })->values();
+            ->map(fn ($group, $chapterId) => [
+                'chapter_id'   => (int) $chapterId,
+                'chapter_name' => optional($group->first()->chapter)->name,
+                'videos'       => $this->presentMany($group, $entitled, $user?->id),
+            ])->values();
 
         return $this->jsonResponse([
-            'status' => 'success',
-            'data'   => [
-                'subject_id'     => (string) $subject->id,
+            'status'   => 'success',
+            'entitled' => $entitled,
+            'data'     => [
+                'subject_id'     => (int) $subject->id,
                 'subject_name'   => $subject->name,
-                'subject_videos' => $subjectLevel,
+                'subject_videos' => $this->presentMany($videos->whereNull('chapter_id'), $entitled, $user?->id),
                 'chapters'       => $chapters,
             ],
         ]);
     }
 
-    /**
-     * All videos for one chapter.
-     */
     public function byChapter(Request $request)
     {
         $request->validate([
             'chapter_id' => 'required|exists:chapters,id',
             'subject_id' => 'nullable|exists:subjects,id',
+            'user_id'    => 'nullable|exists:users,id',
         ]);
 
+        $user = $this->resolveUser($request);
+        $entitled = $this->isEntitled($user);
         $chapter = Chapter::findOrFail($request->input('chapter_id'));
 
         $videos = Video::with(['subject', 'type'])
@@ -168,11 +307,12 @@ class VideoController extends Controller
             ->get();
 
         return $this->jsonResponse([
-            'status' => 'success',
-            'data'   => [
-                'chapter_id'   => (string) $chapter->id,
+            'status'   => 'success',
+            'entitled' => $entitled,
+            'data'     => [
+                'chapter_id'   => (int) $chapter->id,
                 'chapter_name' => $chapter->name,
-                'videos'       => $videos,
+                'videos'       => $this->presentMany($videos, $entitled, $user?->id),
             ],
         ]);
     }
@@ -196,6 +336,8 @@ class VideoController extends Controller
             ], 400);
         }
 
+        $entitled = $this->isEntitled($user);
+
         $videos = Video::with(['subject', 'chapter', 'type'])
             ->active()
             ->where(function ($q) use ($user) {
@@ -204,33 +346,46 @@ class VideoController extends Controller
             ->ordered()
             ->get();
 
-        $general = $videos->whereNull('subject_id')->values();
-
         $subjects = $videos->whereNotNull('subject_id')
             ->groupBy('subject_id')
-            ->map(function ($subjectVideos, $subjectId) {
+            ->map(function ($subjectVideos, $subjectId) use ($entitled, $user) {
                 $chapters = $subjectVideos->whereNotNull('chapter_id')
                     ->groupBy('chapter_id')
                     ->map(fn ($group, $chapterId) => [
-                        'chapter_id'   => (string) $chapterId,
+                        'chapter_id'   => (int) $chapterId,
                         'chapter_name' => optional($group->first()->chapter)->name,
-                        'videos'       => $group->values(),
+                        'videos'       => $this->presentMany($group, $entitled, $user->id),
                     ])->values();
 
                 return [
-                    'subject_id'     => (string) $subjectId,
+                    'subject_id'     => (int) $subjectId,
                     'subject_name'   => optional($subjectVideos->first()->subject)->name,
-                    'subject_videos' => $subjectVideos->whereNull('chapter_id')->values(),
+                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $entitled, $user->id),
                     'chapters'       => $chapters,
                 ];
             })->values();
 
         return $this->jsonResponse([
-            'status' => 'success',
-            'data'   => [
-                'general_videos' => $general,
+            'status'   => 'success',
+            'entitled' => $entitled,
+            'data'     => [
+                'general_videos' => $this->presentMany($videos->whereNull('subject_id'), $entitled, $user->id),
                 'subjects'       => $subjects,
             ],
+        ]);
+    }
+
+    public function show(Request $request, Video $video)
+    {
+        $user = $this->resolveUser($request);
+        $entitled = $this->isEntitled($user);
+
+        $video->load(['subject', 'chapter', 'type', 'user']);
+
+        return $this->jsonResponse([
+            'status'   => 'success',
+            'entitled' => $entitled,
+            'data'     => $this->present($video, $entitled, $user?->id),
         ]);
     }
 
@@ -240,36 +395,36 @@ class VideoController extends Controller
 
     public function store(Request $request)
     {
-        $data = $this->validatePayload($request);
+        $data = $request->validate($this->rules(false));
 
         $video = new Video();
         $this->fillFromRequest($video, $request, $data);
+
+        if (!$video->file_path) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'A video file is required.',
+            ], 422);
+        }
+
         $video->save();
 
         return $this->jsonResponse([
             'status' => 'success',
-            'data'   => $video->load(['subject', 'chapter', 'type', 'user']),
+            'data'   => $this->present($video->load(['subject', 'chapter', 'type', 'user']), true, null),
         ], 201);
-    }
-
-    public function show(Video $video)
-    {
-        return $this->jsonResponse([
-            'status' => 'success',
-            'data'   => $video->load(['subject', 'chapter', 'type', 'user']),
-        ]);
     }
 
     public function update(Request $request, Video $video)
     {
-        $data = $this->validatePayload($request, true);
+        $data = $request->validate($this->rules(true));
 
         $this->fillFromRequest($video, $request, $data);
         $video->save();
 
         return $this->jsonResponse([
             'status' => 'success',
-            'data'   => $video->load(['subject', 'chapter', 'type', 'user']),
+            'data'   => $this->present($video->load(['subject', 'chapter', 'type', 'user']), true, null),
         ]);
     }
 
@@ -288,21 +443,20 @@ class VideoController extends Controller
     /* Helpers                                                             */
     /* ------------------------------------------------------------------ */
 
-    private function validatePayload(Request $request, bool $partial = false)
+    private function rules(bool $partial): array
     {
         $required = $partial ? 'sometimes' : 'required';
         $optional = 'sometimes|nullable';
 
-        $rules = [
+        return [
             'type_id'     => $optional . '|exists:types,id',
             'subject_id'  => $optional . '|exists:subjects,id',
             'chapter_id'  => $optional . '|exists:chapters,id',
             'user_id'     => $optional . '|exists:users,id',
             'title'       => $required . '|string|max:255',
             'description' => $optional . '|string',
-            'source'      => $required . '|in:url,upload',
-            'video_url'   => $optional . '|url|max:2048',
-            'video'       => $optional . '|file|mimetypes:' . self::VIDEO_MIMETYPES . '|max:' . self::MAX_VIDEO_KB,
+            'video'       => ($partial ? 'sometimes' : 'required')
+                             . '|file|mimetypes:' . self::VIDEO_MIMETYPES . '|max:' . self::MAX_VIDEO_KB,
             'thumbnail'   => $optional . '|image|max:2048',
             'duration'    => $optional . '|integer|min:0',
             'grade'       => $optional . '|integer|min:0|max:12',
@@ -311,27 +465,6 @@ class VideoController extends Controller
             'sort_order'  => $optional . '|integer|min:0',
             'is_active'   => $optional . '|boolean',
         ];
-
-        $validated = $request->validate($rules);
-
-        // A video is useless without something to play.
-        $source = $request->input('source');
-
-        if ($source === 'url' && !$request->filled('video_url')) {
-            abort($this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'video_url is required when source is "url".',
-            ], 422));
-        }
-
-        if ($source === 'upload' && !$request->hasFile('video') && !$partial) {
-            abort($this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'A video file is required when source is "upload".',
-            ], 422));
-        }
-
-        return $validated;
     }
 
     private function fillFromRequest(Video $video, Request $request, array $data): void
@@ -343,36 +476,23 @@ class VideoController extends Controller
             }
         }
 
-        if ($request->filled('source')) {
-            $video->source = $request->input('source');
-        }
-
-        if ($video->source === 'upload') {
-            if ($request->hasFile('video')) {
-                if ($video->file_path) {
-                    Storage::disk('public')->delete($video->file_path);
-                }
-                $file = $request->file('video');
-                $video->file_path = $file->store('videos', 'public');
-                $video->mime_type = $file->getMimeType();
-                $video->file_size = $file->getSize();
-            }
-            $video->video_url = null;
-        } else {
+        if ($request->hasFile('video')) {
             if ($video->file_path) {
-                Storage::disk('public')->delete($video->file_path);
+                Storage::disk(Video::DISK)->delete($video->file_path);
             }
-            $video->file_path = null;
-            $video->mime_type = null;
-            $video->file_size = null;
-            $video->video_url = $request->input('video_url', $video->video_url);
+
+            $file = $request->file('video');
+            $video->file_path = $file->store('videos', Video::DISK);
+            $video->mime_type = $file->getMimeType();
+            $video->file_size = $file->getSize();
+            $video->checksum  = md5_file(Storage::disk(Video::DISK)->path($video->file_path));
         }
 
         if ($request->hasFile('thumbnail')) {
             if ($video->thumbnail_path) {
-                Storage::disk('public')->delete($video->thumbnail_path);
+                Storage::disk(Video::THUMB_DISK)->delete($video->thumbnail_path);
             }
-            $video->thumbnail_path = $request->file('thumbnail')->store('videos/thumbnails', 'public');
+            $video->thumbnail_path = $request->file('thumbnail')->store('videos/thumbnails', Video::THUMB_DISK);
         }
 
         if (!$video->language) {

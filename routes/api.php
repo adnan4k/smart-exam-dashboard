@@ -89,6 +89,7 @@ Route::delete('notes/{note}', [NoteController::class, 'destroy']);
 Route::get('videos/by-subject', [VideoController::class, 'bySubject']);
 Route::get('videos/by-chapter', [VideoController::class, 'byChapter']);
 Route::get('videos/for-user-grouped', [VideoController::class, 'forUserGrouped']);
+Route::get('videos/{video}/download', [VideoController::class, 'download']);
 
 // General video routes
 Route::get('videos', [VideoController::class, 'index']);

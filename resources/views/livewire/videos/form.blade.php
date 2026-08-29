@@ -68,71 +68,43 @@
                             @error('description') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
-                        <!-- Source switch -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Video Source</label>
-                            <div class="flex gap-4 mt-1">
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="source" value="url">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Paste a link (YouTube / Vimeo / CDN)</span>
-                                </label>
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" wire:model.live="source" value="upload">
-                                    <span class="text-sm text-gray-600 dark:text-gray-300">Upload a file</span>
-                                </label>
-                            </div>
-                            @error('source') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <!-- URL -->
-                        @if ($source === 'url')
-                            <div>
-                                <label class="text-gray-600 dark:text-gray-400">Video URL</label>
-                                <input wire:model="videoUrl" type="url" placeholder="https://www.youtube.com/watch?v=..."
-                                       class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('videoUrl') border-red-500 @enderror">
-                                @error('videoUrl') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                            </div>
-                        @endif
-
                         <!-- Upload -->
-                        @if ($source === 'upload')
-                            <div>
-                                <label class="text-gray-600 dark:text-gray-400">
-                                    Video File <span class="text-xs text-gray-400">(mp4, mov, avi, mkv, webm — max 500MB)</span>
-                                </label>
-                                <input type="file" accept="video/*" wire:model="videoFile"
-                                       class="w-full py-2 border border-slate-200 rounded-lg px-3 dark:bg-gray-600 dark:text-gray-100">
+                        <div>
+                            <label class="text-gray-600 dark:text-gray-400">
+                                Video File <span class="text-xs text-gray-400">(mp4, mov, avi, mkv, webm — max 500MB)</span>
+                            </label>
+                            <input type="file" accept="video/*" wire:model="videoFile"
+                                   class="w-full py-2 border border-slate-200 rounded-lg px-3 dark:bg-gray-600 dark:text-gray-100">
 
-                                <div wire:loading wire:target="videoFile" class="mt-2 text-sm text-gray-500">
-                                    Uploading video…
-                                </div>
-
-                                <div x-data="{ progress: 0, uploading: false }"
-                                     x-on:livewire-upload-start="uploading = true"
-                                     x-on:livewire-upload-finish="uploading = false; progress = 0"
-                                     x-on:livewire-upload-error="uploading = false"
-                                     x-on:livewire-upload-progress="progress = $event.detail.progress"
-                                     class="mt-2">
-                                    <div x-show="uploading" class="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div class="h-2.5 rounded-full" style="background-color:#56C596" :style="`width: ${progress}%`"></div>
-                                    </div>
-                                    <p x-show="uploading" class="text-xs text-gray-500 mt-1" x-text="`${progress}%`"></p>
-                                </div>
-
-                                @if ($videoFile)
-                                    <p class="text-xs text-green-600 mt-1">
-                                        Ready: {{ $videoFile->getClientOriginalName() }}
-                                        ({{ number_format($videoFile->getSize() / 1048576, 1) }} MB)
-                                    </p>
-                                @elseif ($existingFilePath)
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Current file: {{ basename($existingFilePath) }} — choose a new file to replace it.
-                                    </p>
-                                @endif
-
-                                @error('videoFile') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                            <div wire:loading wire:target="videoFile" class="mt-2 text-sm text-gray-500">
+                                Uploading video…
                             </div>
-                        @endif
+
+                            <div x-data="{ progress: 0, uploading: false }"
+                                 x-on:livewire-upload-start="uploading = true"
+                                 x-on:livewire-upload-finish="uploading = false; progress = 0"
+                                 x-on:livewire-upload-error="uploading = false"
+                                 x-on:livewire-upload-progress="progress = $event.detail.progress"
+                                 class="mt-2">
+                                <div x-show="uploading" class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div class="h-2.5 rounded-full" style="background-color:#56C596" :style="`width: ${progress}%`"></div>
+                                </div>
+                                <p x-show="uploading" class="text-xs text-gray-500 mt-1" x-text="`${progress}%`"></p>
+                            </div>
+
+                            @if ($videoFile)
+                                <p class="text-xs text-green-600 mt-1">
+                                    Ready: {{ $videoFile->getClientOriginalName() }}
+                                    ({{ number_format($videoFile->getSize() / 1048576, 1) }} MB)
+                                </p>
+                            @elseif ($existingFilePath)
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Current file: {{ basename($existingFilePath) }} — choose a new file to replace it.
+                                </p>
+                            @endif
+
+                            @error('videoFile') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
 
                         <!-- Thumbnail -->
                         <div>

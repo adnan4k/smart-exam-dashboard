@@ -31,8 +31,6 @@ class Form extends Component
 
     public $title;
     public $description;
-    public $source = 'url';        // 'url' | 'upload'
-    public $videoUrl;
     public $videoFile;             // TemporaryUploadedFile
     public $thumbnail;             // TemporaryUploadedFile
     public $existingFilePath;
@@ -61,8 +59,6 @@ class Form extends Component
             'chapterId'   => 'nullable|exists:chapters,id',
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
-            'source'      => 'required|in:url,upload',
-            'videoUrl'    => 'nullable|url|max:2048',
             'videoFile'   => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,video/mpeg|max:' . self::MAX_VIDEO_KB,
             'thumbnail'   => 'nullable|image|max:2048',
             'duration'    => 'nullable|integer|min:0',
@@ -75,7 +71,6 @@ class Form extends Component
     protected $messages = [
         'videoFile.mimetypes' => 'The video must be an mp4, mov, avi, mkv, webm or mpeg file.',
         'videoFile.max'       => 'The video may not be larger than 500MB.',
-        'videoUrl.url'        => 'Please enter a valid video URL (including http:// or https://).',
     ];
 
     /* ------------------------------------------------------------------ */
@@ -152,8 +147,6 @@ class Form extends Component
         $this->chapterId             = $video->chapter_id;
         $this->title                 = $video->title;
         $this->description           = $video->description;
-        $this->source                = $video->source;
-        $this->videoUrl              = $video->video_url;
         $this->existingFilePath      = $video->file_path;
         $this->existingThumbnailPath = $video->thumbnail_path;
         $this->duration              = $video->duration;
@@ -179,15 +172,8 @@ class Form extends Component
         try {
             $this->validate();
 
-            // A video needs a playable source: either a file or a link.
-            if ($this->source === 'url' && !$this->videoUrl) {
-                $this->addError('videoUrl', 'Please provide the video URL.');
-                Toaster::error('Please provide the video URL.');
-                $this->isSubmitting = false;
-                return;
-            }
-
-            if ($this->source === 'upload' && !$this->videoFile && !$this->existingFilePath) {
+            // Students download these for offline use, so every video is a real file.
+            if (!$this->videoFile && !$this->existingFilePath) {
                 $this->addError('videoFile', 'Please choose a video file to upload.');
                 Toaster::error('Please choose a video file to upload.');
                 $this->isSubmitting = false;
@@ -206,7 +192,6 @@ class Form extends Component
             'chapter_id'  => $this->chapterId ?: null,
             'title'       => $this->title,
             'description' => $this->description,
-            'source'      => $this->source,
             'duration'    => $this->duration ?: null,
             'grade'       => $this->grade !== '' ? $this->grade : null,
             'language'    => $this->language,
@@ -217,35 +202,22 @@ class Form extends Component
         try {
             $video = $this->is_edit ? Video::findOrFail($this->id) : null;
 
-            if ($this->source === 'upload') {
-                $data['video_url'] = null;
-
-                if ($this->videoFile) {
-                    // Replace the old file rather than orphaning it on disk.
-                    if ($video && $video->file_path) {
-                        Storage::disk('public')->delete($video->file_path);
-                    }
-                    $data['file_path'] = $this->videoFile->store('videos', 'public');
-                    $data['mime_type'] = $this->videoFile->getMimeType();
-                    $data['file_size'] = $this->videoFile->getSize();
-                }
-            } else {
-                $data['video_url'] = $this->videoUrl;
-
-                // Switching link-ward: drop the previously uploaded file.
+            if ($this->videoFile) {
+                // Replace the old file rather than orphaning it on disk.
                 if ($video && $video->file_path) {
-                    Storage::disk('public')->delete($video->file_path);
+                    Storage::disk(Video::DISK)->delete($video->file_path);
                 }
-                $data['file_path'] = null;
-                $data['mime_type'] = null;
-                $data['file_size'] = null;
+                $data['file_path'] = $this->videoFile->store('videos', Video::DISK);
+                $data['mime_type'] = $this->videoFile->getMimeType();
+                $data['file_size'] = $this->videoFile->getSize();
+                $data['checksum']  = md5_file(Storage::disk(Video::DISK)->path($data['file_path']));
             }
 
             if ($this->thumbnail) {
                 if ($video && $video->thumbnail_path) {
-                    Storage::disk('public')->delete($video->thumbnail_path);
+                    Storage::disk(Video::THUMB_DISK)->delete($video->thumbnail_path);
                 }
-                $data['thumbnail_path'] = $this->thumbnail->store('videos/thumbnails', 'public');
+                $data['thumbnail_path'] = $this->thumbnail->store('videos/thumbnails', Video::THUMB_DISK);
             }
 
             if ($video) {
@@ -286,12 +258,11 @@ class Form extends Component
     {
         $this->reset([
             'id', 'is_edit', 'typeId', 'subjectId', 'chapterId', 'title', 'description',
-            'source', 'videoUrl', 'videoFile', 'thumbnail', 'existingFilePath',
+            'videoFile', 'thumbnail', 'existingFilePath',
             'existingThumbnailPath', 'duration', 'grade', 'language', 'sortOrder',
             'isActive', 'isSubmitting',
         ]);
 
-        $this->source   = 'url';
         $this->language = 'english';
         $this->sortOrder = 0;
         $this->isActive = true;

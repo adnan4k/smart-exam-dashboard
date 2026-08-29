@@ -10,6 +10,12 @@ class Video extends Model
 {
     use HasFactory;
 
+    /** Videos live on the private disk — never public/storage. */
+    public const DISK = 'local';
+
+    /** Thumbnails are not the valuable asset, so they stay publicly servable. */
+    public const THUMB_DISK = 'public';
+
     protected $guarded = [];
 
     protected $casts = [
@@ -19,11 +25,12 @@ class Video extends Model
         'grade'     => 'integer',
     ];
 
+    protected $appends = ['thumbnail_url'];
+
     /**
-     * Appended so the mobile app always gets one ready-to-play URL,
-     * regardless of whether the video was uploaded or linked.
+     * file_path points at private storage and must never reach a client.
      */
-    protected $appends = ['stream_url', 'thumbnail_url'];
+    protected $hidden = ['file_path'];
 
     public function user()
     {
@@ -45,36 +52,44 @@ class Video extends Model
         return $this->belongsTo(Chapter::class);
     }
 
-    /**
-     * The URL the client should play.
-     */
-    public function getStreamUrlAttribute()
-    {
-        if ($this->source === 'upload' && $this->file_path) {
-            return Storage::disk('public')->url($this->file_path);
-        }
-
-        return $this->video_url;
-    }
-
     public function getThumbnailUrlAttribute()
     {
         return $this->thumbnail_path
-            ? Storage::disk('public')->url($this->thumbnail_path)
+            ? Storage::disk(self::THUMB_DISK)->url($this->thumbnail_path)
             : null;
     }
 
     /**
-     * Delete the stored files when the row goes away.
+     * Absolute URL of the authorizing download endpoint. Serving the file
+     * itself is gated there — this URL alone grants nothing without a
+     * user_id that holds a paid subscription.
      */
+    public function downloadUrl($userId = null)
+    {
+        return url('/api/videos/' . $this->id . '/download'
+            . ($userId ? '?user_id=' . $userId : ''));
+    }
+
+    public function fileExists(): bool
+    {
+        return $this->file_path && Storage::disk(self::DISK)->exists($this->file_path);
+    }
+
+    public function absolutePath(): ?string
+    {
+        return $this->fileExists()
+            ? Storage::disk(self::DISK)->path($this->file_path)
+            : null;
+    }
+
     protected static function booted()
     {
         static::deleting(function (Video $video) {
             if ($video->file_path) {
-                Storage::disk('public')->delete($video->file_path);
+                Storage::disk(self::DISK)->delete($video->file_path);
             }
             if ($video->thumbnail_path) {
-                Storage::disk('public')->delete($video->thumbnail_path);
+                Storage::disk(self::THUMB_DISK)->delete($video->thumbnail_path);
             }
         });
     }
