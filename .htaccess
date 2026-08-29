@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Send external requests for /public/... back to the clean URL
+    RewriteCond %{THE_REQUEST} \s/+public/(\S*) [NC]
+    RewriteRule ^ /%1 [R=301,L]
+
+    # Block direct access to application internals
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$) - [F,L]
+    RewriteRule ^(\.env(\..*)?|artisan|server\.php|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|webpack\.mix\.js|.*\.md)$ - [F,L]
+
+    # Route every request into public/ (public/.htaccess takes over from there)
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule mod_negotiation.c>
+    Options -MultiViews
+</IfModule>
+
+Options -Indexes
+DirectoryIndex index.php
