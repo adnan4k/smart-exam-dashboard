@@ -11,7 +11,7 @@
                             <h5 class="mb-0">All chapters</h5>
                         </div>
                         <button
-                            style="background-color:#56C596;"
+                            style="background-color:#58706D;"
                             @click="$dispatch('chapterModal')"
                             class="btn text-white bg-green-400 btn-sm mb-0"
                             chapter="button">+&nbsp; New chapter</button>

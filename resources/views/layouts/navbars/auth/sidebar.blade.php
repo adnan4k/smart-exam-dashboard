@@ -1,5 +1,5 @@
 <!-- Update the toggle button position to right side -->
-<button id="sidebarToggle" class="fixed top-4 right-4 z-[999] p-2.5 rounded-lg bg-[#56C596] text-white lg:hidden hover:bg-[#4ab485] transition-colors">
+<button id="sidebarToggle" class="fixed top-4 right-4 z-[999] p-2.5 rounded-lg bg-[#58706D] text-white lg:hidden hover:bg-[#4ab485] transition-colors">
     <i class="fas fa-bars text-lg"></i>
 </button>
 
@@ -11,7 +11,7 @@
             
             <!-- Dashboard -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'dashboard' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'dashboard' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('dashboard') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-tachometer-alt text-dark"></i>
@@ -22,7 +22,7 @@
 
             <!-- Questions -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'questions' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'questions' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('questions') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-question-circle text-dark"></i>
@@ -33,7 +33,7 @@
 
             <!-- Year Group -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'year-group' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'year-group' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('year-group') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-calendar-alt text-dark"></i>
@@ -44,7 +44,7 @@
 
             <!-- Subject -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'subject' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'subject' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('subject') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-book text-dark"></i>
@@ -53,7 +53,7 @@
                 </a>
             </li>
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'chapter' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'chapter' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('chapter') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-book text-dark"></i>
@@ -63,7 +63,7 @@
             </li>
                   <!-- Subject -->
                   <li class="nav-item pb-2">
-                    <a class="nav-link {{ Route::currentRouteName() == 'type' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                    <a class="nav-link {{ Route::currentRouteName() == 'type' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                         wire:navigate href="{{ route('type') }}">
                         <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                             <i class="fas fa-book text-dark"></i>
@@ -74,7 +74,7 @@
 
             <!-- Subscription -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'subscription' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'subscription' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('subscription') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-credit-card text-dark"></i>
@@ -84,7 +84,7 @@
             </li>
 
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'referral' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'referral' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('referral') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-credit-card text-dark"></i>
@@ -93,7 +93,7 @@
                 </a>
             </li>
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'referral-setting' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'referral-setting' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('referral-setting') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-credit-card text-dark"></i>
@@ -104,7 +104,7 @@
 
             <!-- Users -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'users' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'users' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('users') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-users text-dark"></i>
@@ -115,7 +115,7 @@
 
             <!-- Notes -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'notes' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'notes' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('notes') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-sticky-note text-dark"></i>
@@ -125,7 +125,7 @@
             </li>
             <!-- Videos -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'videos' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'videos' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('videos') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-video text-dark"></i>
@@ -135,7 +135,7 @@
             </li>
             <!-- Contests -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ str_starts_with(Route::currentRouteName() ?? '', 'contests.') ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ str_starts_with(Route::currentRouteName() ?? '', 'contests.') ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     href="{{ route('contests.index') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-ranking-star text-dark"></i>
@@ -145,7 +145,7 @@
             </li>
             <!-- Contest bank -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ str_starts_with(Route::currentRouteName() ?? '', 'contest-questions.') ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ str_starts_with(Route::currentRouteName() ?? '', 'contest-questions.') ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     href="{{ route('contest-questions.index') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-vault text-dark"></i>
@@ -155,7 +155,7 @@
             </li>
             <!-- Notifications -->
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'notifications' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'notifications' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('notifications') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-bell text-dark"></i>
@@ -164,7 +164,7 @@
                 </a>
             </li>
             <li class="nav-item pb-2">
-                <a class="nav-link {{ Route::currentRouteName() == 'profile' ? 'bg-[#56C596] text-white font-bold rounded-2xl' : '' }}"
+                <a class="nav-link {{ Route::currentRouteName() == 'profile' ? 'bg-[#58706D] text-white font-bold rounded-2xl' : '' }}"
                     wire:navigate href="{{ route('profile') }}">
                     <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="fas fa-user text-dark"></i>

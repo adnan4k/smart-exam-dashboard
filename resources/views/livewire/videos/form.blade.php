@@ -92,7 +92,7 @@
                                          role="progressbar" aria-valuemin="0" aria-valuemax="100"
                                          :aria-valuenow="progress" aria-label="Video upload progress">
                                         <div class="h-2.5 rounded-full transition-all duration-150 ease-out"
-                                             style="background-color:#56C596" :style="`width: ${progress}%`"></div>
+                                             style="background-color:#58706D" :style="`width: ${progress}%`"></div>
                                     </div>
                                     <div class="flex justify-between gap-2 text-xs text-gray-500 mt-1">
                                         <span x-text="progress < 100 ? `Uploading… ${progress}%` : 'Finishing upload…'"></span>
@@ -177,7 +177,7 @@
 
                         <!-- Buttons -->
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button style="background-color:#56C596;" type="submit"
+                            <button style="background-color:#58706D;" type="submit"
                                     wire:loading.attr="disabled" wire:target="saveVideo,videoFile,thumbnail"
                                     class="text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:opacity-50">
                                 <span wire:loading.remove wire:target="saveVideo">{{ $is_edit ? 'Save Changes' : 'Create' }}</span>

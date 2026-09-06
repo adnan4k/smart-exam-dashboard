@@ -15,7 +15,7 @@
                 </div>
               </div>
               <div class="col-4 text-end">
-                <div style="background-color: #56C596;" class="icon icon-shape bg-[#56C596] text-white   shadow text-center border-radius-md">
+                <div style="background-color: #58706D;" class="icon icon-shape bg-[#58706D] text-white   shadow text-center border-radius-md">
                   <i class="fas fa-question-circle text-dark"></i>
                 </div>
               </div>
@@ -38,7 +38,7 @@
                 </div>
               </div>
               <div class="col-4 text-end">
-                <div style="background-color: #56C596;" class="icon icon-shape bg-[#56C596] text-white   shadow text-center border-radius-md">
+                <div style="background-color: #58706D;" class="icon icon-shape bg-[#58706D] text-white   shadow text-center border-radius-md">
                   <i class="fas fa-book text-dark"></i>
                 </div>
               </div>
@@ -61,7 +61,7 @@
                 </div>
               </div>
               <div class="col-4 text-end">
-                <div style="background-color: #56C596;" class="icon icon-shape bg-[#56C596] text-white   shadow text-center border-radius-md">
+                <div style="background-color: #58706D;" class="icon icon-shape bg-[#58706D] text-white   shadow text-center border-radius-md">
                   <i class="fas fa-users text-dark"></i>
                 </div>
               </div>
@@ -84,7 +84,7 @@
                 </div>
               </div>
               <div class="col-4 text-end">
-                <div style="background-color: #56C596;" class="icon icon-shape bg-[#56C596] text-white   shadow text-center border-radius-md">
+                <div style="background-color: #58706D;" class="icon icon-shape bg-[#58706D] text-white   shadow text-center border-radius-md">
                   <i class="fas fa-credit-card text-dark"></i>
                 </div>
               </div>

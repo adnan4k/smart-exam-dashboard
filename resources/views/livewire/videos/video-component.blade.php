@@ -7,7 +7,7 @@
                 <div class="card-header pb-0">
                     <div class="d-flex flex-row justify-content-between align-items-center">
                         <h5 class="mb-0">All Videos</h5>
-                        <button style="background-color:#56C596;"
+                        <button style="background-color:#58706D;"
                                 @click="$dispatch('videoModal')"
                                 class="btn text-white btn-sm mb-0"
                                 type="button">+&nbsp; New Video</button>

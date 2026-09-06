@@ -1,5 +1,7 @@
 <x-layouts.app>
-    <div class="main-content">
+    @include('contests.partials.theme')
+
+    <div class="main-content ct">
         <div class="row">
             <div class="col-lg-9 col-12 mx-auto">
                 @include('contests.partials.flash')
@@ -47,7 +49,7 @@
                     <div class="card mb-4 mx-4">
                         <div class="card-header pb-0">
                             <h5 class="mb-0">{{ $isEdit ? 'Edit contest' : 'New contest' }}</h5>
-                            <p class="text-sm text-secondary mb-0">
+                            <p class="text-sm ct-muted mb-0">
                                 Everyone sits the same paper in the same window, so scores are comparable.
                             </p>
                         </div>
@@ -123,7 +125,7 @@
                                 </div>
                             </div>
 
-                            <div class="bg-gray-100 border-radius-md p-3 mt-2" x-show="startsAt">
+                            <div class="ct-panel p-3 mt-2" x-show="startsAt">
                                 <p class="text-xs font-weight-bolder text-uppercase mb-2">Schedule</p>
                                 <p class="text-xs mb-1">
                                     Entry closes at <strong x-text="format(joinClosesAt)"></strong>.
@@ -137,8 +139,8 @@
                         </div>
 
                         <div class="card-footer d-flex justify-content-between">
-                            <a href="{{ route('contests.index') }}" class="btn btn-outline-secondary btn-sm mb-0">Cancel</a>
-                            <button type="submit" style="background-color:#56C596;" class="btn text-white btn-sm mb-0">
+                            <a href="{{ route('contests.index') }}" class="btn ct-btn-quiet btn-sm mb-0">Cancel</a>
+                            <button type="submit" class="btn ct-btn btn-sm mb-0">
                                 {{ $isEdit ? 'Save changes' : 'Create and build paper' }}
                             </button>
                         </div>

@@ -1,5 +1,7 @@
 <x-layouts.app>
-    <div class="main-content">
+    @include('contests.partials.theme')
+
+    <div class="main-content ct">
         <div class="row">
             <div class="col-12">
                 @include('contests.partials.flash')
@@ -16,7 +18,7 @@
                         <div class="d-flex flex-row justify-content-between align-items-start">
                             <div>
                                 <h5 class="mb-0">{{ $contest->title }}</h5>
-                                <p class="text-sm text-secondary mb-0">
+                                <p class="text-sm ct-muted mb-0">
                                     {{ $contest->type?->name ?? 'All exam types' }} &middot;
                                     {{ $contest->starts_at->format('D, d M Y H:i') }}
                                 </p>
@@ -33,7 +35,7 @@
                                 @if ($contest->hasEnded() && $contest->status !== 'finalized')
                                     <form action="{{ route('contests.finalize', $contest) }}" method="POST" class="mt-2">
                                         @csrf
-                                        <button type="submit" style="background-color:#56C596;" class="btn text-white btn-sm mb-0">
+                                        <button type="submit" class="btn ct-btn btn-sm mb-0">
                                             Finalize &amp; pay out
                                         </button>
                                     </form>
@@ -108,12 +110,12 @@
                                                 </template>
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge badge-sm"
+                                                <span class="ct-badge"
                                                       :class="{
-                                                        'bg-gradient-success': row.status === 'submitted',
-                                                        'bg-gradient-warning': row.status === 'in_progress',
-                                                        'bg-gradient-secondary': row.status === 'expired',
-                                                        'bg-gradient-danger': row.status === 'voided'
+                                                        'ct-badge-finalized': row.status === 'submitted',
+                                                        'ct-badge-upcoming': row.status === 'in_progress',
+                                                        'ct-badge-quiet': row.status === 'expired',
+                                                        'ct-badge-void': row.status === 'voided'
                                                       }"
                                                       x-text="row.status.replace('_', ' ')"></span>
                                             </td>
@@ -122,7 +124,7 @@
                                                     <form :action="voidUrl(row.attempt_id)" method="POST"
                                                           @submit="return confirm('Void this entry? Any stars already paid are taken back.')">
                                                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                        <button type="submit" class="btn btn-link p-0 m-0 text-red-500 text-xxs" title="Void entry">
+                                                        <button type="submit" class="btn btn-link p-0 m-0 ct-icon-danger text-xxs" title="Void entry">
                                                             Void
                                                         </button>
                                                     </form>
@@ -134,7 +136,7 @@
                                     <template x-if="rows.length === 0">
                                         <tr>
                                             <td colspan="7" class="text-center py-5">
-                                                <p class="text-sm text-secondary mb-0">No entries yet.</p>
+                                                <p class="text-sm ct-muted mb-0">No entries yet.</p>
                                             </td>
                                         </tr>
                                     </template>
@@ -155,7 +157,7 @@
                     <div class="card-body pt-3">
                         <div class="d-flex flex-wrap gap-3">
                             @foreach ($rules as $rule)
-                                <div class="border-radius-md bg-gray-100 px-3 py-2">
+                                <div class="ct-panel px-3 py-2">
                                     <p class="text-xxs text-uppercase text-secondary font-weight-bolder mb-0">
                                         Rank {{ $rule->rank_from }}{{ $rule->rank_to ? '–' . $rule->rank_to : '+' }}
                                     </p>

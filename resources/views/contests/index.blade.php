@@ -1,5 +1,7 @@
 <x-layouts.app>
-    <div class="main-content">
+    @include('contests.partials.theme')
+
+    <div class="main-content ct">
         <div class="row">
             <div class="col-12">
                 @include('contests.partials.flash')
@@ -9,13 +11,13 @@
                         <div class="d-flex flex-row justify-content-between align-items-center">
                             <div>
                                 <h5 class="mb-0">Contests</h5>
-                                <p class="text-sm mb-0 text-secondary">Scheduled competitions students compete in for stars and coins.</p>
+                                <p class="text-sm mb-0 ct-muted">Scheduled competitions students compete in for stars and coins.</p>
                             </div>
                             <div class="text-end">
-                                <a href="{{ route('contest-questions.index') }}" class="btn btn-outline-dark btn-sm mb-0">Contest bank</a>
+                                <a href="{{ route('contest-questions.index') }}" class="btn ct-btn-quiet btn-sm mb-0">Contest bank</a>
                                 <a href="{{ route('contests.create') }}"
-                                   style="background-color:#56C596;"
-                                   class="btn text-white btn-sm mb-0">+&nbsp; New contest</a>
+                                  
+                                   class="btn ct-btn btn-sm mb-0">+&nbsp; New contest</a>
                             </div>
                         </div>
 
@@ -70,17 +72,17 @@
                                                 <a href="{{ route('contests.builder', $contest) }}" class="text-secondary me-2" title="Build paper">
                                                     <i class="fa-solid fa-list-check"></i>
                                                 </a>
-                                                <a href="{{ route('contests.leaderboard', $contest) }}" class="text-warning me-2" title="Leaderboard">
+                                                <a href="{{ route('contests.leaderboard', $contest) }}" class="ct-icon-action me-2" title="Leaderboard">
                                                     <i class="fa-solid fa-ranking-star"></i>
                                                 </a>
-                                                <a href="{{ route('contests.edit', $contest) }}" class="text-blue-500 me-2" title="Edit">
+                                                <a href="{{ route('contests.edit', $contest) }}" class="ct-icon-action me-2" title="Edit">
                                                     <i class="fa-regular fa-pen-to-square"></i>
                                                 </a>
                                                 @if ($contest->attempts_count === 0)
                                                     <form action="{{ route('contests.destroy', $contest) }}" method="POST" class="d-inline"
                                                           onsubmit="return confirm('Delete this contest?');">
                                                         @csrf @method('DELETE')
-                                                        <button type="submit" class="btn btn-link p-0 m-0 text-red-500 align-baseline" title="Delete">
+                                                        <button type="submit" class="btn btn-link p-0 m-0 ct-icon-danger align-baseline" title="Delete">
                                                             <i class="fa-solid fa-trash"></i>
                                                         </button>
                                                     </form>
@@ -91,7 +93,7 @@
                                         <tr>
                                             <td colspan="7" class="text-center py-5">
                                                 <p class="text-sm text-secondary mb-2">No contests yet.</p>
-                                                <a href="{{ route('contests.create') }}" class="btn btn-sm btn-dark mb-0">Create the first one</a>
+                                                <a href="{{ route('contests.create') }}" class="btn ct-btn btn-sm mb-0">Create the first one</a>
                                             </td>
                                         </tr>
                                     @endforelse

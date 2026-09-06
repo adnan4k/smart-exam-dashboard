@@ -10,7 +10,7 @@
 
 @php
     $tones = [
-        'brand' => '#56C596',
+        'brand' => '#58706D',
         'info' => '#17c1e8',
         'warning' => '#fbcf33',
         'danger' => '#ea0606',

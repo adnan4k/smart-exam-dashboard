@@ -88,7 +88,7 @@
                         </div>
 
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button style="background-color:#56C596;" type="submit"
+                            <button style="background-color:#58706D;" type="submit"
                                     class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                                 <span x-show="!@entangle('is_edit')">Create</span>
                                 <span x-show="@entangle('is_edit')">Save Changes</span>

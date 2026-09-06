@@ -56,7 +56,7 @@
                                         type="submit" 
                                         class="btn btn-primary"
                                         wire:loading.attr="disabled"
-                                        style="background-color:#56C596; border-color:#56C596;"
+                                        style="background-color:#58706D; border-color:#58706D;"
                                     >
                                         <span wire:loading.remove>Update Profile</span>
                                         <span wire:loading>Updating...</span>

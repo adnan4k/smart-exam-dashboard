@@ -1,5 +1,7 @@
 <x-layouts.app>
-    <div class="main-content">
+    @include('contests.partials.theme')
+
+    <div class="main-content ct">
         <div class="row">
             <div class="col-lg-9 col-12 mx-auto">
                 @include('contests.partials.flash')
@@ -35,7 +37,7 @@
                     <div class="card mb-4 mx-4">
                         <div class="card-header pb-0">
                             <h5 class="mb-0">{{ $isEdit ? 'Edit contest question' : 'New contest question' }}</h5>
-                            <p class="text-sm text-secondary mb-0">
+                            <p class="text-sm ct-muted mb-0">
                                 This stays hidden from students until a contest using it has ended — then it
                                 joins the study bank with its explanation.
                             </p>
@@ -104,7 +106,7 @@
                             <div class="border-top pt-3 mt-2">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <label class="form-label text-xs font-weight-bolder mb-0">Choices</label>
-                                    <button type="button" class="btn btn-outline-dark btn-sm mb-0"
+                                    <button type="button" class="btn ct-btn-quiet btn-sm mb-0"
                                             @click="addChoice()" x-show="choices.length < 6">+ Add choice</button>
                                 </div>
                                 <p class="text-xxs text-secondary">Mark the correct one. Students see these in a random order.</p>
@@ -117,7 +119,7 @@
                                                class="form-control" placeholder="Choice text" required>
                                         <input type="text" :name="`choices[${i}][formula]`" x-model="choice.formula"
                                                class="form-control" style="max-width: 12rem;" placeholder="Formula (optional)">
-                                        <button type="button" class="btn btn-link p-0 text-red-500"
+                                        <button type="button" class="btn btn-link p-0 ct-icon-danger"
                                                 @click="removeChoice(i)" x-show="choices.length > 2" title="Remove">
                                             <i class="fa-solid fa-xmark"></i>
                                         </button>
@@ -135,8 +137,8 @@
                         </div>
 
                         <div class="card-footer d-flex justify-content-between">
-                            <a href="{{ route('contest-questions.index') }}" class="btn btn-outline-secondary btn-sm mb-0">Cancel</a>
-                            <button type="submit" style="background-color:#56C596;" class="btn text-white btn-sm mb-0">
+                            <a href="{{ route('contest-questions.index') }}" class="btn ct-btn-quiet btn-sm mb-0">Cancel</a>
+                            <button type="submit" class="btn ct-btn btn-sm mb-0">
                                 {{ $isEdit ? 'Save question' : 'Add to contest bank' }}
                             </button>
                         </div>

@@ -10,7 +10,7 @@
                             <h5 class="mb-0">All Notes</h5>
                         </div>
                         <button
-                            style="background-color:#56C596;"
+                            style="background-color:#58706D;"
                             @click="$dispatch('noteModal')"
                             class="btn text-white bg-green-400 btn-sm mb-0"
                             type="button">+&nbsp; New Note</button>

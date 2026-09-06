@@ -1,5 +1,7 @@
 <x-layouts.app>
-    <div class="main-content">
+    @include('contests.partials.theme')
+
+    <div class="main-content ct">
         <div class="row">
             <div class="col-12">
                 @include('contests.partials.flash')
@@ -9,15 +11,15 @@
                         <div class="d-flex flex-row justify-content-between align-items-start">
                             <div>
                                 <h5 class="mb-0">Contest bank</h5>
-                                <p class="text-sm text-secondary mb-0">
+                                <p class="text-sm ct-muted mb-0">
                                     Questions written for contests. Students cannot see these anywhere in the app
                                     until a contest using them has ended.
                                 </p>
                             </div>
                             <div class="text-end">
                                 <a href="{{ route('contest-questions.create') }}"
-                                   style="background-color:#56C596;" class="btn text-white btn-sm mb-0">+&nbsp; New question</a>
-                                <a href="{{ route('contests.index') }}" class="btn btn-outline-dark btn-sm mb-0">Contests</a>
+                                   class="btn ct-btn btn-sm mb-0">+&nbsp; New question</a>
+                                <a href="{{ route('contests.index') }}" class="btn ct-btn-quiet btn-sm mb-0">Contests</a>
                             </div>
                         </div>
 
@@ -30,7 +32,7 @@
                                     <option value="{{ $subject->id }}" @selected(request('subject_id') == $subject->id)>{{ $subject->name }}</option>
                                 @endforeach
                             </select>
-                            <button type="submit" class="btn btn-sm btn-dark mb-0">Filter</button>
+                            <button type="submit" class="btn ct-btn btn-sm mb-0">Filter</button>
                         </form>
                     </div>
 
@@ -54,24 +56,24 @@
                                             </td>
                                             <td><span class="text-xs">{{ $question->subject?->name ?? '—' }}</span></td>
                                             <td class="text-center">
-                                                <span class="badge badge-sm bg-gradient-info">{{ $question->difficulty ?? 'unset' }}</span>
+                                                <span class="ct-badge ct-badge-quiet">{{ $question->difficulty ?? 'unset' }}</span>
                                             </td>
                                             <td class="text-center">
                                                 @if ($usedIds->has($question->id))
-                                                    <span class="badge badge-sm bg-gradient-dark">Assigned</span>
+                                                    <span class="ct-badge ct-badge-finalized">Assigned</span>
                                                 @else
                                                     <span class="text-xxs text-secondary">Available</span>
                                                 @endif
                                             </td>
                                             <td class="text-center">
-                                                <a href="{{ route('contest-questions.edit', $question->id) }}" class="text-blue-500 me-2">
+                                                <a href="{{ route('contest-questions.edit', $question->id) }}" class="ct-icon-action me-2">
                                                     <i class="fa-regular fa-pen-to-square"></i>
                                                 </a>
                                                 @unless ($usedIds->has($question->id))
                                                     <form action="{{ route('contest-questions.destroy', $question->id) }}" method="POST"
                                                           class="d-inline" onsubmit="return confirm('Delete this question?');">
                                                         @csrf @method('DELETE')
-                                                        <button type="submit" class="btn btn-link p-0 m-0 text-red-500 align-baseline">
+                                                        <button type="submit" class="btn btn-link p-0 m-0 ct-icon-danger align-baseline">
                                                             <i class="fa-solid fa-trash"></i>
                                                         </button>
                                                     </form>
@@ -86,7 +88,7 @@
                                                     Contest papers are built from questions written here, so students who
                                                     grind the study bank have not already seen the paper.
                                                 </p>
-                                                <a href="{{ route('contest-questions.create') }}" class="btn btn-sm btn-dark mb-0">Write the first one</a>
+                                                <a href="{{ route('contest-questions.create') }}" class="btn ct-btn btn-sm mb-0">Write the first one</a>
                                             </td>
                                         </tr>
                                     @endforelse

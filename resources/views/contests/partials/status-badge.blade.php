@@ -4,11 +4,11 @@
         : ($contest->hasEnded() ? 'awaiting results' : 'live'));
 
     $classes = [
-        'draft'            => 'bg-gradient-secondary',
-        'upcoming'         => 'bg-gradient-info',
-        'live'             => 'bg-gradient-success',
-        'awaiting results' => 'bg-gradient-warning',
-        'finalized'        => 'bg-gradient-dark',
+        'draft'            => 'ct-badge-draft',
+        'upcoming'         => 'ct-badge-upcoming',
+        'live'             => 'ct-badge-live',
+        'awaiting results' => 'ct-badge-awaiting',
+        'finalized'        => 'ct-badge-finalized',
     ];
 @endphp
-<span class="badge badge-sm {{ $classes[$state] ?? 'bg-gradient-secondary' }}">{{ ucfirst($state) }}</span>
+<span class="ct-badge {{ $classes[$state] ?? 'ct-badge-quiet' }}">{{ ucfirst($state) }}</span>

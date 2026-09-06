@@ -11,7 +11,7 @@
                             <p class="text-sm text-muted mb-0">Create and manage announcements sent to mobile users.</p>
                         </div>
                         <button
-                            style="background-color:#56C596;"
+                            style="background-color:#58706D;"
                             @click="$dispatch('notificationModal')"
                             class="btn text-white bg-green-400 btn-sm mb-0"
                             type="button">+&nbsp; New Notification</button>

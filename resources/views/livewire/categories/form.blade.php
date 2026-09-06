@@ -45,7 +45,7 @@
                         </div>
                         <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <button
-                                style="background-color:#56C596;"
+                                style="background-color:#58706D;"
 
                                 data-modal-hide="default-modal"
                                 type="submit"
