@@ -1,4 +1,4 @@
-<div class="main-content">
+<div>
 
     <div class="row">
         <div class="col-12">

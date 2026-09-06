@@ -1,102 +1,123 @@
-<div class="main-content">
+<div>
     <livewire:questions.form />
     <div class="row">
         <div class="col-12">
-            <div class="card mb-4 mx-4">
-                <div class="card-header pb-0">
-                    <div class="d-flex flex-row justify-content-between align-items-center">
-                        <h5 class="mb-0">All Questions</h5>
-                        <div class="d-flex gap-2">
-                            <div class="input-group">
-                                <input type="text" wire:model.live="searchTerm" class="form-control" placeholder="Search questions...">
-                            </div>
+            <div class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm overflow-hidden mb-4">
+                <!-- Card Header -->
+                <div class="card-header border-b border-slate-100 p-4">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <h5 class="font-bold text-slate-800 text-base mb-0.5 tracking-tight">Question Bank</h5>
+                            <p class="text-xs text-slate-400 mb-0">Browse and manage questions categorized by subject, year group, and exam type.</p>
+                        </div>
+                        <button
+                            @click="$dispatch('questionModal')"
+                            class="btn-brand self-start lg:self-auto shadow-sm"
+                            type="button">
+                            <i class="fa-solid fa-plus text-xs"></i> New Question
+                        </button>
+                    </div>
+
+                    <!-- Filter Toolbar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mt-3 pt-3 border-t border-slate-100">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" wire:model.live="searchTerm" class="form-control" style="padding-left: 2rem !important;" placeholder="Search questions...">
+                        </div>
+                        <div>
                             <select wire:model.live="selectedSubject" class="form-select">
                                 <option value="">All Subjects</option>
                                 @foreach($subjects as $subject)
                                     <option value="{{ $subject->name }}">{{ $subject->name }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div>
                             <select wire:model.live="selectedYear" class="form-select">
                                 <option value="">All Years</option>
                                 @foreach($years as $year)
                                     <option value="{{ $year->year }}">{{ $year->year }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div>
                             <select wire:model.live="selectedType" class="form-select">
                                 <option value="">All Types</option>
                                 @foreach($types as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
-                            <button
-                                style="background-color:#58706D;"
-                                @click="$dispatch('questionModal')"
-                                class="btn text-white btn-sm px-3"
-                                type="button">
-                                <i class="fa-solid fa-plus"></i> New Question
-                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-body px-0 pt-0 pb-2">
+                <!-- Card Body & Table -->
+                <div class="card-body px-0 pt-0 pb-3">
                     @php
                         $groupedQuestions = $questions->groupBy(function($question) {
                             return $question->subject->name ?? 'No Subject';
                         });
                     @endphp
 
-                    @foreach($groupedQuestions as $subject => $subjectQuestions)
+                    @forelse($groupedQuestions as $subject => $subjectQuestions)
                         <div class="mb-4">
-                            <h6 class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 px-4">
-                                {{ $subject }}
-                            </h6>
+                            <div class="px-4 py-2.5 bg-slate-50/80 border-y border-slate-100 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-book text-[#58706D] text-xs"></i>
+                                    {{ $subject }}
+                                </span>
+                                <span class="badge-subtle-brand text-xs">
+                                    {{ count($subjectQuestions) }} questions
+                                </span>
+                            </div>
                             <div class="table-responsive p-0">
-                                <table class="table align-items-center mb-0">
-                                    <thead class="bg-light">
+                                <table class="table align-items-center mb-0 w-full">
+                                    <thead>
                                         <tr>
-                                            <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">#</th>
-                                            <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Question</th>
-                                            <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Subject</th>
-                                            <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Year Group</th>
-                                            <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Type</th>
-                                            <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Actions</th>
+                                            <th class="text-center w-12">#</th>
+                                            <th>Question Preview</th>
+                                            <th class="text-center">Subject</th>
+                                            <th class="text-center">Year</th>
+                                            <th class="text-center">Type</th>
+                                            <th class="text-center w-24">Actions</th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
                                         @foreach ($subjectQuestions as $num => $question)
                                             <tr>
-                                                <td class="ps-4 text-xs">{{ $num + 1 }}</td>
+                                                <td class="text-center text-xs font-semibold text-slate-400">{{ $num + 1 }}</td>
                                                 <td>
-                                                    <div class="text-xs font-weight-bold mb-0">
-                                                        {!! Str::limit(strip_tags($question->question_text), 50) !!}
+                                                    <div class="text-xs font-medium text-slate-800">
+                                                        {!! Str::limit(strip_tags($question->question_text), 75) !!}
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-primary text-white">{{ $question->subject->name }}</span>
+                                                    <span class="badge-subtle-brand">{{ $question->subject->name ?? 'N/A' }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-info text-white">{{ $question->subject->year }}</span>
+                                                    <span class="badge-subtle-amber">{{ $question->subject->year ?? 'N/A' }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="badge {{ $question->type == 'exam' ? 'bg-danger' : 'bg-success' }} text-white">
-                                                        {{ ucfirst($question->type ? $question->type->name : "" ) }}
+                                                    <span class="badge-subtle-success">
+                                                        {{ ucfirst($question->type ? $question->type->name : 'Standard') }}
                                                     </span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <div class="d-flex gap-2 justify-content-center">
+                                                    <div class="flex items-center justify-center gap-1">
                                                         <button
+                                                            type="button"
                                                             @click="$dispatch('edit-question', { questionId: {{ $question->id }} })"
-                                                            class="btn btn-sm text-primary"
-                                                            data-bs-toggle="tooltip" title="Edit">
-                                                            <i class="fa-solid fa-pen"></i>
+                                                            class="action-icon-btn"
+                                                            title="Edit question">
+                                                            <i class="fa-regular fa-pen-to-square text-xs"></i>
                                                         </button>
                                                         <button
+                                                            type="button"
                                                             wire:click="confirmDelete({{ $question->id }})"
-                                                            class="btn btn-sm text-danger"
-                                                            data-bs-toggle="tooltip" title="Delete">
-                                                            <i class="fa-solid fa-trash"></i>
+                                                            class="action-icon-btn btn-danger-icon"
+                                                            title="Delete question">
+                                                            <i class="fa-solid fa-trash text-xs"></i>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -106,13 +127,22 @@
                                 </table>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <x-empty-state 
+                            icon="fas fa-circle-question"
+                            title="No questions found"
+                            message="There are no questions matching your current filters. Start building your question bank by creating your first entry."
+                        >
+                            <button
+                                type="button"
+                                @click="$dispatch('questionModal')"
+                                class="btn-brand">
+                                <i class="fa-solid fa-plus text-xs"></i> Add New Question
+                            </button>
+                        </x-empty-state>
+                    @endforelse
 
-                    @if ($questions->isEmpty())
-                        <div class="text-center p-3 text-muted">No questions found.</div>
-                    @endif
-
-                    <div class="d-flex justify-content-center mt-4">
+                    <div class="d-flex justify-content-center mt-3 px-4">
                         {{ $questions->links() }}
                     </div>
                 </div>

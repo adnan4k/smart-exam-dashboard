@@ -8,40 +8,32 @@
     @if (env('IS_DEMO'))
     <x-demo-metas></x-demo-metas>
     @endif
-    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('assets/img/logo.png') }}">
-    <link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
-    <title>
-        Quiz Dashboard
-    </title>
-    <!-- Fonts and icons     -->
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('assets/img/log.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/log.png') }}">
+    <title>Smart Exam &mdash; Admin Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
-    <!-- Nucleo Icons -->
+    <!-- Icons -->
     <link href="{{ asset('assets/css/nucleo-icons.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet" />
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet" />
-    <!-- CSS Files -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
+
+    <!-- Dashboard & Plugin Styles -->
     <link id="pagestyle" href="{{ asset('assets/css/soft-ui-dashboard.css?v=1') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    {{-- Quill --}}
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.5/dist/quill.snow.css" rel="stylesheet" />
+
     @livewireStyles
     @bukStyles
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-
-
 </head>
 
-<body class="g-sidenav-show z-0 bg-gray-100">
+<body class="g-sidenav-show z-0 bg-[#f8fafc] text-slate-700 font-sans antialiased">
 
     {{ $slot }}
 
@@ -73,7 +65,6 @@
     </script>
     <!-- Github buttons -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
-    <script src="resources/js/custom.js" defer></script>
 
 
     

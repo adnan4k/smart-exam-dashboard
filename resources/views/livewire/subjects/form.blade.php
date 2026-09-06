@@ -1,107 +1,127 @@
-<div x-data="{ openModal: @entangle('openModal') }" class="flex justify-center px-8">
-    <div @click.away="openModal = false" x-cloak x-show="openModal" id="default-modal" tabindex="-1" aria-hidden="true"
-        class="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 overflow-y-auto">
-        <div x-data="{isEdit:@entangle('is_edit')}" class="relative p-4 w-full max-w-2xl max-h-full">
-            <form class="relative bg-white rounded-lg shadow dark:bg-gray-700" wire:submit.prevent="saveSubject">
-                <div class="flex flex-wrap border shadow rounded-lg p-3 dark:bg-gray-600">
-                    <h2 class="text-xl text-gray-600 dark:text-gray-300 pb-2" x-text="isEdit ? 'Edit Subject' : 'Create Subject'"></h2>
+<div x-data="{ openModal: @entangle('openModal') }">
+    <div @click.away="openModal = false" x-cloak x-show="openModal" id="subject-modal" tabindex="-1" aria-hidden="true"
+        class="fixed inset-0 z-50 flex justify-center items-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto"
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100">
+        <div x-data="{isEdit:@entangle('is_edit')}" class="relative w-full max-w-lg my-6">
+            <form class="relative bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden" wire:submit.prevent="saveSubject">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800" x-text="isEdit ? 'Edit Subject' : 'Create New Subject'"></h3>
+                        <p class="text-xs text-slate-400 mb-0">Specify curriculum details, exam category, and testing parameters.</p>
+                    </div>
+                    <button @click="openModal = false" type="button" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
 
-                    <div class="flex flex-col gap-2 w-full border-gray-400">
-                        <!-- Name Field -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Name</label>
-                            <input wire:model="name"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                type="text"
-                                placeholder="Enter subject name">
-                            @error('name') <span class="text-red-500">{{ $message }}</span> @enderror
-                        </div>
+                <!-- Modal Body -->
+                <div class="p-6 space-y-4">
+                    <!-- Subject Name -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Subject Name <span class="text-rose-500">*</span></label>
+                        <input wire:model="name"
+                            class="form-control w-full"
+                            type="text"
+                            placeholder="e.g. Mathematics, Biology, Chemistry">
+                        @error('name') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
 
+                    <!-- Grid: Exam Type & Year -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Exam Type -->
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Year</label>
-                            <input wire:model="year"
-                                type="text"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                placeholder="e.g., 2023">
-                            @error('year') <span class="text-red-500">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Exam Type Field -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Exam Type <span class="text-rose-500">*</span></label>
                             <select wire:model="typeId" 
                                     wire:change="handleTypeChange($event.target.value)"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
+                                    class="form-select w-full">
                                 <option value="">Select Exam Type</option>
                                 @foreach ($types as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
-                            @error('typeId') <span class="text-red-500">{{ $message }}</span> @enderror
+                            @error('typeId') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
 
-                        <!-- Region Dropdown - Only shown when type is regional -->
-                        <div x-show="$wire.isRegional">
-                            <label class="text-gray-600 dark:text-gray-400">Region</label>
-                            <select wire:model="region"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100">
-                                <option value="">Select Region</option>
-                                <option value="addis_ababa">Addis Ababa (City)</option>
-                                <option value="afar">Afar</option>
-                                <option value="amhara">Amhara</option>
-                                <option value="benishangul_gumuz">Benishangul-Gumuz</option>
-                                <option value="dire_dawa">Dire Dawa (City)</option>
-                                <option value="gambela">Gambela</option>
-                                <option value="harari">Harari</option>
-                                <option value="oromia">Oromia</option>
-                                <option value="sidama">Sidama</option>
-                                <option value="snnpr">Southern Nations, Nationalities, and Peoples' Region</option>
-                                <option value="somali">Somali</option>
-                                <option value="tigray">Tigray</option>
-                            </select>
-                            @error('region') <span class="text-red-500">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Default Duration Field -->
+                        <!-- Year -->
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Default Duration (minutes)</label>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Year Group <span class="text-rose-500">*</span></label>
+                            <input wire:model="year"
+                                type="text"
+                                class="form-control w-full"
+                                placeholder="e.g. 2024">
+                            @error('year') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
+                    <!-- Region Dropdown - Only shown when type is regional -->
+                    <div x-show="$wire.isRegional" x-cloak class="transition-all duration-200">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Administrative Region <span class="text-rose-500">*</span></label>
+                        <select wire:model="region" class="form-select w-full">
+                            <option value="">Select Region</option>
+                            <option value="addis_ababa">Addis Ababa (City)</option>
+                            <option value="afar">Afar</option>
+                            <option value="amhara">Amhara</option>
+                            <option value="benishangul_gumuz">Benishangul-Gumuz</option>
+                            <option value="dire_dawa">Dire Dawa (City)</option>
+                            <option value="gambela">Gambela</option>
+                            <option value="harari">Harari</option>
+                            <option value="oromia">Oromia</option>
+                            <option value="sidama">Sidama</option>
+                            <option value="snnpr">Southern Nations, Nationalities, and Peoples' Region</option>
+                            <option value="somali">Somali</option>
+                            <option value="tigray">Tigray</option>
+                        </select>
+                        @error('region') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Default Duration Field -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Default Duration (Minutes) <span class="text-rose-500">*</span></label>
+                        <div class="relative">
                             <input wire:model="defaultDuration"
                                 type="number"
                                 min="1"
-                                class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100"
-                                placeholder="Enter duration in minutes">
-                            @error('defaultDuration') <span class="text-red-500">{{ $message }}</span> @enderror
+                                class="form-control w-full"
+                                placeholder="e.g. 60">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">mins</span>
                         </div>
+                        @error('defaultDuration') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
 
-                        <!-- Sample Subject -->
-                        <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
-                            <input type="checkbox" wire:model="isSample" id="isSample"
-                                class="w-4 h-4 mt-0.5 text-blue-600 bg-white border-2 border-gray-400 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-500 cursor-pointer">
-                            <div class="flex-1">
-                                <label for="isSample" class="block text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">
-                                    Mark as Sample Subject
-                                </label>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    All questions in this subject will be available in the sample questions section
-                                </p>
-                                @error('isSample')
-                                    <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <!-- Submit Buttons -->
-                        <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button style="background-color:#58706D;" type="submit"
-                                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                <span x-text="isEdit ? 'Edit' : 'Create'"></span>
-                            </button>
-                            <button @click="openModal = false" type="button"
-                                class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                Cancel
-                            </button>
+                    <!-- Sample Subject Toggle -->
+                    <div class="flex items-start gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                        <input type="checkbox" wire:model="isSample" id="isSample"
+                            class="mt-1 w-4 h-4 rounded text-[#58706D] focus:ring-[#58706D] border-slate-300 cursor-pointer">
+                        <div class="flex-1">
+                            <label for="isSample" class="block text-xs font-bold text-slate-800 cursor-pointer">
+                                Mark as Sample Subject
+                            </label>
+                            <p class="text-[11px] text-slate-400 mb-0">
+                                Questions under this subject will be visible in the open preview/sample examination pool.
+                            </p>
+                            @error('isSample')
+                                <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-end gap-2.5 px-6 py-4 bg-slate-50/50 border-t border-slate-100">
+                    <button @click="openModal = false" type="button" class="btn-brand-outline text-xs px-4 py-2">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-brand text-xs px-5 py-2 shadow-sm">
+                        <span wire:loading.remove wire:target="saveSubject">
+                            <i class="fas fa-check text-xs"></i> <span x-text="isEdit ? 'Save Changes' : 'Create Subject'"></span>
+                        </span>
+                        <span wire:loading wire:target="saveSubject" class="flex items-center gap-1.5">
+                            <i class="fas fa-spinner fa-spin text-xs"></i> Saving...
+                        </span>
+                    </button>
                 </div>
             </form>
         </div>

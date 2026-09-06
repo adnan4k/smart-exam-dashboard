@@ -1,3 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-brand: #58706D;
+  --color-brand-hover: #455956;
+  --color-brand-light: #f0f4f2;
+  --color-ink: #384343;
+  --color-sage: #7C8A6E;
+  --color-khaki: #B0B087;
+  --color-cream: #f7f7f2;
+  --surface-base: #f8fafc;
+  --surface-card: #ffffff;
+  --border-subtle: #e8edea;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  background-color: #f8fafc;
+  color: #334155;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sleek modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar for elements that want it clean */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Card Modernization */
+.card {
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02) !important;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Card Headers */
+.card-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(241, 245, 249, 1) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+/* Button System */
+.btn-brand {
+  background-color: var(--color-brand) !important;
+  border-color: var(--color-brand) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 0.625rem !important;
+  padding: 0.5rem 1.1rem !important;
+  font-size: 0.84rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.btn-brand:hover {
+  background-color: var(--color-brand-hover) !important;
+  border-color: var(--color-brand-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(88, 112, 109, 0.28) !important;
+  color: #ffffff !important;
+}
+
+.btn-brand:active {
+  transform: translateY(0);
+}
+
+.btn-brand-outline {
+  background-color: transparent !important;
+  border: 1px solid var(--color-brand) !important;
+  color: var(--color-brand) !important;
+  font-weight: 600 !important;
+  border-radius: 0.625rem !important;
+  padding: 0.5rem 1.1rem !important;
+  font-size: 0.84rem !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.btn-brand-outline:hover {
+  background-color: var(--color-brand-light) !important;
+  color: var(--color-brand-hover) !important;
+}
+
+/* Form Controls Modernization */
+.form-control, .form-select {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.625rem !important;
+  padding: 0.55rem 0.875rem !important;
+  font-size: 0.875rem !important;
+  color: #1e293b !important;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--color-brand) !important;
+  box-shadow: 0 0 0 3px rgba(88, 112, 109, 0.15) !important;
+  outline: none !important;
+}
+
+/* Modern Inputs */
+.input-modern {
+  width: 100%;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.625rem !important;
+  padding: 0.55rem 0.875rem !important;
+  font-size: 0.84rem !important;
+  color: #1e293b !important;
+  background-color: #ffffff;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+}
+
+.input-modern:focus {
+  border-color: var(--color-brand) !important;
+  box-shadow: 0 0 0 3px rgba(88, 112, 109, 0.15) !important;
+  outline: none !important;
+}
+
+.input-modern::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Modern Tables */
+.table thead th {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 0.85rem 1.25rem !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.table tbody td {
+  padding: 0.95rem 1.25rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  vertical-align: middle !important;
+}
+
+/* Badges */
+.badge-subtle-brand {
+  background-color: #eef3f1;
+  color: #455956;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.badge-subtle-success {
+  background-color: #ecfdf5;
+  color: #047857;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.badge-subtle-amber {
+  background-color: #fffbeb;
+  color: #b45309;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.badge-subtle-neutral {
+  background-color: #f1f5f9;
+  color: #64748b;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+/* Action Icon Buttons */
+.action-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 0.5rem;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-icon-btn:hover {
+  background-color: #f1f5f9;
+  color: var(--color-brand);
+}
+
+.action-icon-btn.btn-danger-icon:hover {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+

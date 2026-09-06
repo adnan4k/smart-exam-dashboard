@@ -10,56 +10,46 @@
 
 @php
     $tones = [
-        'brand' => '#58706D',
-        'info' => '#17c1e8',
-        'warning' => '#fbcf33',
-        'danger' => '#ea0606',
+        'brand' => ['bg' => 'bg-[#58706D]', 'color' => '#58706D', 'glow' => 'rgba(88, 112, 109, 0.25)'],
+        'sage'  => ['bg' => 'bg-[#7C8A6E]', 'color' => '#7C8A6E', 'glow' => 'rgba(124, 138, 110, 0.25)'],
+        'ink'   => ['bg' => 'bg-[#4B5757]', 'color' => '#4B5757', 'glow' => 'rgba(75, 87, 87, 0.25)'],
+        'khaki' => ['bg' => 'bg-[#96835B]', 'color' => '#96835B', 'glow' => 'rgba(150, 131, 91, 0.25)'],
+        'info'  => ['bg' => 'bg-sky-600',   'color' => '#0284c7', 'glow' => 'rgba(2, 132, 199, 0.25)'],
     ];
 
-    $directions = [
-        'up' => ['icon' => 'fa-arrow-up', 'class' => 'text-success'],
-        'down' => ['icon' => 'fa-arrow-down', 'class' => 'text-danger'],
-        'flat' => ['icon' => 'fa-minus', 'class' => 'text-secondary'],
-    ];
-
-    $background = $tones[$tone] ?? $tones['brand'];
-    $trend = $delta ? ($directions[$delta['direction']] ?? $directions['flat']) : null;
+    $chosenTone = $tones[$tone] ?? $tones['brand'];
 @endphp
 
 @if ($href)
-    <a href="{{ $href }}" wire:navigate class="d-block h-100 text-decoration-none">
+    <a href="{{ $href }}" wire:navigate class="block h-full text-decoration-none group">
 @endif
 
-<div {{ $attributes->merge(['class' => 'card h-100']) }}>
-    <div class="card-body p-3">
-        <div class="row align-items-center">
-            <div class="col-8">
-                <p class="text-sm mb-1 text-capitalize font-weight-bold text-secondary">{{ $label }}</p>
-                <h5 class="font-weight-bolder mb-1">{{ $value }}</h5>
+<div {{ $attributes->merge(['class' => 'card h-full border border-slate-200/70 rounded-2xl bg-white p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200']) }}>
+    <div class="flex items-center justify-between gap-3">
+        <div class="flex flex-col">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                {{ $label }}
+            </span>
+            <h3 class="text-2xl font-black text-slate-800 tracking-tight mb-0">
+                {{ $value }}
+            </h3>
 
-                @if ($trend || $note)
-                    <p class="mb-0 text-sm">
-                        @if ($trend)
-                            <span class="{{ $trend['class'] }} font-weight-bolder">
-                                <i class="fas {{ $trend['icon'] }} text-xs" aria-hidden="true"></i>
-                                {{ $delta['percent'] === null ? 'New' : $delta['percent'] . '%' }}
-                            </span>
-                        @endif
-
-                        @if ($note)
-                            <span class="text-secondary">{{ $note }}</span>
-                        @endif
-                    </p>
-                @endif
-            </div>
-
-            <div class="col-4 text-end">
-                <div class="icon icon-shape shadow border-radius-md d-flex align-items-center justify-content-center ms-auto"
-                     style="background-color: {{ $background }};">
-                    {{-- .icon-shape offsets its icon by 11px for the theme's non-flex markup. --}}
-                    <i class="{{ $icon }} text-white" style="top: 0;" aria-hidden="true"></i>
+            @if ($note || $href)
+                <div class="mt-2 flex items-center gap-1.5 text-xs">
+                    @if ($note)
+                        <span class="text-slate-400 font-medium">{{ $note }}</span>
+                    @elseif ($href)
+                        <span class="text-[#58706D] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                            View details <i class="fas fa-arrow-right text-[10px]"></i>
+                        </span>
+                    @endif
                 </div>
-            </div>
+            @endif
+        </div>
+
+        <div class="w-12 h-12 rounded-xl {{ $chosenTone['bg'] }} text-white flex items-center justify-center shadow-md flex-shrink-0"
+             style="box-shadow: 0 4px 12px {{ $chosenTone['glow'] }};">
+            <i class="{{ $icon }} text-lg text-white" aria-hidden="true"></i>
         </div>
     </div>
 </div>
