@@ -80,4 +80,44 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('videos.preview');
     Route::get('notifications', AppNotificationComponent::class)->name('notifications');
+
+    /*
+    | Contests. Plain controllers with Blade and Alpine rather than Livewire, so
+    | the paper builder and the live leaderboard run client side.
+    */
+    Route::controller(\App\Http\Controllers\Admin\ContestAdminController::class)->group(function () {
+        Route::get('contests', 'index')->name('contests.index');
+        Route::get('contests/create', 'create')->name('contests.create');
+        Route::post('contests', 'store')->name('contests.store');
+        Route::get('contests/{contest}/edit', 'edit')->name('contests.edit');
+        Route::put('contests/{contest}', 'update')->name('contests.update');
+        Route::delete('contests/{contest}', 'destroy')->name('contests.destroy');
+
+        Route::get('contests/{contest}/builder', 'builder')->name('contests.builder');
+        Route::get('contests/{contest}/pool', 'pool')->name('contests.pool');
+        Route::post('contests/{contest}/questions', 'addQuestion')->name('contests.questions.add');
+        Route::delete('contests/{contest}/questions', 'removeQuestion')->name('contests.questions.remove');
+
+        Route::post('contests/{contest}/publish', 'publish')->name('contests.publish');
+        Route::post('contests/{contest}/unpublish', 'unpublish')->name('contests.unpublish');
+
+        Route::get('contests/{contest}/leaderboard', 'leaderboard')->name('contests.leaderboard');
+        Route::get('contests/{contest}/standings', 'standings')->name('contests.standings');
+        Route::post('contests/{contest}/finalize', 'finalize')->name('contests.finalize');
+        Route::post('contest-attempts/{attempt}/void', 'voidAttempt')->name('contests.attempts.void');
+    });
+
+    /*
+    | Authoring for the contest bank. Kept separate from the ordinary question
+    | screens because these questions are hidden from students until the contest
+    | they belong to has been run.
+    */
+    Route::controller(\App\Http\Controllers\Admin\ContestQuestionController::class)->group(function () {
+        Route::get('contest-questions', 'index')->name('contest-questions.index');
+        Route::get('contest-questions/create', 'create')->name('contest-questions.create');
+        Route::post('contest-questions', 'store')->name('contest-questions.store');
+        Route::get('contest-questions/{contestQuestion}/edit', 'edit')->name('contest-questions.edit');
+        Route::put('contest-questions/{contestQuestion}', 'update')->name('contest-questions.update');
+        Route::delete('contest-questions/{contestQuestion}', 'destroy')->name('contest-questions.destroy');
+    });
 });

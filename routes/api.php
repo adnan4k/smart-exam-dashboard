@@ -137,3 +137,24 @@ Route::get('/test-email', function () {
         return 'Error: ' . $e->getMessage();
     }
 });
+/*
+|--------------------------------------------------------------------------
+| Contest routes
+|--------------------------------------------------------------------------
+|
+| The competition surface, kept separate from the study endpoints above.
+| These all require a Sanctum token: a contest pays out stars and coins, so
+| the caller has to prove who they are rather than passing a user_id.
+|
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('contests', [\App\Http\Controllers\Api\ContestController::class, 'index']);
+    Route::get('contests/leaderboard', [\App\Http\Controllers\Api\ContestController::class, 'globalLeaderboard']);
+    Route::get('me/rewards', [\App\Http\Controllers\Api\ContestController::class, 'myRewards']);
+
+    Route::post('contests/{contest}/start', [\App\Http\Controllers\Api\ContestController::class, 'start']);
+    Route::post('contests/{contest}/answers', [\App\Http\Controllers\Api\ContestController::class, 'saveAnswers']);
+    Route::post('contests/{contest}/submit', [\App\Http\Controllers\Api\ContestController::class, 'submit']);
+    Route::get('contests/{contest}/review', [\App\Http\Controllers\Api\ContestController::class, 'review']);
+    Route::get('contests/{contest}/leaderboard', [\App\Http\Controllers\Api\ContestController::class, 'leaderboard']);
+});
