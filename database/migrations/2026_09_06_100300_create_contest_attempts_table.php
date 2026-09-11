@@ -16,11 +16,18 @@ return new class extends Migration
             $table->string('device_id')->nullable();
             $table->string('ip_address', 45)->nullable();
 
-            $table->timestamp('started_at');
+            // DATETIME, not TIMESTAMP, and deliberately so: MySQL only gives the
+            // first TIMESTAMP column in a table an implicit CURRENT_TIMESTAMP
+            // default. Every later TIMESTAMP NOT NULL column gets an implicit
+            // '0000-00-00 00:00:00', which NO_ZERO_DATE - part of the strict mode
+            // Laravel sets - rejects outright, so `expires_at` failed to create on
+            // any server running with explicit_defaults_for_timestamp = 0.
+            // The contests table already dates its columns this way.
+            $table->dateTime('started_at');
             // Server-computed deadline. The client counts down to this, never to
             // a duration it calculated itself.
-            $table->timestamp('expires_at');
-            $table->timestamp('submitted_at')->nullable();
+            $table->dateTime('expires_at');
+            $table->dateTime('submitted_at')->nullable();
 
             $table->enum('status', ['in_progress', 'submitted', 'expired', 'voided'])
                 ->default('in_progress');
