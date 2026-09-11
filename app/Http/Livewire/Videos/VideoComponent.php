@@ -21,6 +21,18 @@ class VideoComponent extends Component
     public $filterTypeId = '';
     public $filterSubjectId = '';
     public $filterChapterId = '';
+    public $filterLanguage = '';
+
+    /** Language options shared by the filter dropdown and the table badge. */
+    public const LANGUAGES = [
+        'english'    => 'English',
+        'amharic'    => 'Amharic',
+        'afan_oromo' => 'Afan Oromo',
+        'tigrinya'   => 'Tigrinya',
+        'somali'     => 'Somali',
+        'afar'       => 'Afar',
+        'other'      => 'Other',
+    ];
 
     public $showDeleteModal = false;
     public $videoToDelete;
@@ -33,16 +45,18 @@ class VideoComponent extends Component
         'filterTypeId'    => ['except' => ''],
         'filterSubjectId' => ['except' => ''],
         'filterChapterId' => ['except' => ''],
+        'filterLanguage'  => ['except' => ''],
     ];
 
     public function updatedSearch()          { $this->resetPage(); }
     public function updatedFilterTypeId()    { $this->filterSubjectId = ''; $this->filterChapterId = ''; $this->resetPage(); }
     public function updatedFilterSubjectId() { $this->filterChapterId = ''; $this->resetPage(); }
     public function updatedFilterChapterId() { $this->resetPage(); }
+    public function updatedFilterLanguage()  { $this->resetPage(); }
 
     public function clearFilters()
     {
-        $this->reset(['search', 'filterTypeId', 'filterSubjectId', 'filterChapterId']);
+        $this->reset(['search', 'filterTypeId', 'filterSubjectId', 'filterChapterId', 'filterLanguage']);
         $this->resetPage();
     }
 
@@ -65,15 +79,17 @@ class VideoComponent extends Component
             ->when($this->filterTypeId, fn ($q) => $q->where('type_id', $this->filterTypeId))
             ->when($this->filterSubjectId, fn ($q) => $q->where('subject_id', $this->filterSubjectId))
             ->when($this->filterChapterId, fn ($q) => $q->where('chapter_id', $this->filterChapterId))
+            ->when($this->filterLanguage, fn ($q) => $q->where('language', $this->filterLanguage))
             ->ordered()
             ->paginate(10);
 
         return view('livewire.videos.video-component', [
-            'videos'   => $videos,
-            'types'    => Type::orderBy('name')->get(),
-            'subjects' => Subject::when($this->filterTypeId, fn ($q) => $q->where('type_id', $this->filterTypeId))
+            'videos'    => $videos,
+            'types'     => Type::orderBy('name')->get(),
+            'subjects'  => Subject::when($this->filterTypeId, fn ($q) => $q->where('type_id', $this->filterTypeId))
                             ->orderBy('name')->get(),
-            'chapters' => Chapter::orderBy('name')->get(),
+            'chapters'  => Chapter::orderBy('name')->get(),
+            'languages' => self::LANGUAGES,
         ]);
     }
 

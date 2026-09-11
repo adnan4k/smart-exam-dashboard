@@ -20,7 +20,7 @@
                     </div>
 
                     <!-- Filters Toolbar -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mt-4 pt-3 border-t border-slate-100">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mt-4 pt-3 border-t border-slate-100">
                         <div class="relative">
                             <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                             <input wire:model.live.debounce.400ms="search" type="text"
@@ -42,11 +42,19 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <select wire:model.live="filterChapterId" class="form-select text-xs flex-1">
+                        <div>
+                            <select wire:model.live="filterChapterId" class="form-select text-xs w-full">
                                 <option value="">All Chapters</option>
                                 @foreach ($chapters as $chapter)
                                     <option value="{{ $chapter->id }}">{{ $chapter->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select wire:model.live="filterLanguage" class="form-select text-xs flex-1">
+                                <option value="">All Languages</option>
+                                @foreach ($languages as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
                             <button wire:click="clearFilters" class="btn-brand-outline text-xs px-3 py-2 flex-shrink-0" type="button">
@@ -66,6 +74,7 @@
                                     <th>Video Details</th>
                                     <th class="text-center">Subject</th>
                                     <th class="text-center">Chapter</th>
+                                    <th class="text-center">Language</th>
                                     <th class="text-center">Size</th>
                                     <th class="text-center">Status</th>
                                     <th class="text-center w-28">Actions</th>
@@ -110,6 +119,13 @@
                                             </span>
                                         </td>
                                         <td class="text-center">
+                                            @if ($video->language)
+                                                <span class="badge-subtle-neutral">{{ $languages[$video->language] ?? ucfirst(str_replace('_', ' ', $video->language)) }}</span>
+                                            @else
+                                                <span class="text-xs text-slate-400">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
                                             <p class="text-xs font-medium text-slate-700 mb-0">
                                                 {{ $video->file_size ? number_format($video->file_size / 1048576, 1) . ' MB' : '—' }}
                                             </p>
@@ -144,7 +160,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="p-0">
+                                        <td colspan="8" class="p-0">
                                             <x-empty-state
                                                 title="No Video Lessons Found"
                                                 description="Upload instructional video lectures to guide students through chapters."

@@ -255,6 +255,7 @@ class VideoController extends Controller
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
             'user_id'    => 'nullable|exists:users,id',
+            'language'   => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
         $user = $this->resolveUser($request);
@@ -264,6 +265,7 @@ class VideoController extends Controller
         $videos = Video::with(['chapter', 'type'])
             ->active()
             ->forSubject($subject->id)
+            ->when($request->filled('language'), fn ($q) => $q->where('language', $request->input('language')))
             ->ordered()
             ->get();
 
@@ -293,6 +295,7 @@ class VideoController extends Controller
             'chapter_id' => 'required|exists:chapters,id',
             'subject_id' => 'nullable|exists:subjects,id',
             'user_id'    => 'nullable|exists:users,id',
+            'language'   => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
         $user = $this->resolveUser($request);
@@ -303,6 +306,7 @@ class VideoController extends Controller
             ->active()
             ->forChapter($chapter->id)
             ->when($request->filled('subject_id'), fn ($q) => $q->where('subject_id', $request->input('subject_id')))
+            ->when($request->filled('language'), fn ($q) => $q->where('language', $request->input('language')))
             ->ordered()
             ->get();
 
@@ -324,7 +328,9 @@ class VideoController extends Controller
     public function forUserGrouped(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id'    => 'required|exists:users,id',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'language'   => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
         $user = User::findOrFail($request->input('user_id'));
@@ -343,6 +349,8 @@ class VideoController extends Controller
             ->where(function ($q) use ($user) {
                 $q->whereNull('type_id')->orWhere('type_id', $user->type_id);
             })
+            ->when($request->filled('subject_id'), fn ($q) => $q->where('subject_id', $request->input('subject_id')))
+            ->when($request->filled('language'), fn ($q) => $q->where('language', $request->input('language')))
             ->ordered()
             ->get();
 
