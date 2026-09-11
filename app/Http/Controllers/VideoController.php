@@ -101,6 +101,32 @@ class VideoController extends Controller
         return collect($videos)->map(fn ($v) => $this->present($v, $entitled, $userId))->values()->all();
     }
 
+    /**
+     * Subject -> chapter tree for a flat collection of videos. A video with a
+     * subject but no chapter sits in that subject's own "subject_videos".
+     */
+    private function groupBySubject($videos, bool $entitled, ?int $userId): array
+    {
+        return $videos->whereNotNull('subject_id')
+            ->groupBy('subject_id')
+            ->map(function ($subjectVideos, $subjectId) use ($entitled, $userId) {
+                $chapters = $subjectVideos->whereNotNull('chapter_id')
+                    ->groupBy('chapter_id')
+                    ->map(fn ($group, $chapterId) => [
+                        'chapter_id'   => (int) $chapterId,
+                        'chapter_name' => optional($group->first()->chapter)->name,
+                        'videos'       => $this->presentMany($group, $entitled, $userId),
+                    ])->values();
+
+                return [
+                    'subject_id'     => (int) $subjectId,
+                    'subject_name'   => optional($subjectVideos->first()->subject)->name,
+                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $entitled, $userId),
+                    'chapters'       => $chapters,
+                ];
+            })->values()->all();
+    }
+
     /* ------------------------------------------------------------------ */
     /* Download — the gate                                                 */
     /* ------------------------------------------------------------------ */
@@ -322,6 +348,46 @@ class VideoController extends Controller
     }
 
     /**
+     * Every video in one language, grouped subject -> chapter, so a language
+     * picker in the app leads straight into a browsable list. Videos filed
+     * under no subject come back under "general_videos".
+     */
+    public function byLanguage(Request $request)
+    {
+        $request->validate([
+            'language'   => 'required|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
+            'user_id'    => 'nullable|exists:users,id',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'type_id'    => 'nullable|exists:types,id',
+            'grade'      => 'nullable|integer|min:0|max:12',
+        ]);
+
+        $user = $this->resolveUser($request);
+        $entitled = $this->isEntitled($user);
+        $language = $request->input('language');
+
+        $videos = Video::with(['subject', 'chapter', 'type'])
+            ->active()
+            ->forLanguage($language)
+            ->when($request->filled('subject_id'), fn ($q) => $q->where('subject_id', $request->input('subject_id')))
+            ->when($request->filled('type_id'), fn ($q) => $q->where('type_id', $request->input('type_id')))
+            ->when($request->filled('grade'), fn ($q) => $q->where('grade', $request->input('grade')))
+            ->ordered()
+            ->get();
+
+        return $this->jsonResponse([
+            'status'   => 'success',
+            'entitled' => $entitled,
+            'data'     => [
+                'language'       => $language,
+                'total'          => $videos->count(),
+                'general_videos' => $this->presentMany($videos->whereNull('subject_id'), $entitled, $user?->id),
+                'subjects'       => $this->groupBySubject($videos, $entitled, $user?->id),
+            ],
+        ]);
+    }
+
+    /**
      * Everything visible to a user, grouped subject -> chapter,
      * scoped to the user's exam type (plus type-agnostic videos).
      */
@@ -354,24 +420,7 @@ class VideoController extends Controller
             ->ordered()
             ->get();
 
-        $subjects = $videos->whereNotNull('subject_id')
-            ->groupBy('subject_id')
-            ->map(function ($subjectVideos, $subjectId) use ($entitled, $user) {
-                $chapters = $subjectVideos->whereNotNull('chapter_id')
-                    ->groupBy('chapter_id')
-                    ->map(fn ($group, $chapterId) => [
-                        'chapter_id'   => (int) $chapterId,
-                        'chapter_name' => optional($group->first()->chapter)->name,
-                        'videos'       => $this->presentMany($group, $entitled, $user->id),
-                    ])->values();
-
-                return [
-                    'subject_id'     => (int) $subjectId,
-                    'subject_name'   => optional($subjectVideos->first()->subject)->name,
-                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $entitled, $user->id),
-                    'chapters'       => $chapters,
-                ];
-            })->values();
+        $subjects = $this->groupBySubject($videos, $entitled, $user->id);
 
         return $this->jsonResponse([
             'status'   => 'success',

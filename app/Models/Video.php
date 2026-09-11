@@ -113,6 +113,11 @@ class Video extends Model
         return $query->where('chapter_id', $chapterId);
     }
 
+    public function scopeForLanguage($query, $language)
+    {
+        return $query->where('language', $language);
+    }
+
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('created_at', 'desc');

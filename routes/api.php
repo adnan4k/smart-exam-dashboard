@@ -88,6 +88,7 @@ Route::delete('notes/{note}', [NoteController::class, 'destroy']);
 // Videos routes - specific routes first to avoid conflicts
 Route::get('videos/by-subject', [VideoController::class, 'bySubject']);
 Route::get('videos/by-chapter', [VideoController::class, 'byChapter']);
+Route::get('videos/by-language', [VideoController::class, 'byLanguage']);
 Route::get('videos/for-user-grouped', [VideoController::class, 'forUserGrouped']);
 Route::get('videos/{video}/download', [VideoController::class, 'download']);
 
