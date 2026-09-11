@@ -248,7 +248,14 @@ class ContestController extends Controller
     }
 
     /**
-     * The answer key, released only after this student has finished.
+     * The student's own paper back, and - once the contest is over for
+     * everybody - the answer key with it.
+     *
+     * Finishing early must not buy an answer key: the first student to submit
+     * could otherwise pull the key here and hand it to everyone still sitting
+     * the paper. So while the contest is still running this returns only what
+     * the student themselves chose. The correct choice stays server-side, used
+     * for scoring and nothing else, until ends_at has passed.
      */
     public function review(Request $request, Contest $contest): JsonResponse
     {
@@ -258,6 +265,8 @@ class ContestController extends Controller
             return response()->json(['status' => 'error', 'error_code' => 'not_finished',
                 'message' => 'Finish the contest to see the answers.'], 403);
         }
+
+        $keyReleased = $contest->hasEnded();
 
         $answers = $attempt->answers()->get()->keyBy('question_id');
 
@@ -273,17 +282,24 @@ class ContestController extends Controller
             'stars_awarded' => $attempt->stars_awarded,
             // Standings are only settled once the contest is finalized.
             'is_final'      => $contest->status === 'finalized',
-            'questions' => $questions->map(function ($question) use ($answers) {
+            // Tells the app whether to render an answer key or just the
+            // student's own selections with a "comes back when the contest
+            // closes" note.
+            'answers_released'    => $keyReleased,
+            'answers_released_at' => $contest->ends_at->toIso8601String(),
+            'questions' => $questions->map(function ($question) use ($answers, $keyReleased) {
                 $answer = $answers->get($question->id);
 
                 return [
                     'question_id'       => $question->id,
                     'question_text'     => $question->question_text,
-                    'correct_choice_id' => $question->correctChoiceId(),
+                    // Null until the contest closes - never "the answer, but
+                    // flagged": an app that ignores the flag still cannot leak it.
+                    'correct_choice_id' => $keyReleased ? $question->correctChoiceId() : null,
                     'my_choice_id'      => $answer?->choice_id,
-                    'is_correct'        => (bool) $answer?->is_correct,
-                    'explanation'       => $question->explanation,
-                    'explanation_image' => $question->explanation_image_path
+                    'is_correct'        => $keyReleased ? (bool) $answer?->is_correct : null,
+                    'explanation'       => $keyReleased ? $question->explanation : null,
+                    'explanation_image' => $keyReleased && $question->explanation_image_path
                         ? asset('storage/' . $question->explanation_image_path)
                         : null,
                     'choices' => $question->choices->map(fn ($c) => [

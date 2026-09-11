@@ -91,8 +91,6 @@
                     <!-- One card per question -->
                     <template x-for="(q, qi) in questions" :key="q.uid">
                         <div class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm overflow-hidden mb-6">
-                            {{-- Carries the selected answer index to the server. --}}
-                            <input type="hidden" :name="`questions[${q.uid}][correct_choice]`" :value="q.correct ?? ''">
                             <div class="border-b border-slate-100 p-4 flex items-center justify-between">
                                 <span class="badge-subtle-brand" x-text="'Question ' + (qi + 1)"></span>
                                 <button type="button" class="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 transition"
@@ -123,34 +121,50 @@
                                 {{-- Answer Choices --}}
                                 <div class="border-t border-slate-100 pt-4">
                                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Answer Choices <span class="text-rose-500">*</span></label>
-                                    <p class="text-[11px] text-slate-400 mb-3">Tap the circle next to the correct answer &mdash; that row highlights. Leave unused choices blank. Students see these shuffled.</p>
+                                    <p class="text-[11px] text-slate-400 mb-3"><strong class="text-slate-600">Click the row of the correct answer</strong> (or its lettered circle) &mdash; the circle fills in and the row highlights. Leave unused choices blank. Students see these shuffled, and never receive the answer &mdash; it is only used server-side to score the contest.</p>
 
                                     <div class="space-y-2">
                                         <template x-for="(c, ci) in q.choices" :key="ci">
+                                            {{-- The whole row is the hit area. The two text fields stop the
+                                                 click so typing an option never marks it correct by accident.
+                                                 Style overrides are objects, not strings: Alpine replaces the
+                                                 whole style attribute when given a string, which wiped the
+                                                 static sizing and left nothing to click. --}}
                                             <div class="flex items-center gap-2 rounded-xl"
-                                                 style="padding: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; border-radius: 12px;"
-                                                 :style="q.correct === ci ? 'border-color: #58706D; background-color: #EDF2F1;' : ''">
+                                                 @click="q.correct = ci"
+                                                 style="padding: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; border-radius: 12px; cursor: pointer;"
+                                                 :style="q.correct === ci ? { borderColor: '#58706D', backgroundColor: '#EDF2F1' } : {}">
                                                 <div class="flex items-center gap-1.5" style="padding: 0 8px;">
-                                                    <button type="button" @click="q.correct = ci"
-                                                            class="flex items-center justify-center shrink-0 cursor-pointer rounded-full"
-                                                            style="width: 22px; height: 22px; border: 2px solid #94a3b8; background-color: #ffffff;"
-                                                            :style="q.correct === ci ? 'border-color: #58706D; background-color: #58706D;' : ''"
-                                                            :title="'Mark choice ' + String.fromCharCode(65 + ci) + ' as the correct answer'">
-                                                        <span class="block rounded-full" style="width: 8px; height: 8px; background-color: #ffffff;"
-                                                              x-show="q.correct === ci"></span>
-                                                    </button>
-                                                    <span class="font-bold" style="font-size: 11px; color: #64748b;"
-                                                          x-text="String.fromCharCode(65 + ci)"></span>
+                                                    <label class="flex items-center justify-center shrink-0 rounded-full font-bold"
+                                                           style="position: relative; width: 30px; height: 30px; border: 2px solid #94a3b8; background-color: #ffffff; color: #64748b; font-size: 12px; cursor: pointer; user-select: none;"
+                                                           :style="q.correct === ci ? { borderColor: '#58706D', backgroundColor: '#58706D', color: '#ffffff' } : {}"
+                                                           :title="'Mark choice ' + String.fromCharCode(65 + ci) + ' as the correct answer'">
+                                                        {{-- A real radio, so the circle is clickable by the
+                                                             browser itself and reachable by keyboard. It also
+                                                             carries the answer index to the server. --}}
+                                                        <input type="radio" :name="`questions[${q.uid}][correct_choice]`"
+                                                               :value="ci" x-model.number="q.correct"
+                                                               style="position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer;">
+                                                        <span x-text="String.fromCharCode(65 + ci)"></span>
+                                                    </label>
                                                 </div>
                                                 <div class="flex-1">
                                                     <input type="text" :name="`questions[${q.uid}][choices][${ci}][text]`" x-model="c.text"
+                                                           @click.stop
                                                            class="w-full text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white"
                                                            placeholder="Choice option text...">
                                                 </div>
                                                 <div class="w-44">
                                                     <input type="text" :name="`questions[${q.uid}][choices][${ci}][formula]`" x-model="c.formula"
+                                                           @click.stop
                                                            class="w-full text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white font-mono text-[11px]"
                                                            placeholder="Formula (optional)">
+                                                </div>
+                                                <div class="shrink-0" style="width: 74px; text-align: right; padding-right: 4px;">
+                                                    <span class="font-bold" style="font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #58706D;"
+                                                          x-show="q.correct === ci">
+                                                        <i class="fa-solid fa-check"></i> Correct
+                                                    </span>
                                                 </div>
                                             </div>
                                         </template>
@@ -263,7 +277,7 @@
                         }
 
                         if (q.correct === null || q.correct === undefined || q.correct === '') {
-                            problems.push(`Question ${n}: mark the correct answer with the radio button.`);
+                            problems.push(`Question ${n}: click the row of the correct answer to mark it.`);
                         } else if (!q.choices[q.correct] || !q.choices[q.correct].text.trim()) {
                             problems.push(`Question ${n}: the marked correct answer is one of the blank choices.`);
                         }
