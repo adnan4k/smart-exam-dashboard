@@ -11,6 +11,7 @@ use App\Models\Subject;
 use App\Models\Type;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Authoring for the contest bank.
@@ -44,43 +45,99 @@ class ContestQuestionController extends Controller
 
     public function create()
     {
-        return view('contests.questions.form', [
-            'question' => new Question(['bank' => 'contest', 'difficulty' => 'medium']),
-            'choices'  => collect(),
+        return view('contests.questions.create', [
             'subjects' => Subject::orderBy('name')->get(),
             'chapters' => Chapter::orderBy('name')->get(),
             'types'    => Type::orderBy('name')->get(),
         ]);
     }
 
+    /**
+     * Bulk entry. The shared settings apply to every question in the batch, so
+     * an author banks a whole paper in one visit instead of one round trip per
+     * question.
+     */
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->bulkValidated($request);
 
-        $question = DB::transaction(function () use ($request, $data) {
-            $question = Question::create([
-                'question_text'       => $data['question_text'],
-                'question_image_path' => $this->upload($request, 'question_image', 'questions/images'),
-                'formula'             => $data['formula'] ?? null,
-                'explanation'         => $data['explanation'] ?? '',
-                'explanation_image_path' => $this->upload($request, 'explanation_image', 'explanations/images'),
-                'subject_id'          => $data['subject_id'],
-                'chapter_id'          => $data['chapter_id'] ?? null,
-                'type_id'             => $data['type_id'],
-                'difficulty'          => $data['difficulty'],
-                // The two things that keep it out of the study bank until its
-                // contest has been run.
-                'bank'                => 'contest',
-                'released_at'         => null,
-            ]);
+        $uploadedPaths = [];
 
-            $this->saveChoices($question, $data['choices'], (int) $data['correct_choice']);
+        try {
+            $count = DB::transaction(function () use ($request, $data, &$uploadedPaths) {
+                $created  = 0;
+                $position = 1;
 
-            return $question;
-        });
+                foreach ($data['questions'] as $uid => $q) {
+                    // Choice rows are fixed at A-D in the bulk form; unused rows
+                    // arrive empty and are dropped here.
+                    $keptIndexes = array_values(array_filter(
+                        array_keys($q['choices']),
+                        fn ($i) => trim((string) ($q['choices'][$i]['text'] ?? '')) !== ''
+                    ));
+
+                    if (count($keptIndexes) < 2) {
+                        throw ValidationException::withMessages([
+                            'questions' => "Question {$position} needs at least 2 answer choices.",
+                        ]);
+                    }
+
+                    $correctIndex = array_search((int) $q['correct_choice'], $keptIndexes, true);
+
+                    if ($correctIndex === false) {
+                        throw ValidationException::withMessages([
+                            'questions' => "Question {$position}: the marked correct answer is one of the blank choices.",
+                        ]);
+                    }
+
+                    $questionImage    = $this->upload($request, "questions.{$uid}.question_image", 'questions/images');
+                    $explanationImage = $this->upload($request, "questions.{$uid}.explanation_image", 'explanations/images');
+
+                    if ($questionImage) {
+                        $uploadedPaths[] = $questionImage;
+                    }
+                    if ($explanationImage) {
+                        $uploadedPaths[] = $explanationImage;
+                    }
+
+                    $question = Question::create([
+                        'question_text'          => $q['question_text'],
+                        'question_image_path'    => $questionImage,
+                        'formula'                => $q['formula'] ?? null,
+                        'explanation'            => $q['explanation'] ?? '',
+                        'explanation_image_path' => $explanationImage,
+                        'subject_id'             => $data['subject_id'],
+                        'chapter_id'             => $data['chapter_id'] ?? null,
+                        'type_id'                => $data['type_id'],
+                        'difficulty'             => $data['difficulty'],
+                        // The two things that keep it out of the study bank until
+                        // its contest has been run.
+                        'bank'                   => 'contest',
+                        'released_at'            => null,
+                    ]);
+
+                    $orderedChoices = array_map(fn ($i) => $q['choices'][$i], $keptIndexes);
+
+                    $this->saveChoices($question, $orderedChoices, $correctIndex);
+
+                    $created++;
+                    $position++;
+                }
+
+                return $created;
+            });
+        } catch (\Throwable $e) {
+            // Files land on disk before the transaction commits, so clean them
+            // up if the batch fails anywhere in the middle.
+            foreach ($uploadedPaths as $path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            }
+
+            throw $e;
+        }
 
         return redirect()->route('contest-questions.index')
-            ->with('success', 'Question added to the contest bank. Students cannot see it until a contest using it has ended.');
+            ->with('success', "{$count} questions added to the contest bank. Students cannot see them until a contest using them has ended.");
     }
 
     public function edit($contestQuestion)
@@ -182,6 +239,27 @@ class ContestQuestionController extends Controller
         return $request->hasFile($field)
             ? $request->file($field)->store($path, 'public')
             : null;
+    }
+
+    private function bulkValidated(Request $request): array
+    {
+        return $request->validate([
+            'type_id'    => 'required|exists:types,id',
+            'subject_id' => 'required|exists:subjects,id',
+            'chapter_id' => 'nullable|exists:chapters,id',
+            'difficulty' => 'required|in:easy,medium,hard',
+
+            'questions'                     => 'required|array|max:50',
+            'questions.*.question_text'     => 'required|string',
+            'questions.*.formula'           => 'nullable|string',
+            'questions.*.explanation'       => 'nullable|string',
+            'questions.*.question_image'    => 'nullable|image|max:5120',
+            'questions.*.explanation_image' => 'nullable|image|max:5120',
+            'questions.*.choices'           => 'required|array|min:2|max:6',
+            'questions.*.choices.*.text'    => 'nullable|string',
+            'questions.*.choices.*.formula' => 'nullable|string',
+            'questions.*.correct_choice'    => 'required|integer|min:0|max:3',
+        ]);
     }
 
     private function validated(Request $request): array

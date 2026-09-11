@@ -42,7 +42,7 @@ class Form extends Component
     protected $listeners = ['questionModal' => 'questionModal'];
 
     public $questionId;
-    public $scienceType;
+    public $scienceType = 'natural';
     public $region;
     public $correctChoiceId;
 
@@ -92,15 +92,39 @@ class Form extends Component
         'correctChoiceId' => 'required|integer|min:0', // Added validation for correct choice
     ];
 
+    protected $validationAttributes = [
+        'subjectId' => 'subject',
+        'type' => 'exam type',
+        'questionText' => 'question text',
+        'correctChoiceId' => 'correct answer',
+        'choices.*.text' => 'choice text',
+    ];
+
     public function addChoice()
     {
+        if (count($this->choices) >= 6) {
+            return;
+        }
         $this->choices[] = ['text' => '', 'image' => null, 'formula' => ''];
     }
 
     public function removeChoice($index)
     {
+        if (count($this->choices) <= 2) {
+            return;
+        }
         unset($this->choices[$index]);
         $this->choices = array_values($this->choices);
+
+        // Keep the correct-answer selection in sync after removal.
+        if ($this->correctChoiceId === null) {
+            return;
+        }
+        if ((int) $this->correctChoiceId === (int) $index) {
+            $this->correctChoiceId = null;
+        } elseif ((int) $this->correctChoiceId > (int) $index) {
+            $this->correctChoiceId = (int) $this->correctChoiceId - 1;
+        }
     }
 
     public function saveQuestion()

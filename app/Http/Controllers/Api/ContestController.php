@@ -6,6 +6,7 @@ use App\Exceptions\ContestException;
 use App\Http\Controllers\Controller;
 use App\Models\Contest;
 use App\Models\ContestAttempt;
+use App\Models\ContestRewardRule;
 use App\Models\Question;
 use App\Models\RewardTransaction;
 use App\Services\ContestService;
@@ -67,6 +68,64 @@ class ContestController extends Controller
                     'my_rank'            => $attempt?->rank,
                 ];
             }),
+        ]);
+    }
+
+    /**
+     * One contest in full - the app's contest-details screen. The list stays a
+     * summary; this is where the prize bands and the caller's own entry live.
+     */
+    public function show(Request $request, Contest $contest): JsonResponse
+    {
+        $user = $request->user();
+
+        // Drafts and other-cohort contests must not even be discoverable.
+        $contest = Contest::visibleTo($user)
+            ->with(['type:id,name', 'subject:id,name'])
+            ->find($contest->id);
+
+        if (! $contest) {
+            return response()->json(['status' => 'error', 'error_code' => 'not_found',
+                'message' => 'Contest not found.'], 404);
+        }
+
+        $attempt = ContestAttempt::where('contest_id', $contest->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        return response()->json([
+            'status'      => 'success',
+            'server_time' => now()->toIso8601String(),
+            'contest'     => [
+                'id'               => $contest->id,
+                'title'            => $contest->title,
+                'description'      => $contest->description,
+                'exam_type'        => $contest->type?->name,
+                'subject'          => $contest->subject?->name,
+                'question_count'   => $contest->question_count,
+                'duration_minutes' => $contest->duration_minutes,
+                'starts_at'        => $contest->starts_at->toIso8601String(),
+                'ends_at'          => $contest->ends_at->toIso8601String(),
+                'join_closes_at'   => $contest->joinClosesAt()->toIso8601String(),
+                'state'            => $this->stateOf($contest),
+                // Prize bands the contest pays out; the contest's own rules win,
+                // otherwise the global defaults are shown.
+                'rewards'          => ContestRewardRule::forContest($contest)->map(fn ($rule) => [
+                    'rank_from' => $rule->rank_from,
+                    'rank_to'   => $rule->rank_to,
+                    'stars'     => $rule->stars,
+                ])->values(),
+            ],
+            'my_attempt' => $attempt ? [
+                'status'            => $attempt->status,
+                'started_at'        => $attempt->started_at?->toIso8601String(),
+                'expires_at'        => $attempt->expires_at?->toIso8601String(),
+                'seconds_remaining' => $attempt->status === 'in_progress' ? $attempt->secondsRemaining() : 0,
+                'submitted_at'      => $attempt->submitted_at?->toIso8601String(),
+                'score'             => $attempt->score,
+                'rank'              => $attempt->rank,
+                'stars_awarded'     => $attempt->stars_awarded,
+            ] : null,
         ]);
     }
 
@@ -208,9 +267,12 @@ class ContestController extends Controller
             ->get();
 
         return response()->json([
-            'status'    => 'success',
-            'score'     => $attempt->score,
-            'rank'      => $attempt->rank,
+            'status'        => 'success',
+            'score'         => $attempt->score,
+            'rank'          => $attempt->rank,
+            'stars_awarded' => $attempt->stars_awarded,
+            // Standings are only settled once the contest is finalized.
+            'is_final'      => $contest->status === 'finalized',
             'questions' => $questions->map(function ($question) use ($answers) {
                 $answer = $answers->get($question->id);
 
@@ -320,6 +382,41 @@ class ContestController extends Controller
                 'total_stars' => $user->total_stars,
                 'total_coins' => $user->total_coins,
             ],
+        ]);
+    }
+
+    /**
+     * The caller's own contest record, for the app's "My contests" screen.
+     * Every entry with its result, newest first; an attempt still in progress
+     * comes back with its seconds_remaining so a resume is one tap away.
+     */
+    public function myAttempts(Request $request): JsonResponse
+    {
+        $attempts = ContestAttempt::with('contest:id,title')
+            ->where('user_id', $request->user()->id)
+            ->latest('id')
+            ->limit(100)
+            ->get();
+
+        return response()->json([
+            'status'   => 'success',
+            'attempts' => $attempts->map(fn ($attempt) => [
+                'contest_id'         => $attempt->contest_id,
+                'contest_title'      => $attempt->contest?->title,
+                'status'             => $attempt->status,
+                'started_at'         => $attempt->started_at?->toIso8601String(),
+                'expires_at'         => $attempt->expires_at?->toIso8601String(),
+                'seconds_remaining'  => $attempt->status === 'in_progress' ? $attempt->secondsRemaining() : 0,
+                'submitted_at'       => $attempt->submitted_at?->toIso8601String(),
+                'score'              => $attempt->score,
+                'correct'            => $attempt->correct_count,
+                'wrong'              => $attempt->wrong_count,
+                'unanswered'         => $attempt->unanswered_count,
+                'total_questions'    => $attempt->total_questions,
+                'time_taken_seconds' => $attempt->time_taken_seconds,
+                'rank'               => $attempt->rank,
+                'stars_awarded'      => $attempt->stars_awarded,
+            ]),
         ]);
     }
 
