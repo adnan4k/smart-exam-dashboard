@@ -45,22 +45,15 @@
     <script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
     <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const toggleButton = document.getElementById("iconNavbarSidenav");
-            const sidenav = document.getElementById("sidebar-container");
-            console.log('here is me faya', sidenav)
-            toggleButton.addEventListener("click", () => {
-                console.log('clicked here')
-                // Toggle a class to show/hide the sidebar
-                console.log(sidenav.classList.toggle("hidden"));
-            });
-        });
-    </script>
+    {{-- The Soft UI template's sidebar toggle used to live here. It looked for
+         #iconNavbarSidenav, which none of these pages render, so it threw
+         "Cannot read properties of null (reading 'addEventListener')" on every
+         single page load and drowned out any real error in the console. The
+         working mobile toggle is window.sidebarState, in the sidebar partial. --}}
 
     <script>
         var win = navigator.platform.indexOf('Win') > -1;
-        if (win && document.querySelector('#sidenav-scrollbar')) {
+        if (win && typeof Scrollbar !== 'undefined' && document.querySelector('#sidenav-scrollbar')) {
             var options = {
                 damping: '0.5'
             }
