@@ -357,7 +357,7 @@
                                 @php
                                     $status    = $statuses[$index];
                                     $isActive  = (int) $activeIndex === (int) $index;
-                                    $preview   = trim(\Illuminate\Support\Str::limit(strip_tags($draft['text']), 80));
+                                    $preview   = \App\Support\Latex::preview($draft['text'], 80);
                                     $hasErrors = $errors->hasAny([
                                         'drafts.' . $index . '.text',
                                         'drafts.' . $index . '.explanation',
@@ -380,7 +380,7 @@
                                             </span>
                                             <span class="min-w-0 flex-1">
                                                 <span class="block truncate text-xs font-semibold {{ $preview ? 'text-slate-800' : 'text-slate-400 italic' }}">
-                                                    {{ $preview ?: 'Untitled question' }}
+                                                    <x-math-text :value="$draft['text']" :limit="80" fallback="Untitled question" />
                                                 </span>
                                                 <span class="block text-[11px] font-medium mt-0.5 {{ $status['ready'] ? 'text-emerald-600' : 'text-amber-600' }}">
                                                     <i class="fa-solid {{ $status['ready'] ? 'fa-circle-check' : 'fa-circle-exclamation' }} text-[9px] mr-1"></i>{{ $status['label'] }}
@@ -406,26 +406,51 @@
                                     @if ($isActive)
                                         <div class="border-t border-slate-100 p-4 space-y-4">
 
-                                            {{-- Prompt --}}
-                                            <div>
-                                                <div class="flex items-center justify-between mb-1.5">
+                                            {{-- Prompt. Maths goes inline, wrapped in $…$, and is
+                                                 typeset live in the preview underneath. --}}
+                                            <div x-data="{ hasMath: {{ str_contains((string) $draft['text'], '$') ? 'true' : 'false' }} }">
+                                                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                                                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Question Prompt <span class="text-rose-500">*</span></label>
-                                                    <span class="text-[11px] font-medium text-slate-300"
-                                                          x-text="(($wire.drafts[{{ $index }}] || {}).text || '').length + ' characters'"></span>
+                                                    <div class="flex items-center gap-1">
+                                                        <button type="button" class="math-btn" title="Insert inline formula"
+                                                                @click="MathText.insert($refs.prompt, '$@$')"><i class="fa-solid fa-dollar-sign text-[9px]"></i> Math</button>
+                                                        <button type="button" class="math-btn" title="Fraction"
+                                                                @click="MathText.insert($refs.prompt, '$\\frac{@}{b}$')">a/b</button>
+                                                        <button type="button" class="math-btn" title="Square root"
+                                                                @click="MathText.insert($refs.prompt, '$\\sqrt{@}$')">&radic;x</button>
+                                                        <button type="button" class="math-btn" title="Power"
+                                                                @click="MathText.insert($refs.prompt, '$@^{2}$')">x&sup2;</button>
+                                                        <button type="button" class="math-btn" title="Subscript"
+                                                                @click="MathText.insert($refs.prompt, '$@_{n}$')">x&#8345;</button>
+                                                        <span class="text-[11px] font-medium text-slate-300 ml-1"
+                                                              x-text="(($wire.drafts[{{ $index }}] || {}).text || '').length + ' characters'"></span>
+                                                    </div>
                                                 </div>
-                                                <textarea wire:model.blur="drafts.{{ $index }}.text" rows="3"
-                                                          placeholder="Type the full question text here..."
+                                                <textarea wire:model.blur="drafts.{{ $index }}.text" rows="3" x-ref="prompt"
+                                                          @input="hasMath = $event.target.value.includes('$'); MathText.preview($refs.promptPreview, $event.target.value)"
+                                                          placeholder="Type the full question text here, with any maths inline: What is $\sqrt{x^2+y^2}$ when $x=3$?"
                                                           class="input-modern text-xs resize-none min-h-[84px]"></textarea>
+                                                <div class="mt-1.5" x-show="hasMath" x-cloak>
+                                                    <span class="math-preview"><span class="math-preview-label">Preview</span><span data-math x-ref="promptPreview" data-math-src="{{ $draft['text'] }}">{{ $draft['text'] }}</span></span>
+                                                </div>
+                                                <p class="text-[11px] text-slate-400 mt-1">
+                                                    <i class="fa-solid fa-square-root-variable mr-1"></i>Wrap maths in <code class="font-mono text-[10px] text-slate-500">$…$</code> to write it inside a sentence &mdash; use <code class="font-mono text-[10px] text-slate-500">\$</code> for a literal dollar sign.
+                                                </p>
                                                 @error('drafts.' . $index . '.text')
                                                     <span class="text-rose-500 text-[11px] font-medium mt-1 block">{{ $message }}</span>
                                                 @enderror
                                             </div>
 
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">LaTeX Formula <span class="text-slate-300">(optional)</span></label>
-                                                    <input type="text" wire:model="drafts.{{ $index }}.formula"
+                                                <div x-data="{ hasFormula: {{ trim((string) $draft['formula']) !== '' ? 'true' : 'false' }} }">
+                                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Display Formula <span class="text-slate-300">(optional)</span></label>
+                                                    <input type="text" wire:model.blur="drafts.{{ $index }}.formula" x-ref="formula"
+                                                           @input="hasFormula = $event.target.value.trim() !== ''; MathText.preview($refs.formulaPreview, '$' + $event.target.value + '$')"
                                                            class="input-modern font-mono text-xs" placeholder="e.g. \sqrt{x^2 + y^2}">
+                                                    <div class="mt-1.5" x-show="hasFormula" x-cloak>
+                                                        <span class="math-preview">@php $formulaPreview = trim((string) $draft['formula']) !== '' ? '$' . $draft['formula'] . '$' : ''; @endphp<span data-math x-ref="formulaPreview" data-math-src="{{ $formulaPreview }}">{{ $formulaPreview }}</span></span>
+                                                    </div>
+                                                    <p class="text-[11px] text-slate-400 mt-1">Stands on its own line, under the question. No <code class="font-mono text-[10px] text-slate-500">$</code> needed here.</p>
                                                 </div>
 
                                                 <div>
@@ -483,11 +508,11 @@
 
                                                         <div wire:key="choice-{{ $draft['key'] }}-{{ $choiceIndex }}"
                                                              wire:click="markCorrect({{ $index }}, {{ $choiceIndex }})"
-                                                             class="flex items-center gap-2 rounded-xl border p-2 cursor-pointer transition-colors duration-150 {{ $isCorrect ? 'border-[#58706D] bg-[#f0f4f2]' : 'border-slate-200 bg-slate-50/60 hover:border-slate-300' }}">
+                                                             class="flex items-start gap-2 rounded-xl border p-2 cursor-pointer transition-colors duration-150 {{ $isCorrect ? 'border-[#58706D] bg-[#f0f4f2]' : 'border-slate-200 bg-slate-50/60 hover:border-slate-300' }}">
 
                                                             {{-- A real radio keeps the control keyboard reachable; the
                                                                  row's wire:click is what actually records the answer. --}}
-                                                            <label class="relative flex items-center justify-center shrink-0 w-7 h-7 rounded-full text-[11px] font-bold cursor-pointer select-none border-2 transition-colors duration-150 {{ $isCorrect ? 'border-[#58706D] bg-[#58706D] text-white' : 'border-slate-300 bg-white text-slate-500' }}"
+                                                            <label class="relative flex items-center justify-center shrink-0 w-7 h-7 mt-0.5 rounded-full text-[11px] font-bold cursor-pointer select-none border-2 transition-colors duration-150 {{ $isCorrect ? 'border-[#58706D] bg-[#58706D] text-white' : 'border-slate-300 bg-white text-slate-500' }}"
                                                                    title="Mark choice {{ chr(65 + $choiceIndex) }} as the correct answer">
                                                                 <input type="radio" name="correct-{{ $draft['key'] }}" value="{{ $choiceIndex }}"
                                                                        {{ $isCorrect ? 'checked' : '' }}
@@ -495,15 +520,31 @@
                                                                 {{ chr(65 + $choiceIndex) }}
                                                             </label>
 
-                                                            <input type="text" wire:model.blur="drafts.{{ $index }}.choices.{{ $choiceIndex }}.text" @click.stop
-                                                                   class="flex-1 min-w-0 text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white"
-                                                                   placeholder="Choice {{ chr(65 + $choiceIndex) }} text...">
+                                                            {{-- Answers take inline maths too, so a choice can simply
+                                                                 be "$\frac{1}{2}$" without a second field. --}}
+                                                            <div class="flex-1 min-w-0"
+                                                                 x-data="{ hasMath: {{ str_contains((string) $choice['text'], '$') ? 'true' : 'false' }} }">
+                                                                <div class="flex items-center gap-1.5">
+                                                                    <input type="text" wire:model.blur="drafts.{{ $index }}.choices.{{ $choiceIndex }}.text" @click.stop
+                                                                           x-ref="choice"
+                                                                           @input="hasMath = $event.target.value.includes('$'); MathText.preview($refs.choicePreview, $event.target.value)"
+                                                                           class="flex-1 min-w-0 text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white"
+                                                                           placeholder="Choice {{ chr(65 + $choiceIndex) }} text...">
+                                                                    <button type="button" class="math-btn shrink-0" title="Insert inline formula"
+                                                                            @click.stop="MathText.insert($refs.choice, '$@$')">
+                                                                        <i class="fa-solid fa-square-root-variable text-[9px]"></i>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="mt-1" x-show="hasMath" x-cloak>
+                                                                    <span class="math-preview"><span data-math x-ref="choicePreview" data-math-src="{{ $choice['text'] }}">{{ $choice['text'] }}</span></span>
+                                                                </div>
+                                                            </div>
 
                                                             <input type="text" wire:model="drafts.{{ $index }}.choices.{{ $choiceIndex }}.formula" @click.stop
-                                                                   class="w-32 sm:w-40 text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white font-mono text-[11px]"
-                                                                   placeholder="Formula (optional)">
+                                                                   class="w-28 sm:w-36 shrink-0 text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white font-mono text-[11px]"
+                                                                   placeholder="Display formula">
 
-                                                            <span class="w-16 text-right shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#58706D]">
+                                                            <span class="w-16 text-right shrink-0 mt-2 text-[10px] font-bold uppercase tracking-wider text-[#58706D]">
                                                                 @if ($isCorrect)
                                                                     <i class="fa-solid fa-check"></i> Correct
                                                                 @endif

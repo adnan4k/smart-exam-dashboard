@@ -52,10 +52,29 @@
                         </div>
 
                         <div class="p-6 space-y-5">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Question Prompt <span class="text-rose-500">*</span></label>
-                                <textarea name="question_text" rows="3" required class="input-modern"
-                                          placeholder="Type the full question text here...">{{ old('question_text', $question->question_text) }}</textarea>
+                            <div x-data="{ hasMath: @js(str_contains((string) old('question_text', $question->question_text), '$')) }">
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Question Prompt <span class="text-rose-500">*</span></label>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" class="math-btn" title="Insert inline formula"
+                                                @click="MathText.insert($refs.prompt, '$@$')"><i class="fa-solid fa-dollar-sign text-[9px]"></i> Math</button>
+                                        <button type="button" class="math-btn" title="Fraction"
+                                                @click="MathText.insert($refs.prompt, '$\\frac{@}{b}$')">a/b</button>
+                                        <button type="button" class="math-btn" title="Square root"
+                                                @click="MathText.insert($refs.prompt, '$\\sqrt{@}$')">&radic;x</button>
+                                        <button type="button" class="math-btn" title="Power"
+                                                @click="MathText.insert($refs.prompt, '$@^{2}$')">x&sup2;</button>
+                                    </div>
+                                </div>
+                                <textarea name="question_text" rows="3" required class="input-modern" x-ref="prompt"
+                                          @input="hasMath = ($event.target.value || '').includes('$'); MathText.preview($refs.promptPreview, $event.target.value)"
+                                          placeholder="Type the full question text here, with any maths inline: What is $\sqrt{x^2+y^2}$ when $x=3$?">{{ old('question_text', $question->question_text) }}</textarea>
+                                <div class="mt-1.5" x-show="hasMath" x-cloak>
+                                    <span class="math-preview"><span class="math-preview-label">Preview</span><span data-math x-ref="promptPreview" data-math-src="{{ old('question_text', $question->question_text) }}">{{ old('question_text', $question->question_text) }}</span></span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-1">
+                                    <i class="fa-solid fa-square-root-variable mr-1"></i>Wrap maths in <code class="font-mono text-[10px] text-slate-500">$…$</code> to write it inside a sentence.
+                                </p>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -128,15 +147,26 @@
 
                                 <div class="space-y-2 mt-3">
                                     <template x-for="(choice, i) in choices" :key="i">
-                                        <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                                        <div class="flex items-start gap-2 p-2 rounded-xl bg-slate-50/70 border border-slate-200/70">
                                             <div class="px-2 flex items-center">
                                                 <input type="radio" name="correct_choice" :value="i" x-model.number="correct"
                                                        class="w-4 h-4 text-[#58706D] focus:ring-[#58706D] cursor-pointer" required title="Mark as correct answer">
                                             </div>
-                                            <div class="flex-1">
-                                                <input type="text" :name="`choices[${i}][text]`" x-model="choice.text"
-                                                       class="w-full text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white" 
-                                                       placeholder="Choice option text..." required>
+                                            <div class="flex-1 min-w-0" x-data="{ hasMath: false }"
+                                                 x-init="hasMath = (choice.text || '').includes('$'); MathText.preview($refs.choicePreview, choice.text)">
+                                                <div class="flex items-center gap-1.5">
+                                                    <input type="text" :name="`choices[${i}][text]`" x-model="choice.text" x-ref="choice"
+                                                           @input="hasMath = ($event.target.value || '').includes('$'); MathText.preview($refs.choicePreview, $event.target.value)"
+                                                           class="flex-1 min-w-0 text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white"
+                                                           placeholder="Choice option text..." required>
+                                                    <button type="button" class="math-btn shrink-0" title="Insert inline formula"
+                                                            @click="MathText.insert($refs.choice, '$@$')">
+                                                        <i class="fa-solid fa-square-root-variable text-[9px]"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="mt-1" x-show="hasMath" x-cloak>
+                                                    <span class="math-preview"><span data-math x-ref="choicePreview"></span></span>
+                                                </div>
                                             </div>
                                             <div class="w-44">
                                                 <input type="text" :name="`choices[${i}][formula]`" x-model="choice.formula"

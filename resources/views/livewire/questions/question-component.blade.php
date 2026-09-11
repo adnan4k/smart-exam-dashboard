@@ -89,7 +89,7 @@
                                                 <td class="text-center text-xs font-semibold text-slate-400">{{ $num + 1 }}</td>
                                                 <td>
                                                     <div class="text-xs font-medium text-slate-800">
-                                                        {!! Str::limit(strip_tags($question->question_text), 75) !!}
+                                                        <x-math-text :value="$question->question_text" :limit="75" />
                                                     </div>
                                                 </td>
                                                 <td class="text-center">
@@ -175,7 +175,7 @@
                                     <div class="mb-2">
                                         <strong>Question:</strong>
                                         <div class="border p-2 rounded bg-light">
-                                            {!! Str::limit(strip_tags($questionToDelete->question_text), 200) !!}
+                                            <x-math-text :value="$questionToDelete->question_text" :limit="200" />
                                         </div>
                                     </div>
                                     <div class="row">

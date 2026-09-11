@@ -67,7 +67,7 @@
                                             </td>
                                             <td style="max-width: 34rem;">
                                                 <p class="text-xs font-medium text-slate-800 mb-0">
-                                                    {{ Str::limit(strip_tags($question->question_text), 130) }}
+                                                    <x-math-text :value="$question->question_text" :limit="130" />
                                                 </p>
                                             </td>
                                             <td class="text-center">

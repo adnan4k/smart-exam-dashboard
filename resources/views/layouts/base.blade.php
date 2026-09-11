@@ -31,6 +31,10 @@
     @livewireStyles
     @bukStyles
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
+    {{-- KaTeX + the [data-math] renderer, so question and answer text can carry
+         inline formulas anywhere in the admin. --}}
+    @include('partials.math')
 </head>
 
 <body class="g-sidenav-show z-0 bg-[#f8fafc] text-slate-700 font-sans antialiased">

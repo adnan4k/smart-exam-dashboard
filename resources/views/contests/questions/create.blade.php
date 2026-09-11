@@ -90,7 +90,9 @@
 
                     <!-- One card per question -->
                     <template x-for="(q, qi) in questions" :key="q.uid">
-                        <div class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm overflow-hidden mb-6">
+                        {{-- Own x-data so x-ref (prompt, previews) stays scoped to this card. --}}
+                        <div class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm overflow-hidden mb-6"
+                             x-data="{ hasMath: false }">
                             <div class="border-b border-slate-100 p-4 flex items-center justify-between">
                                 <span class="badge-subtle-brand" x-text="'Question ' + (qi + 1)"></span>
                                 <button type="button" class="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 transition"
@@ -101,9 +103,29 @@
 
                             <div class="p-5 space-y-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Question Prompt <span class="text-rose-500">*</span></label>
+                                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Question Prompt <span class="text-rose-500">*</span></label>
+                                        <div class="flex items-center gap-1">
+                                            <button type="button" class="math-btn" title="Insert inline formula"
+                                                    @click="MathText.insert($refs.prompt, '$@$')"><i class="fa-solid fa-dollar-sign text-[9px]"></i> Math</button>
+                                            <button type="button" class="math-btn" title="Fraction"
+                                                    @click="MathText.insert($refs.prompt, '$\\frac{@}{b}$')">a/b</button>
+                                            <button type="button" class="math-btn" title="Square root"
+                                                    @click="MathText.insert($refs.prompt, '$\\sqrt{@}$')">&radic;x</button>
+                                            <button type="button" class="math-btn" title="Power"
+                                                    @click="MathText.insert($refs.prompt, '$@^{2}$')">x&sup2;</button>
+                                        </div>
+                                    </div>
                                     <textarea :name="`questions[${q.uid}][question_text]`" rows="2" required class="input-modern"
-                                              placeholder="Type the full question text here..." x-model="q.text"></textarea>
+                                              x-ref="prompt" x-model="q.text"
+                                              @input="hasMath = ($event.target.value || '').includes('$'); MathText.preview($refs.promptPreview, $event.target.value)"
+                                              placeholder="Type the full question text here, with any maths inline: What is $\sqrt{x^2+y^2}$ when $x=3$?"></textarea>
+                                    <div class="mt-1.5" x-show="hasMath" x-cloak>
+                                        <span class="math-preview"><span class="math-preview-label">Preview</span><span data-math x-ref="promptPreview"></span></span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">
+                                        <i class="fa-solid fa-square-root-variable mr-1"></i>Wrap maths in <code class="font-mono text-[10px] text-slate-500">$…$</code> to write it inside a sentence &mdash; use <code class="font-mono text-[10px] text-slate-500">\$</code> for a literal dollar sign.
+                                    </p>
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -130,7 +152,7 @@
                                                  Style overrides are objects, not strings: Alpine replaces the
                                                  whole style attribute when given a string, which wiped the
                                                  static sizing and left nothing to click. --}}
-                                            <div class="flex items-center gap-2 rounded-xl"
+                                            <div class="flex items-start gap-2 rounded-xl"
                                                  @click="q.correct = ci"
                                                  style="padding: 8px; border: 1px solid #e2e8f0; background-color: #f8fafc; border-radius: 12px; cursor: pointer;"
                                                  :style="q.correct === ci ? { borderColor: '#58706D', backgroundColor: '#EDF2F1' } : {}">
@@ -148,11 +170,21 @@
                                                         <span x-text="String.fromCharCode(65 + ci)"></span>
                                                     </label>
                                                 </div>
-                                                <div class="flex-1">
-                                                    <input type="text" :name="`questions[${q.uid}][choices][${ci}][text]`" x-model="c.text"
-                                                           @click.stop
-                                                           class="w-full text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white"
-                                                           placeholder="Choice option text...">
+                                                <div class="flex-1 min-w-0" x-data="{ hasMath: false }">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <input type="text" :name="`questions[${q.uid}][choices][${ci}][text]`" x-model="c.text"
+                                                               @click.stop x-ref="choice"
+                                                               @input="hasMath = ($event.target.value || '').includes('$'); MathText.preview($refs.choicePreview, $event.target.value)"
+                                                               class="flex-1 min-w-0 text-xs py-2 px-3 border border-slate-200 rounded-lg focus:border-[#58706D] focus:outline-none bg-white"
+                                                               placeholder="Choice option text...">
+                                                        <button type="button" class="math-btn shrink-0" title="Insert inline formula"
+                                                                @click.stop="MathText.insert($refs.choice, '$@$')">
+                                                            <i class="fa-solid fa-square-root-variable text-[9px]"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="mt-1" x-show="hasMath" x-cloak>
+                                                        <span class="math-preview"><span data-math x-ref="choicePreview"></span></span>
+                                                    </div>
                                                 </div>
                                                 <div class="w-44">
                                                     <input type="text" :name="`questions[${q.uid}][choices][${ci}][formula]`" x-model="c.formula"

@@ -858,6 +858,9 @@ video {
 .inline-block{
   display: inline-block;
 }
+.inline{
+  display: inline;
+}
 .flex{
   display: flex;
 }
@@ -2755,8 +2758,8 @@ body {
     display: flex;
   }
 
-  .sm\:w-40{
-    width: 10rem;
+  .sm\:w-36{
+    width: 9rem;
   }
 
   .sm\:w-48{
