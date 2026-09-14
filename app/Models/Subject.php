@@ -37,4 +37,9 @@ class Subject extends Model
     {
         return $this->hasMany(Note::class);
     }
+
+    public function videos()
+    {
+        return $this->hasMany(Video::class);
+    }
 } 

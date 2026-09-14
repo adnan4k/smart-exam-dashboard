@@ -43,13 +43,14 @@ class UserController extends Controller
          try {
             $user = User::create([
                 'name'             => $validatedData['name'],
-                'email'            => $validatedData['email'],
+                // These are nullable rules, so the keys are absent when not sent.
+                'email'            => $validatedData['email'] ?? null,
                 'password'         => Hash::make($validatedData['password']),
                 'phone_number'     => $validatedData['phone_number'],
                 'role'             => 'student',
                 'status'           => 'active',
-                'institution_type' => $validatedData['institution_type'],
-                'institution_name' => $validatedData['institution_name'],
+                'institution_type' => $validatedData['institution_type'] ?? null,
+                'institution_name' => $validatedData['institution_name'] ?? null,
                 'type_id'          => $validatedData['type_id'],
                 'referred_by'      => User::where('referral_code', $request->referral_code)->value('id'),
                 'device_id'        => $validatedData['device_id'],

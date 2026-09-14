@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Scopes\ReleasedQuestionScope;
 
 class Question extends Model
 {
@@ -24,11 +25,57 @@ class Question extends Model
         'science_type',
         'region',
         'answer_id',
+        'bank',
+        'released_at',
+        'difficulty',
     ];
 
     protected $casts = [
         'science_type' => 'string',
+        'released_at'  => 'datetime',
     ];
+
+    /**
+     * Unreleased questions are invisible everywhere by default, so the existing
+     * study API and admin screens need no changes to stay contest-safe.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new ReleasedQuestionScope);
+    }
+
+    /**
+     * Includes the questions the global scope hides. Only contest code should
+     * use this - the paper builder and the live contest endpoints.
+     */
+    public function scopeWithUnreleased($query)
+    {
+        return $query->withoutGlobalScope(ReleasedQuestionScope::class);
+    }
+
+    /**
+     * The pool contest papers are built from: authored for contests, not yet
+     * released to the study bank.
+     */
+    public function scopeContestPool($query)
+    {
+        return $query->withoutGlobalScope(ReleasedQuestionScope::class)
+            ->where('bank', 'contest')
+            ->whereNull('released_at');
+    }
+
+    public function contests()
+    {
+        return $this->belongsToMany(Contest::class, 'contest_questions');
+    }
+
+    /**
+     * The admin form keeps correct_choice_id and answer_id in step; read either.
+     */
+    public function correctChoiceId(): ?int
+    {
+        return $this->correct_choice_id ?: $this->answer_id;
+    }
 
     /**
      * A question belongs to one subject.

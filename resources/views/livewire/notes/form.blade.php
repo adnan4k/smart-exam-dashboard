@@ -149,11 +149,10 @@ class="flex justify-center px-8"
          id="default-modal"
          tabindex="-1"
          aria-hidden="true"
-         class="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-50 overflow-y-auto"
+         class="fixed inset-0 z-50 flex justify-center items-center bg-slate-900/40 backdrop-blur-xs overflow-y-auto p-4"
          wire:ignore.self>
-        <div x-data="{}" class="relative p-4 w-full max-w-2xl max-h-full">
-            <form class="relative bg-white rounded-lg shadow dark:bg-gray-700"
-                  @submit.prevent="
+        <div x-data="{}" class="relative w-full max-w-2xl my-8 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden">
+            <form @submit.prevent="
                     // Sync all form data to Livewire before submission
                     syncContentToLivewire();
                     $wire.set('typeId', typeId);
@@ -168,51 +167,62 @@ class="flex justify-center px-8"
                     }, 50);
                   ">
 
-                <div class="flex flex-wrap border shadow rounded-lg p-3 dark:bg-gray-600">
-                    <h2 class="text-xl text-gray-600 dark:text-gray-300 pb-2" x-text="isEdit ? 'Edit Note' : 'Create Note'"></h2>
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <div>
+                        <h5 class="font-bold text-slate-800 text-base mb-0 tracking-tight" x-text="isEdit ? 'Edit Learning Note' : 'Create Learning Note'"></h5>
+                        <p class="text-[11px] text-slate-400 mb-0">Compose formatted study material with math equations &amp; rich formatting.</p>
+                    </div>
+                    <button type="button" @click="openModal = false" class="action-icon-btn text-slate-400 hover:text-slate-700">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
 
-                    <div class="flex flex-col gap-2 w-full border-gray-400">
-
-                        <!-- Exam Type -->
+                <!-- Modal Body -->
+                <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+                    
+                    <!-- Exam Type & Subject -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Exam Type</label>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Exam Type <span class="text-rose-500">*</span></label>
                             <select x-model="typeId"
                                     @change="$wire.call('updateType', $event.target.value)"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('typeId') border-red-500 @enderror">
+                                    class="input-modern bg-white text-xs @error('typeId') border-rose-500 @enderror">
                                 <option value="">Select Exam Type</option>
                                 @foreach ($types as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
                                 @endforeach
                             </select>
                             @error('typeId') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Subject Field -->
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Subject <span class="text-xs text-gray-400">(select type first)</span></label>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Subject</label>
                             <select x-model="subjectId"
                                     @change="$wire.call('updateSubject', $event.target.value)"
                                     :disabled="!typeId"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('subjectId') border-red-500 @enderror">
+                                    class="input-modern bg-white text-xs disabled:bg-slate-100 disabled:cursor-not-allowed @error('subjectId') border-rose-500 @enderror">
                                 <option value="">All Subjects</option>
                                 @foreach ($subjects as $subject)
                                     <option value="{{ $subject->id }}">{{ $subject->name }}</option>
                                 @endforeach
                             </select>
                             @error('subjectId') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
                             @enderror
                         </div>
+                    </div>
 
-                        <!-- Chapter Field -->
+                    <!-- Chapter & Grade -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Chapter</label>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Chapter</label>
                             <select x-model="chapterId"
                                     @change="$wire.set('chapterId', $event.target.value)"
                                     :disabled="!subjectId"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('chapterId') border-red-500 @enderror">
+                                    class="input-modern bg-white text-xs disabled:bg-slate-100 disabled:cursor-not-allowed @error('chapterId') border-rose-500 @enderror">
                                 <option value="">All Chapters</option>
                                 @php
                                     $chaptersToShow = !empty($chaptersForSubject) ? $chaptersForSubject : $allChapters;
@@ -222,79 +232,78 @@ class="flex justify-center px-8"
                                 @endforeach
                             </select>
                             @error('chapterId') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Title Field -->
                         <div>
-                            <label class="text-gray-600 dark:text-gray-400">Title</label>
-                            <input x-model="title"
-                                   @input.debounce.300ms="$wire.set('title', $event.target.value)"
-                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('title') border-red-500 @enderror"
-                                   type="text"
-                                   placeholder="Enter note title">
-                            @error('title') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Grade Field -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Grade <span class="text-xs text-gray-400">(optional, 0-12)</span></label>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Grade Level <span class="text-[11px] text-slate-400 font-normal lowercase">(0–12 optional)</span></label>
                             <input x-model.number="grade"
                                    @input.debounce.300ms="$wire.set('grade', $event.target.value)"
-                                   class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('grade') border-red-500 @enderror"
-                                   type="number" min="0" max="12" placeholder="e.g., 9">
+                                   class="input-modern text-xs @error('grade') border-rose-500 @enderror"
+                                   type="number" min="0" max="12" placeholder="e.g. 9">
                             @error('grade') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
                             @enderror
-                        </div>
-
-                        <!-- Language Field -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Language <span class="text-xs text-gray-400">(required)</span></label>
-                            <select x-model="language"
-                                    @change="$wire.set('language', $event.target.value)"
-                                    class="w-full py-3 border border-slate-200 rounded-lg px-3 focus:outline-none focus:border-slate-500 hover:shadow dark:bg-gray-600 dark:text-gray-100 @error('language') border-red-500 @enderror">
-                                <option value="english">English</option>
-                                <option value="amharic">Amharic</option>
-                                <option value="afan_oromo">Afan Oromo</option>
-                                <option value="tigrinya">Tigrinya</option>
-                                <option value="somali">Somali</option>
-                                <option value="afar">Afar</option>
-                                <option value="other">Other</option>
-                            </select>
-                            @error('language') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Content Field (Quill) -->
-                        <div>
-                            <label class="text-gray-600 dark:text-gray-400">Content</label>
-                            <div wire:ignore>
-                                <div id="noteEditor" class="@error('content') border-2 border-red-500 rounded @enderror" style="height: 200px;"></div>
-                            </div>
-                            @error('content') 
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Submit Buttons -->
-                        <div class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button style="background-color:#56C596;" type="submit"
-                                    wire:loading.attr="disabled"
-                                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-50">
-                                <span wire:loading.remove x-text="isEdit ? 'Save Changes' : 'Create'"></span>
-                                <span wire:loading>Saving...</span>
-                            </button>
-                            <button @click="openModal = false" type="button"
-                                    class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                Cancel
-                            </button>
                         </div>
                     </div>
+
+                    <!-- Note Title -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Note Title <span class="text-rose-500">*</span></label>
+                        <input x-model="title"
+                               @input.debounce.300ms="$wire.set('title', $event.target.value)"
+                               class="input-modern text-xs @error('title') border-rose-500 @enderror"
+                               type="text"
+                               placeholder="e.g. Chapter 4: Electric Currents and Circuit Analysis">
+                        @error('title') 
+                            <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Language Selection -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Language <span class="text-rose-500">*</span></label>
+                        <select x-model="language"
+                                @change="$wire.set('language', $event.target.value)"
+                                class="input-modern bg-white text-xs @error('language') border-rose-500 @enderror">
+                            <option value="english">English</option>
+                            <option value="amharic">Amharic</option>
+                            <option value="afan_oromo">Afan Oromo</option>
+                            <option value="tigrinya">Tigrinya</option>
+                            <option value="somali">Somali</option>
+                            <option value="afar">Afar</option>
+                            <option value="other">Other</option>
+                        </select>
+                        @error('language') 
+                            <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Rich Content (Quill Editor) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Note Content &amp; Equations</label>
+                        <div wire:ignore class="rounded-xl overflow-hidden border border-slate-200 @error('content') border-rose-500 @enderror bg-white">
+                            <div id="noteEditor" style="min-height: 220px;"></div>
+                        </div>
+                        @error('content') 
+                            <p class="mt-1 text-[11px] text-rose-500 font-medium">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+                    <button @click="openModal = false" type="button" class="btn-brand-outline text-xs px-4 py-2">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            wire:loading.attr="disabled"
+                            class="btn-brand text-xs px-5 py-2.5 shadow-sm flex items-center gap-1.5 disabled:opacity-50">
+                        <i class="fa-solid fa-check text-xs"></i>
+                        <span wire:loading.remove x-text="isEdit ? 'Save Changes' : 'Create Note'"></span>
+                        <span wire:loading>Saving...</span>
+                    </button>
                 </div>
             </form>
         </div>

@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +18,10 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+/*
+| Contests close on their own: expired attempts are scored, finished contests
+| are ranked and paid out. Runs every minute so a contest that ends at 20:40
+| has its leaderboard settled by 20:41.
+*/
+Schedule::command('contests:finalize')->everyMinute()->withoutOverlapping();

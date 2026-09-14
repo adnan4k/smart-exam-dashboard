@@ -8,6 +8,7 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\VideoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
 
@@ -91,6 +92,22 @@ Route::put('notes/{note}', [NoteController::class, 'update']);
 Route::patch('notes/{note}', [NoteController::class, 'update']);
 Route::delete('notes/{note}', [NoteController::class, 'destroy']);
 
+// Videos routes - specific routes first to avoid conflicts
+Route::get('videos/by-subject', [VideoController::class, 'bySubject']);
+Route::get('videos/by-chapter', [VideoController::class, 'byChapter']);
+Route::get('videos/by-language', [VideoController::class, 'byLanguage']);
+Route::get('videos/for-user-grouped', [VideoController::class, 'forUserGrouped']);
+Route::get('videos/{video}/download', [VideoController::class, 'download']);
+
+// General video routes
+Route::get('videos', [VideoController::class, 'index']);
+Route::post('videos', [VideoController::class, 'store']);
+Route::get('videos/{video}', [VideoController::class, 'show']);
+Route::post('videos/{video}', [VideoController::class, 'update']); // multipart updates (use _method=PUT or this)
+Route::put('videos/{video}', [VideoController::class, 'update']);
+Route::patch('videos/{video}', [VideoController::class, 'update']);
+Route::delete('videos/{video}', [VideoController::class, 'destroy']);
+
 // Referral endpoints (using query parameters)
 Route::get('my-referrals', [UserController::class, 'getMyReferrals']);
 Route::get('referral-details', [UserController::class, 'getReferralDetails']);
@@ -127,4 +144,28 @@ Route::get('/test-email', function () {
     } catch (\Exception $e) {
         return 'Error: ' . $e->getMessage();
     }
+});
+/*
+|--------------------------------------------------------------------------
+| Contest routes
+|--------------------------------------------------------------------------
+|
+| The competition surface, kept separate from the study endpoints above.
+| These all require a Sanctum token: a contest pays out stars and coins, so
+| the caller has to prove who they are rather than passing a user_id.
+|
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('contests', [\App\Http\Controllers\Api\ContestController::class, 'index']);
+    Route::get('contests/leaderboard', [\App\Http\Controllers\Api\ContestController::class, 'globalLeaderboard']);
+    Route::get('me/rewards', [\App\Http\Controllers\Api\ContestController::class, 'myRewards']);
+    Route::get('me/contest-attempts', [\App\Http\Controllers\Api\ContestController::class, 'myAttempts']);
+
+    Route::post('contests/{contest}/start', [\App\Http\Controllers\Api\ContestController::class, 'start']);
+    Route::post('contests/{contest}/answers', [\App\Http\Controllers\Api\ContestController::class, 'saveAnswers']);
+    Route::post('contests/{contest}/submit', [\App\Http\Controllers\Api\ContestController::class, 'submit']);
+    Route::get('contests/{contest}/review', [\App\Http\Controllers\Api\ContestController::class, 'review']);
+    Route::get('contests/{contest}/leaderboard', [\App\Http\Controllers\Api\ContestController::class, 'leaderboard']);
+    // Registered last so it never shadows contests/leaderboard above.
+    Route::get('contests/{contest}', [\App\Http\Controllers\Api\ContestController::class, 'show']);
 });

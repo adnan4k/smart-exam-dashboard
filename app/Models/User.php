@@ -36,6 +36,8 @@ class User extends Authenticatable
         'phone',
         'uv',
         'fcm_token',
+        'total_stars',
+        'total_coins',
     ];
 
     protected $guarded = [];
@@ -67,6 +69,22 @@ class User extends Authenticatable
     protected $casts = [
         'last_login_at' => 'datetime',
     ];
+
+    /**
+     * Contest entries. At most one per contest, enforced by a unique index.
+     */
+    public function contestAttempts()
+    {
+        return $this->hasMany(\App\Models\ContestAttempt::class);
+    }
+
+    /**
+     * Every star and coin this user has earned or spent.
+     */
+    public function rewardTransactions()
+    {
+        return $this->hasMany(\App\Models\RewardTransaction::class);
+    }
 
     /**
      * A user can have many subscriptions.

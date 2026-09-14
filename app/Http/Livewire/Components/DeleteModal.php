@@ -29,6 +29,6 @@ class DeleteModal extends Component
 
     public function render()
     {
-        return ''; // No UI/modal needed
+        return '<div></div>'; // No UI/modal needed
     }
 }
