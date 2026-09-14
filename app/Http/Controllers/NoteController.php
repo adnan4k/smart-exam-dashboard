@@ -6,58 +6,13 @@ use App\Models\Note;
 use App\Models\Subject;
 use App\Models\Chapter;
 use App\Models\User;
+use App\Http\Traits\RespondsWithJson;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class NoteController extends Controller
 {
-    /**
-     * Helper method to add Content-Length header to JSON response with gzip compression
-     */
-    private function jsonResponse($data, $status = 200)
-    {
-        // Disable any output buffering
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-
-        // Encode to JSON with consistent options
-        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-        // Calculate uncompressed size
-        $uncompressedLength = strlen($json);
-
-        // Check if client accepts gzip (most modern clients do)
-        $acceptEncoding = request()->header('Accept-Encoding', '');
-        $useGzip = stripos($acceptEncoding, 'gzip') !== false;
-
-        if ($useGzip) {
-            // Compress the JSON using gzip
-            $compressed = gzencode($json, 6); // Level 6 is good balance between speed and compression
-
-            // Calculate compressed size
-            $contentLength = strlen($compressed);
-
-            // Create response with compressed JSON
-            $response = response($compressed, $status)
-                ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->header('Content-Encoding', 'gzip')
-                ->header('Content-Length', (string)$contentLength)
-                ->header('X-Uncompressed-Size', (string)$uncompressedLength); // Debug header
-        } else {
-            // No compression - send as-is
-            $contentLength = $uncompressedLength;
-
-            $response = response($json, $status)
-                ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->header('Content-Length', (string)$contentLength);
-        }
-
-        // Force the response to not use chunked encoding
-        $response->headers->remove('Transfer-Encoding');
-
-        return $response;
-    }
+    use RespondsWithJson;
 
     public function index(Request $request)
     {
@@ -263,10 +218,19 @@ class NoteController extends Controller
         ]);
     }
 
+    /**
+     * Notes grouped by subject, then chapter.
+     *
+     * Pass `subject_id` or `subject` (name) to restrict the response to a single
+     * subject. Without either, behaviour is unchanged: every subject for the
+     * user's exam type, which is what the pre-per-subject-download app expects.
+     */
     public function forUserGrouped(Request $request)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'subject_id' => 'nullable|exists:subjects,id',
+            'subject' => 'nullable|string|max:255',
         ]);
 
         $user = User::findOrFail($request->input('user_id'));
@@ -290,8 +254,10 @@ class NoteController extends Controller
         //     ], 200);
         // }
 
-        // Get all subjects for the user's exam type
+        // Get all subjects for the user's exam type, optionally narrowed to one.
         $subjects = Subject::where('type_id', $user->type_id)
+            ->when($request->input('subject_id'), fn ($q, $id) => $q->where('id', $id))
+            ->when($request->input('subject'), fn ($q, $name) => $q->where('name', $name))
             ->orderBy('name')
             ->get();
 
