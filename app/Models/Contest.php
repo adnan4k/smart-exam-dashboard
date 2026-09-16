@@ -10,9 +10,16 @@ class Contest extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'starts_at'    => 'datetime',
-        'ends_at'      => 'datetime',
-        'finalized_at' => 'datetime',
+        'starts_at'           => 'datetime',
+        'ends_at'             => 'datetime',
+        'finalized_at'        => 'datetime',
+        // These columns feed Carbon's addMinutes(), which under Carbon 3 rejects
+        // a string argument. The MySQL driver can return smallint columns as
+        // strings, so cast them here or joinClosesAt()/deadlineFor() throw a
+        // TypeError (500 on GET /contests and /contests/{id}).
+        'join_window_minutes' => 'integer',
+        'duration_minutes'    => 'integer',
+        'question_count'      => 'integer',
     ];
 
     public function type()
