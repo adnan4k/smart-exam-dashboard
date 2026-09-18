@@ -202,7 +202,7 @@ class SubjectContentService
     {
         return [
             'id' => $question->id,
-            'correct_choice_id' => $question->answer_id,
+'correct_choice_id' => $question->correctChoiceId(),
             'subject_id' => $question->subject_id,
             'year_group_id' => $question->year_group_id,
             'chapter_id' => $question->chapter_id,
