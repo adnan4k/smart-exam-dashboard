@@ -7,6 +7,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -86,42 +87,53 @@ class VideoController extends Controller
      * Shape a video for the client: metadata always, the download link only
      * when the caller is entitled to it.
      */
-    private function present(Video $video, bool $entitled, ?int $userId): array
+    private function present(Video $video, bool $entitled, ?User $user): array
     {
         $data = $video->toArray();
 
-        $data['locked']       = !$entitled;
-        $data['download_url'] = $entitled ? $video->downloadUrl($userId) : null;
+        // download() refuses a video belonging to another exam type and one
+        // whose file is gone from disk. A listing that advertised a link in
+        // those cases would hand the app a download that can only fail.
+        $typeAllowed   = !$video->type_id
+                         || !$user?->type_id
+                         || (int) $video->type_id === (int) $user->type_id;
+        $fileAvailable = $video->fileExists();
+
+        $data['locked']         = !$entitled || !$typeAllowed;
+        $data['file_available'] = $fileAvailable;
+        $data['download_url']   = ($entitled && $typeAllowed && $fileAvailable)
+            ? $video->downloadUrl($user?->id)
+            : null;
 
         return $data;
     }
 
-    private function presentMany($videos, bool $entitled, ?int $userId): array
+    private function presentMany($videos, bool $entitled, ?User $user): array
     {
-        return collect($videos)->map(fn ($v) => $this->present($v, $entitled, $userId))->values()->all();
+        return collect($videos)->map(fn ($v) => $this->present($v, $entitled, $user))->values()->all();
     }
 
     /**
      * Subject -> chapter tree for a flat collection of videos. A video with a
      * subject but no chapter sits in that subject's own "subject_videos".
      */
-    private function groupBySubject($videos, bool $entitled, ?int $userId): array
+    private function groupBySubject($videos, bool $entitled, ?User $user): array
     {
         return $videos->whereNotNull('subject_id')
             ->groupBy('subject_id')
-            ->map(function ($subjectVideos, $subjectId) use ($entitled, $userId) {
+            ->map(function ($subjectVideos, $subjectId) use ($entitled, $user) {
                 $chapters = $subjectVideos->whereNotNull('chapter_id')
                     ->groupBy('chapter_id')
                     ->map(fn ($group, $chapterId) => [
                         'chapter_id'   => (int) $chapterId,
                         'chapter_name' => optional($group->first()->chapter)->name,
-                        'videos'       => $this->presentMany($group, $entitled, $userId),
+                        'videos'       => $this->presentMany($group, $entitled, $user),
                     ])->values();
 
                 return [
                     'subject_id'     => (int) $subjectId,
                     'subject_name'   => optional($subjectVideos->first()->subject)->name,
-                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $entitled, $userId),
+                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $entitled, $user),
                     'chapters'       => $chapters,
                 ];
             })->values()->all();
@@ -145,39 +157,29 @@ class VideoController extends Controller
         $user = User::findOrFail($request->input('user_id'));
 
         if (!$user->type_id) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'No exam type associated with this user.',
-            ], 400);
+            return $this->refuseDownload($video, $user, 'no_exam_type',
+                'No exam type associated with this user.', 400);
         }
 
         if (!$this->isEntitled($user)) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'An active subscription is required to download this video.',
-            ], 403);
+            return $this->refuseDownload($video, $user, 'not_entitled',
+                'An active subscription is required to download this video.', 403);
         }
 
         // A video scoped to another exam type is not this user's to download.
         if ($video->type_id && (int) $video->type_id !== (int) $user->type_id) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'This video is not available for your exam type.',
-            ], 403);
+            return $this->refuseDownload($video, $user, 'exam_type_mismatch',
+                'This video is not available for your exam type.', 403);
         }
 
         if (!$video->is_active) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'This video is not currently available.',
-            ], 404);
+            return $this->refuseDownload($video, $user, 'inactive',
+                'This video is not currently available.', 404);
         }
 
         if (!$video->fileExists()) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'Video file is missing on the server.',
-            ], 404);
+            return $this->refuseDownload($video, $user, 'file_missing',
+                'Video file is missing on the server.', 404);
         }
 
         while (ob_get_level()) {
@@ -202,6 +204,27 @@ class VideoController extends Controller
         );
 
         return $response;
+    }
+
+    /**
+     * A refused download shows up in the app only as "Download failed", so
+     * every refusal is logged with the reason that produced it.
+     */
+    private function refuseDownload(Video $video, User $user, string $reason, string $message, int $status)
+    {
+        Log::warning('Video download refused', [
+            'reason'        => $reason,
+            'video_id'      => $video->id,
+            'user_id'       => $user->id,
+            'video_type_id' => $video->type_id,
+            'user_type_id'  => $user->type_id,
+        ]);
+
+        return $this->jsonResponse([
+            'status'  => 'error',
+            'reason'  => $reason,
+            'message' => $message,
+        ], $status);
     }
 
     private function downloadFilename(Video $video): string
@@ -259,7 +282,7 @@ class VideoController extends Controller
         return $this->jsonResponse([
             'status'   => 'success',
             'entitled' => $entitled,
-            'data'     => $this->presentMany($videos->items(), $entitled, $user?->id),
+            'data'     => $this->presentMany($videos->items(), $entitled, $user),
             'pagination' => [
                 'current_page' => $videos->currentPage(),
                 'last_page'    => $videos->lastPage(),
@@ -300,7 +323,7 @@ class VideoController extends Controller
             ->map(fn ($group, $chapterId) => [
                 'chapter_id'   => (int) $chapterId,
                 'chapter_name' => optional($group->first()->chapter)->name,
-                'videos'       => $this->presentMany($group, $entitled, $user?->id),
+                'videos'       => $this->presentMany($group, $entitled, $user),
             ])->values();
 
         return $this->jsonResponse([
@@ -309,7 +332,7 @@ class VideoController extends Controller
             'data'     => [
                 'subject_id'     => (int) $subject->id,
                 'subject_name'   => $subject->name,
-                'subject_videos' => $this->presentMany($videos->whereNull('chapter_id'), $entitled, $user?->id),
+                'subject_videos' => $this->presentMany($videos->whereNull('chapter_id'), $entitled, $user),
                 'chapters'       => $chapters,
             ],
         ]);
@@ -342,7 +365,7 @@ class VideoController extends Controller
             'data'     => [
                 'chapter_id'   => (int) $chapter->id,
                 'chapter_name' => $chapter->name,
-                'videos'       => $this->presentMany($videos, $entitled, $user?->id),
+                'videos'       => $this->presentMany($videos, $entitled, $user),
             ],
         ]);
     }
@@ -381,8 +404,8 @@ class VideoController extends Controller
             'data'     => [
                 'language'       => $language,
                 'total'          => $videos->count(),
-                'general_videos' => $this->presentMany($videos->whereNull('subject_id'), $entitled, $user?->id),
-                'subjects'       => $this->groupBySubject($videos, $entitled, $user?->id),
+                'general_videos' => $this->presentMany($videos->whereNull('subject_id'), $entitled, $user),
+                'subjects'       => $this->groupBySubject($videos, $entitled, $user),
             ],
         ]);
     }
@@ -420,13 +443,13 @@ class VideoController extends Controller
             ->ordered()
             ->get();
 
-        $subjects = $this->groupBySubject($videos, $entitled, $user->id);
+        $subjects = $this->groupBySubject($videos, $entitled, $user);
 
         return $this->jsonResponse([
             'status'   => 'success',
             'entitled' => $entitled,
             'data'     => [
-                'general_videos' => $this->presentMany($videos->whereNull('subject_id'), $entitled, $user->id),
+                'general_videos' => $this->presentMany($videos->whereNull('subject_id'), $entitled, $user),
                 'subjects'       => $subjects,
             ],
         ]);
@@ -442,7 +465,7 @@ class VideoController extends Controller
         return $this->jsonResponse([
             'status'   => 'success',
             'entitled' => $entitled,
-            'data'     => $this->present($video, $entitled, $user?->id),
+            'data'     => $this->present($video, $entitled, $user),
         ]);
     }
 

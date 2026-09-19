@@ -37,5 +37,13 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        // An API client rarely sends "Accept: application/json" — a file
+        // downloader never does. Without this, a failed validation on an
+        // api/* route answers with a 302 to the dashboard and the mobile app
+        // sees HTML where it expected JSON.
+        $this->shouldRenderJsonWhen(function ($request, Throwable $e) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
     }
 }
