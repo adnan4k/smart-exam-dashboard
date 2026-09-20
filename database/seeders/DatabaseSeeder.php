@@ -80,5 +80,8 @@ class DatabaseSeeder extends Seeder
         
         // Seed notes (requires subjects, types, and chapters to exist)
         $this->call(NoteSeeder::class);
+
+        // Seed 4-tier packages
+        $this->call(PackageSeeder::class);
     }
 }

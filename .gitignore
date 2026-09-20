@@ -12,6 +12,8 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 /storage/framework/views/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
 
 # Firebase service account credentials
 /storage/app/firebase-service-account.json

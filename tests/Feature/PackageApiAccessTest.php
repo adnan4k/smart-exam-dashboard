@@ -39,41 +39,49 @@ class PackageApiAccessTest extends TestCase
         $this->type = Type::create(['name' => 'University Prep']);
         $this->yearGroup = YearGroup::create(['year' => 2024]);
 
-        $this->sem1Package = Package::create([
-            'name' => '1st Semester',
-            'slug' => 'semester_1',
-            'price' => 300.00,
-            'is_active' => true,
-            'display_order' => 1,
-            'type_id' => $this->type->id,
-        ]);
+        $this->sem1Package = Package::updateOrCreate(
+            ['slug' => 'semester_1'],
+            [
+                'name' => '1st Semester',
+                'price' => 300.00,
+                'is_active' => true,
+                'display_order' => 1,
+                'type_id' => $this->type->id,
+            ]
+        );
 
-        $this->sem2Package = Package::create([
-            'name' => '2nd Semester',
-            'slug' => 'semester_2',
-            'price' => 300.00,
-            'is_active' => true,
-            'display_order' => 2,
-            'type_id' => $this->type->id,
-        ]);
+        $this->sem2Package = Package::updateOrCreate(
+            ['slug' => 'semester_2'],
+            [
+                'name' => '2nd Semester',
+                'price' => 300.00,
+                'is_active' => true,
+                'display_order' => 2,
+                'type_id' => $this->type->id,
+            ]
+        );
 
-        $this->cocPackage = Package::create([
-            'name' => 'COC Exam',
-            'slug' => 'coc',
-            'price' => 400.00,
-            'is_active' => true,
-            'display_order' => 3,
-            'type_id' => $this->type->id,
-        ]);
+        $this->cocPackage = Package::updateOrCreate(
+            ['slug' => 'coc'],
+            [
+                'name' => 'COC Exam',
+                'price' => 400.00,
+                'is_active' => true,
+                'display_order' => 3,
+                'type_id' => $this->type->id,
+            ]
+        );
 
-        $this->allAccessPackage = Package::create([
-            'name' => 'All Access',
-            'slug' => 'all_access',
-            'price' => 700.00,
-            'is_active' => true,
-            'display_order' => 4,
-            'type_id' => $this->type->id,
-        ]);
+        $this->allAccessPackage = Package::updateOrCreate(
+            ['slug' => 'all_access'],
+            [
+                'name' => 'All Access',
+                'price' => 700.00,
+                'is_active' => true,
+                'display_order' => 4,
+                'type_id' => $this->type->id,
+            ]
+        );
     }
 
     /** @test */
@@ -461,6 +469,44 @@ class PackageApiAccessTest extends TestCase
         $this->getJson("/api/videos/{$video2->id}/download?user_id={$student->id}")
             ->assertStatus(403)
             ->assertJsonPath('reason', 'not_entitled');
+    }
+
+    /** @test */
+    public function artisan_command_grandfathers_null_package_subscriptions_to_all_access()
+    {
+        $user1 = User::factory()->create(['type_id' => $this->type->id]);
+        $user2 = User::factory()->create(['type_id' => $this->type->id]);
+
+        $sub1 = Subscription::create([
+            'user_id' => $user1->id,
+            'type_id' => $this->type->id,
+            'year_group_id' => $this->yearGroup->id,
+            'package_id' => null,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addYear(),
+            'payment_status' => 'paid',
+        ]);
+
+        $sub2 = Subscription::create([
+            'user_id' => $user2->id,
+            'type_id' => $this->type->id,
+            'year_group_id' => $this->yearGroup->id,
+            'package_id' => null,
+            'start_date' => now()->subDay(),
+            'end_date' => now()->addYear(),
+            'payment_status' => 'paid',
+        ]);
+
+        $this->artisan('packages:grandfather-legacy', ['--dry-run' => true])
+            ->assertExitCode(0);
+
+        $this->assertNull($sub1->fresh()->package_id);
+
+        $this->artisan('packages:grandfather-legacy')
+            ->assertExitCode(0);
+
+        $this->assertSame($this->allAccessPackage->id, $sub1->fresh()->package_id);
+        $this->assertSame($this->allAccessPackage->id, $sub2->fresh()->package_id);
     }
 
     private function makeQuestion(Subject $subject, string $text): Question
