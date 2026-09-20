@@ -54,6 +54,19 @@ class ContestService
                 return $existing;
             }
 
+            // The one gate that matters. saveAnswers, submit and review all
+            // require an existing attempt, and an attempt can only be created
+            // here, so refusing entry keeps an unsubscribed user away from
+            // every piece of contest paper and every answer key.
+            //
+            // Deliberately below the resume branch: a student who was entitled
+            // when they started can always finish the paper in front of them,
+            // even if their payment is revoked mid-attempt. Only a fresh entry
+            // needs a live subscription.
+            if (! $user->hasPaidPackage()) {
+                throw ContestException::subscriptionRequired();
+            }
+
             if (! $contest->isLive()) {
                 throw ContestException::notOpen();
             }

@@ -95,6 +95,32 @@ class User extends Authenticatable
     }
 
     /**
+     * Has this user paid for the package covering their own exam type?
+     *
+     * `types.price` is what a student buys, and a paid `subscriptions` row for
+     * that type is the receipt. This mirrors VideoController::isEntitled and
+     * NoteController, which is deliberate: contests must not apply a stricter
+     * rule than the notes and videos sold under the same package.
+     *
+     * Note what is NOT checked: `start_date`/`end_date` are written on purchase
+     * but no feature in this app enforces them, so access does not expire
+     * anywhere. Contests are not the place to introduce expiry on their own -
+     * that has to land across every paid surface at once or a lapsed user keeps
+     * their notes and videos while silently losing contests.
+     */
+    public function hasPaidPackage(): bool
+    {
+        if (! $this->type_id) {
+            return false;
+        }
+
+        return $this->subscriptions()
+            ->where('type_id', $this->type_id)
+            ->where('payment_status', 'paid')
+            ->exists();
+    }
+
+    /**
      * Check if the user is subscribed to a given year group.
      */
     public function isSubscribed($yearGroupId)

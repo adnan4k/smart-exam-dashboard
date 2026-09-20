@@ -45,4 +45,18 @@ class ContestException extends Exception
     {
         return new self('wrong_cohort', 'This contest is not open to your exam type.', 403);
     }
+
+    /**
+     * Contests are part of the paid package, like notes and videos. The app
+     * keys off `subscription_required` to send the student to the subscribe
+     * screen rather than showing a generic failure.
+     */
+    public static function subscriptionRequired(): self
+    {
+        return new self(
+            'subscription_required',
+            'Contests are part of your exam package. Subscribe to enter.',
+            403
+        );
+    }
 }

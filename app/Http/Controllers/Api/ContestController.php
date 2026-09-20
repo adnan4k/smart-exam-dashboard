@@ -45,10 +45,16 @@ class ContestController extends Controller
             ->get()
             ->keyBy('contest_id');
 
+        // Contests stay browsable without a subscription: the prize bands and
+        // the countdown are what sell the package. Entry is refused in
+        // ContestService::start(); this flag is only so the app can render the
+        // card locked instead of letting the student tap through to a 403.
+        $locked = ! $user->hasPaidPackage();
+
         return response()->json([
             'status'      => 'success',
             'server_time' => now()->toIso8601String(),
-            'contests'    => $contests->map(function ($contest) use ($attempts) {
+            'contests'    => $contests->map(function ($contest) use ($attempts, $locked) {
                 $attempt = $attempts->get($contest->id);
 
                 return [
@@ -66,6 +72,12 @@ class ContestController extends Controller
                     'attempt_status'     => $attempt?->status,
                     'my_score'           => $attempt?->status === 'submitted' ? $attempt->score : null,
                     'my_rank'            => $attempt?->rank,
+                    // An attempt already in progress can always be finished,
+                    // so it is never shown locked - see ContestService::start().
+                    'locked'             => $locked && $attempt?->status !== 'in_progress',
+                    'lock_reason'        => $locked && $attempt?->status !== 'in_progress'
+                        ? 'subscription_required'
+                        : null,
                 ];
             }),
         ]);
@@ -93,6 +105,10 @@ class ContestController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        // An attempt already under way can be finished regardless, so it is
+        // never presented as locked. See ContestService::start().
+        $locked = ! $user->hasPaidPackage() && $attempt?->status !== 'in_progress';
+
         return response()->json([
             'status'      => 'success',
             'server_time' => now()->toIso8601String(),
@@ -115,6 +131,16 @@ class ContestController extends Controller
                     'rank_to'   => $rule->rank_to,
                     'stars'     => $rule->stars,
                 ])->values(),
+                'locked'           => $locked,
+                'lock_reason'      => $locked ? 'subscription_required' : null,
+                // What the student has to buy to unlock it. Their own exam
+                // type's package, not the contest's - a contest with no type
+                // of its own is still only reachable through that package.
+                'package'          => $locked ? [
+                    'type_id' => $user->type_id,
+                    'name'    => $user->type?->name,
+                    'price'   => $user->type?->price,
+                ] : null,
             ],
             'my_attempt' => $attempt ? [
                 'status'            => $attempt->status,
@@ -259,6 +285,15 @@ class ContestController extends Controller
      */
     public function review(Request $request, Contest $contest): JsonResponse
     {
+        // Belt and braces. An attempt is the real gate here and one can only be
+        // created by ContestService::start(), which already refuses an
+        // unsubscribed student - but this endpoint hands back the answer key
+        // for questions that have not reached the study bank yet, so it states
+        // the rule itself rather than inheriting it.
+        if (! $request->user()->hasPaidPackage()) {
+            return $this->failed(ContestException::subscriptionRequired());
+        }
+
         $attempt = $this->attemptFor($request, $contest);
 
         if (! $attempt || $attempt->status === 'in_progress') {
