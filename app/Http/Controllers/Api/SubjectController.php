@@ -102,7 +102,7 @@ class SubjectController extends Controller
         // Built from the rows just resolved, so it describes exactly the
         // questions and notes below it and cannot come back null. Looking the
         // name up in the catalogue a second time is what made it null.
-        $entry = $this->subjects->entryForVariants($variants, $user->type_id);
+        $entry = $this->subjects->entryForVariants($variants, $user->type_id, $user);
 
         // Report the catalogue's spelling, not the caller's, so `notes.name`
         // and `subject.name` agree with the card the user tapped.
@@ -117,7 +117,7 @@ class SubjectController extends Controller
             ]);
         }
 
-        $isSubscribed = $this->subjects->isSubscribed($user);
+        $isSubscribed = $variants->contains(fn ($s) => $user->canAccessSubject($s));
 
         return $this->jsonResponse([
             'status' => 'success',

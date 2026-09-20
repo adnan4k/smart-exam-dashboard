@@ -122,7 +122,10 @@ class QuestionController extends Controller
             ->with(['choices', 'subject', 'yearGroup', 'chapter'])
             ->orderBy('id', 'asc');
 
-        if (!$this->subjects->isSubscribed($user)) {
+        $subject = Subject::find($request->input('subject'));
+        $isEntitled = $subject ? $user->canAccessSubject($subject) : $this->subjects->isSubscribed($user);
+
+        if (!$isEntitled) {
             $query->limit(SubjectContentService::FREE_QUESTION_LIMIT);
         }
 
@@ -169,31 +172,24 @@ class QuestionController extends Controller
             ], 400);
         }
 
-        // Check if user has an active subscription
-        $hasActiveSubscription = $user->subscriptions()
-            ->where('payment_status', 'paid')
-            ->exists();
+        // Check if user has any active package subscription
+        $hasActiveSubscription = $user->hasPaidPackage();
 
-        // Get questions based on subscription status
-        if ($hasActiveSubscription) {
-            // For subscribed users, get all questions
-            $questions = Question::where('type_id', $user->type_id)
+        // Get questions per subject, unlocking full question pool for packages the user owns
+        $subjects = Subject::where('type_id', $user->type_id)->get();
+        $questions = collect();
+
+        foreach ($subjects as $subject) {
+            $query = Question::where('type_id', $user->type_id)
+                ->where('subject_id', $subject->id)
                 ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-                ->orderBy('id', 'asc')
-                ->get();
-        } else {
-            // Unsubscribed users get a capped preview per subject.
-            $subjectIds = Subject::where('type_id', $user->type_id)->pluck('id');
-            $questions = collect();
-            foreach ($subjectIds as $subjectId) {
-                $subjectQuestions = Question::where('type_id', $user->type_id)
-                    ->where('subject_id', $subjectId)
-                    ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-                    ->orderBy('id', 'asc')
-                    ->limit(SubjectContentService::FREE_QUESTION_LIMIT)
-                    ->get();
-                $questions = $questions->concat($subjectQuestions);
+                ->orderBy('id', 'asc');
+
+            if (! $user->canAccessSubject($subject)) {
+                $query->limit(SubjectContentService::FREE_QUESTION_LIMIT);
             }
+
+            $questions = $questions->concat($query->get());
         }
 
         // Group questions by subject

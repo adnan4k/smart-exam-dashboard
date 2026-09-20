@@ -96,17 +96,6 @@ class User extends Authenticatable
 
     /**
      * Has this user paid for the package covering their own exam type?
-     *
-     * `types.price` is what a student buys, and a paid `subscriptions` row for
-     * that type is the receipt. This mirrors VideoController::isEntitled and
-     * NoteController, which is deliberate: contests must not apply a stricter
-     * rule than the notes and videos sold under the same package.
-     *
-     * Note what is NOT checked: `start_date`/`end_date` are written on purchase
-     * but no feature in this app enforces them, so access does not expire
-     * anywhere. Contests are not the place to introduce expiry on their own -
-     * that has to land across every paid surface at once or a lapsed user keeps
-     * their notes and videos while silently losing contests.
      */
     public function hasPaidPackage(): bool
     {
@@ -114,9 +103,102 @@ class User extends Authenticatable
             return false;
         }
 
+        // Active package subscription or legacy type subscription
         return $this->subscriptions()
-            ->where('type_id', $this->type_id)
             ->where('payment_status', 'paid')
+            ->where(function ($q) {
+                $q->where('type_id', $this->type_id)
+                  ->orWhereNotNull('package_id');
+            })
+            ->exists();
+    }
+
+    /**
+     * Get all active paid package slugs for this user.
+     * E.g. ['semester_1', 'coc'] or ['all_access'].
+     *
+     * @return array<string>
+     */
+    public function paidPackageSlugs(): array
+    {
+        return $this->subscriptions()
+            ->where('payment_status', 'paid')
+            ->whereNotNull('package_id')
+            ->with('package')
+            ->get()
+            ->pluck('package.slug')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Check if user has an active paid All-Access package,
+     * or a legacy paid subscription where package_id is null.
+     */
+    public function hasPaidAllAccess(): bool
+    {
+        // 1. Paid All-Access package
+        $hasAllAccessPkg = $this->subscriptions()
+            ->where('payment_status', 'paid')
+            ->whereHas('package', function ($q) {
+                $q->where('slug', Package::SLUG_ALL_ACCESS);
+            })
+            ->exists();
+
+        if ($hasAllAccessPkg) {
+            return true;
+        }
+
+        // 2. Backward-compatibility: legacy subscription without package_id
+        return $this->subscriptions()
+            ->where('payment_status', 'paid')
+            ->whereNull('package_id')
+            ->exists();
+    }
+
+    /**
+     * Check if user has paid access to a given subject's package.
+     */
+    public function canAccessSubject($subject): bool
+    {
+        if (is_numeric($subject)) {
+            $subject = Subject::find($subject);
+        }
+
+        if (! $subject) {
+            return false;
+        }
+
+        // Sample subjects are open to everyone
+        if ($subject->is_sample) {
+            return true;
+        }
+
+        // Subjects not tied to any package require a paid subscription
+        if (! $subject->package_id && ! $subject->package_type) {
+            return $this->hasPaidPackage();
+        }
+
+        // Students with All-Access unlock all subjects
+        if ($this->hasPaidAllAccess()) {
+            return true;
+        }
+
+        // Check if student paid for this specific package
+        return $this->subscriptions()
+            ->where('payment_status', 'paid')
+            ->where(function ($query) use ($subject) {
+                if ($subject->package_id) {
+                    $query->where('package_id', $subject->package_id);
+                }
+                if ($subject->package_type) {
+                    $query->orWhereHas('package', function ($q) use ($subject) {
+                        $q->where('slug', $subject->package_type);
+                    });
+                }
+            })
             ->exists();
     }
 

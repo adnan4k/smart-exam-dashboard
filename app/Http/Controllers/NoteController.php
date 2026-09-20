@@ -182,23 +182,18 @@ class NoteController extends Controller
             ], 400);
         }
 
-        $hasActiveSubscription = $user->subscriptions()
-            ->where('type_id', $user->type_id)
-            ->where('payment_status', 'paid')
-            ->exists();
-
-        if (!$hasActiveSubscription) {
-            return $this->jsonResponse([
-                'status' => 'error',
-                'message' => 'No active subscription found.',
-            ], 403);
-        }
-
         $subject = Subject::findOrFail($request->input('subject_id'));
         if ((int) $subject->type_id !== (int) $user->type_id) {
             return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'Subject does not match user\'s exam type.',
+            ], 403);
+        }
+
+        if (! $user->canAccessSubject($subject)) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'An active subscription is required to access notes for this subject.',
             ], 403);
         }
 

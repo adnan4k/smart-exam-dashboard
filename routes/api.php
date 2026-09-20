@@ -52,6 +52,8 @@ Route::post('/available-chapters', [QuestionController::class, 'availableChapter
 Route::post('check-subscription', [SubscriptionController::class, 'checkSubscription']);
 Route::post('questions/by-year', [QuestionController::class, 'getQuestionsByYear']);
 Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);
+Route::get('packages', [SubscriptionController::class, 'packages']);
+Route::get('subscription/packages', [SubscriptionController::class, 'packages']);
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
 Route::post('register',[UserController::class,'register']);
 Route::post('login', [UserController::class,'login']);

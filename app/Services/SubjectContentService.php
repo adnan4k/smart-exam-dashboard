@@ -60,6 +60,15 @@ class SubjectContentService
     }
 
     /**
+     * Checks if a user is entitled to the full content of a subject
+     * under the new 4-package model.
+     */
+    public function isSubscribedForSubject(User $user, Subject $subject): bool
+    {
+        return $user->canAccessSubject($subject);
+    }
+
+    /**
      * One entry per distinct subject name available to this user.
      *
      * Small enough to fetch on every app launch — it carries counts, sizes and a
@@ -89,7 +98,8 @@ class SubjectContentService
                 $rows,
                 $questionStats,
                 $choiceStats,
-                $noteStats
+                $noteStats,
+                $user
             ))
             ->values();
     }
@@ -107,7 +117,7 @@ class SubjectContentService
      * @param  EloquentCollection<int, Subject>  $variants
      * @return array<string, mixed>|null
      */
-    public function entryForVariants(EloquentCollection $variants, int $typeId): ?array
+    public function entryForVariants(EloquentCollection $variants, int $typeId, ?User $user = null): ?array
     {
         if ($variants->isEmpty()) {
             return null;
@@ -120,7 +130,8 @@ class SubjectContentService
             $variants,
             $this->questionStats($typeId, $subjectIds),
             $this->choiceStats($typeId, $subjectIds),
-            $this->noteStats($typeId, $subjectIds)
+            $this->noteStats($typeId, $subjectIds),
+            $user
         );
     }
 
@@ -340,7 +351,8 @@ class SubjectContentService
         EloquentCollection $rows,
         Collection $questionStats,
         Collection $choiceStats,
-        Collection $noteStats
+        Collection $noteStats,
+        ?User $user = null
     ): array {
         $ids = $rows->pluck('id');
 
@@ -357,10 +369,16 @@ class SubjectContentService
 
         $imageCount = (int) $questions->sum('image_count') + (int) $choices->sum('image_count');
 
+        $firstRow = $rows->first();
+
         return [
             // The download key. Not a `subjects.id` — see the class docblock.
             'key' => $name,
             'name' => $name,
+            'package_id' => $firstRow?->package_id,
+            'package_type' => $firstRow?->package_type,
+            'package_name' => optional($firstRow?->package)->name,
+            'is_subscribed' => $user ? (bool) $rows->contains(fn (Subject $s) => $user->canAccessSubject($s)) : false,
             'subject_ids' => $ids->values()->all(),
             'years' => $rows->pluck('year')->filter()->unique()->sortDesc()->values()->all(),
             'regions' => $rows->pluck('region')->filter()->unique()->sort()->values()->all(),

@@ -59,21 +59,20 @@ class VideoController extends Controller
     /* ------------------------------------------------------------------ */
 
     /**
-     * Mirrors NoteController::forUser — an active paid subscription for the
-     * user's own exam type. Downloads leave our control permanently, so this
-     * is checked again at the moment the file is served, never trusted from
-     * an earlier listing call.
+     * An active paid subscription for the user's own exam type, or package-specific access
+     * when a subject is provided.
      */
-    private function isEntitled(?User $user): bool
+    private function isEntitled(?User $user, ?Subject $subject = null): bool
     {
         if (!$user || !$user->type_id) {
             return false;
         }
 
-        return $user->subscriptions()
-            ->where('type_id', $user->type_id)
-            ->where('payment_status', 'paid')
-            ->exists();
+        if ($subject) {
+            return $user->canAccessSubject($subject);
+        }
+
+        return $user->hasPaidPackage();
     }
 
     private function resolveUser(Request $request): ?User
@@ -87,13 +86,12 @@ class VideoController extends Controller
      * Shape a video for the client: metadata always, the download link only
      * when the caller is entitled to it.
      */
-    private function present(Video $video, bool $entitled, ?User $user): array
+    private function present(Video $video, ?bool $entitledOverride, ?User $user): array
     {
         $data = $video->toArray();
 
-        // download() refuses a video belonging to another exam type and one
-        // whose file is gone from disk. A listing that advertised a link in
-        // those cases would hand the app a download that can only fail.
+        $entitled = $entitledOverride ?? ($video->subject ? ($user ? $user->canAccessSubject($video->subject) : false) : $this->isEntitled($user));
+
         $typeAllowed   = !$video->type_id
                          || !$user?->type_id
                          || (int) $video->type_id === (int) $user->type_id;
@@ -108,7 +106,7 @@ class VideoController extends Controller
         return $data;
     }
 
-    private function presentMany($videos, bool $entitled, ?User $user): array
+    private function presentMany($videos, ?bool $entitled, ?User $user): array
     {
         return collect($videos)->map(fn ($v) => $this->present($v, $entitled, $user))->values()->all();
     }
@@ -122,18 +120,21 @@ class VideoController extends Controller
         return $videos->whereNotNull('subject_id')
             ->groupBy('subject_id')
             ->map(function ($subjectVideos, $subjectId) use ($entitled, $user) {
+                $subject = $subjectVideos->first()->subject;
+                $subjectEntitled = $subject && $user ? $user->canAccessSubject($subject) : $entitled;
+
                 $chapters = $subjectVideos->whereNotNull('chapter_id')
                     ->groupBy('chapter_id')
                     ->map(fn ($group, $chapterId) => [
                         'chapter_id'   => (int) $chapterId,
                         'chapter_name' => optional($group->first()->chapter)->name,
-                        'videos'       => $this->presentMany($group, $entitled, $user),
+                        'videos'       => $this->presentMany($group, $subjectEntitled, $user),
                     ])->values();
 
                 return [
                     'subject_id'     => (int) $subjectId,
-                    'subject_name'   => optional($subjectVideos->first()->subject)->name,
-                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $entitled, $user),
+                    'subject_name'   => optional($subject)->name,
+                    'subject_videos' => $this->presentMany($subjectVideos->whereNull('chapter_id'), $subjectEntitled, $user),
                     'chapters'       => $chapters,
                 ];
             })->values()->all();
@@ -161,7 +162,9 @@ class VideoController extends Controller
                 'No exam type associated with this user.', 400);
         }
 
-        if (!$this->isEntitled($user)) {
+        $subject = $video->subject_id ? ($video->subject ?: Subject::find($video->subject_id)) : null;
+
+        if (!$this->isEntitled($user, $subject)) {
             return $this->refuseDownload($video, $user, 'not_entitled',
                 'An active subscription is required to download this video.', 403);
         }
@@ -307,9 +310,9 @@ class VideoController extends Controller
             'language'   => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
-        $user = $this->resolveUser($request);
-        $entitled = $this->isEntitled($user);
         $subject = Subject::findOrFail($request->input('subject_id'));
+        $user = $this->resolveUser($request);
+        $entitled = $this->isEntitled($user, $subject);
 
         $videos = Video::with(['chapter', 'type'])
             ->active()
@@ -348,8 +351,11 @@ class VideoController extends Controller
         ]);
 
         $user = $this->resolveUser($request);
-        $entitled = $this->isEntitled($user);
         $chapter = Chapter::findOrFail($request->input('chapter_id'));
+        $subject = $request->filled('subject_id')
+            ? Subject::find($request->input('subject_id'))
+            : Video::forChapter($chapter->id)->whereNotNull('subject_id')->first()?->subject;
+        $entitled = $this->isEntitled($user, $subject);
 
         $videos = Video::with(['subject', 'type'])
             ->active()
@@ -458,9 +464,8 @@ class VideoController extends Controller
     public function show(Request $request, Video $video)
     {
         $user = $this->resolveUser($request);
-        $entitled = $this->isEntitled($user);
-
         $video->load(['subject', 'chapter', 'type', 'user']);
+        $entitled = $this->isEntitled($user, $video->subject);
 
         return $this->jsonResponse([
             'status'   => 'success',
