@@ -70,27 +70,22 @@ class SubjectContentService
     public function catalogue(User $user): Collection
     {
         $typeId = $user->type_id;
+        $variants = $this->subjectRows($typeId);
 
-        $subjectIds = Question::where('type_id', $typeId)
-            ->distinct()
-            ->pluck('subject_id')
-            ->filter()
-            ->values();
-
-        if ($subjectIds->isEmpty()) {
+        if ($variants->isEmpty()) {
             return collect();
         }
 
-        $variants = Subject::whereIn('id', $subjectIds)->orderBy('name')->get();
+        $subjectIds = $variants->pluck('id');
 
         $questionStats = $this->questionStats($typeId, $subjectIds);
         $choiceStats = $this->choiceStats($typeId, $subjectIds);
         $noteStats = $this->noteStats($typeId, $subjectIds);
 
         return $variants
-            ->groupBy('name')
-            ->map(fn (EloquentCollection $rows, string $name) => $this->catalogueEntry(
-                $name,
+            ->groupBy(fn (Subject $subject) => $this->nameKey($subject->name))
+            ->map(fn (EloquentCollection $rows) => $this->catalogueEntry(
+                $this->displayName($rows),
                 $rows,
                 $questionStats,
                 $choiceStats,
@@ -100,10 +95,42 @@ class SubjectContentService
     }
 
     /**
+     * The catalogue entry describing exactly the rows a download resolved to.
+     *
+     * Built from the rows themselves rather than by looking the name up in
+     * `catalogue()` again. The second lookup is what produced `subject: null`:
+     * `variantsFor()` resolves the name through MySQL, whose collation folds
+     * case, padding and accents away, while the lookup compared in PHP, which
+     * folds none of them. Deriving the entry from the rows removes the second
+     * comparison instead of trying to keep two of them agreeing.
+     *
+     * @param  EloquentCollection<int, Subject>  $variants
+     * @return array<string, mixed>|null
+     */
+    public function entryForVariants(EloquentCollection $variants, int $typeId): ?array
+    {
+        if ($variants->isEmpty()) {
+            return null;
+        }
+
+        $subjectIds = $variants->pluck('id');
+
+        return $this->catalogueEntry(
+            $this->displayName($variants),
+            $variants,
+            $this->questionStats($typeId, $subjectIds),
+            $this->choiceStats($typeId, $subjectIds),
+            $this->noteStats($typeId, $subjectIds)
+        );
+    }
+
+    /**
      * Every `subjects` row belonging to one subject name, for this user's type.
      *
-     * Returns an empty collection for an unknown name, which callers translate
-     * into a 404.
+     * The name match is left to MySQL so that "Psychology", "psychology" and
+     * "Psychology " all resolve to the same subject, exactly as they do in every
+     * other query in the app. Returns an empty collection for an unknown name,
+     * which callers translate into a 404.
      */
     public function variantsFor(User $user, string $subjectName): EloquentCollection
     {
@@ -115,8 +142,57 @@ class SubjectContentService
             ->filter();
 
         return Subject::whereIn('id', $subjectIds)
-            ->where('name', $subjectName)
+            ->where('name', trim($subjectName))
             ->get();
+    }
+
+    /**
+     * Every `subjects` row this user's exam type has questions for.
+     *
+     * @return EloquentCollection<int, Subject>
+     */
+    private function subjectRows(?int $typeId): EloquentCollection
+    {
+        $subjectIds = Question::where('type_id', $typeId)
+            ->distinct()
+            ->pluck('subject_id')
+            ->filter()
+            ->values();
+
+        if ($subjectIds->isEmpty()) {
+            return new EloquentCollection;
+        }
+
+        return Subject::whereIn('id', $subjectIds)->orderBy('name')->get();
+    }
+
+    /**
+     * The key `catalogue()` groups subject names under.
+     *
+     * `subjects.name` is utf8mb4_unicode_ci, so MySQL treats "Psychology",
+     * "psychology" and "Psychology " as one name and `variantsFor()` returns
+     * all three rows for any of those spellings. Grouping on the raw name would
+     * split them into three cards that each download the same questions, so the
+     * grouping folds case and padding the way the collation does.
+     */
+    private function nameKey(string $name): string
+    {
+        return mb_strtolower(trim($name));
+    }
+
+    /**
+     * The spelling shown to the user when variants disagree. Sorted so the same
+     * set of rows always yields the same `key`, which is what the app caches a
+     * download against.
+     *
+     * @param  EloquentCollection<int, Subject>  $rows
+     */
+    private function displayName(EloquentCollection $rows): string
+    {
+        return $rows->pluck('name')
+            ->map(fn (string $name) => trim($name))
+            ->sort()
+            ->first();
     }
 
     /**

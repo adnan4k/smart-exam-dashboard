@@ -89,18 +89,24 @@ class SubjectController extends Controller
             ], 400);
         }
 
-        $subjectName = $request->input('subject');
-        $variants = $this->subjects->variantsFor($user, $subjectName);
+        $requestedName = trim((string) $request->input('subject'));
+        $variants = $this->subjects->variantsFor($user, $requestedName);
 
         if ($variants->isEmpty()) {
             return $this->jsonResponse([
                 'status' => 'error',
-                'message' => "No subject named '{$subjectName}' is available for this user.",
+                'message' => "No subject named '{$requestedName}' is available for this user.",
             ], 404);
         }
 
-        $entry = $this->subjects->catalogue($user)
-            ->firstWhere('key', $subjectName);
+        // Built from the rows just resolved, so it describes exactly the
+        // questions and notes below it and cannot come back null. Looking the
+        // name up in the catalogue a second time is what made it null.
+        $entry = $this->subjects->entryForVariants($variants, $user->type_id);
+
+        // Report the catalogue's spelling, not the caller's, so `notes.name`
+        // and `subject.name` agree with the card the user tapped.
+        $subjectName = $entry['name'] ?? $requestedName;
 
         $knownVersion = $request->input('known_version');
 

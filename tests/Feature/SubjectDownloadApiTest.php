@@ -215,7 +215,73 @@ class SubjectDownloadApiTest extends TestCase
             ->assertJsonMissingPath('questions');
     }
 
-    /** @test */
+    /**
+     * `subjects.name` is utf8mb4_unicode_ci, so MySQL matches the stored name
+     * case- and trailing-space-insensitively while PHP's own string comparison
+     * does not. The subject therefore resolved to real questions while the
+     * catalogue lookup that produces the `subject` entry missed, and the
+     * response came back with `subject: null` — the app has nothing to record
+     * the download against.
+     *
+     * @test
+     */
+    public function content_resolves_the_catalogue_entry_when_the_stored_name_differs_only_in_case_or_padding()
+    {
+        $this->subscribe();
+
+        $subject = $this->subject('psychology ', '2015');
+        $this->question($subject);
+
+        $payload = $this->getJson(
+            '/api/subjects/content?user_id='.$this->user->id.'&subject=Psychology'
+        )->assertStatus(200)->assertJsonPath('status', 'success')->json();
+
+        $this->assertNotNull($payload['subject'], 'Catalogue entry must resolve.');
+        $this->assertSame([$subject->id], $payload['subject']['subject_ids']);
+        $this->assertSame(1, $payload['subject']['question_count']);
+        $this->assertNotNull($payload['subject']['content_version']);
+        $this->assertCount(1, $payload['questions']);
+    }
+
+    /**
+     * The same mismatch splits one subject into two catalogue cards, and
+     * `content` then returns only half the questions for whichever card is
+     * tapped.
+     *
+     * @test
+     */
+    public function catalogue_collapses_names_that_differ_only_in_case_or_padding()
+    {
+        $this->subscribe();
+
+        $lower = $this->subject('psychology', '2015');
+        $padded = $this->subject('Psychology ', '2016');
+
+        $this->question($lower);
+        $this->question($padded);
+
+        $data = collect(
+            $this->getJson('/api/subjects/catalogue?user_id='.$this->user->id)
+                ->assertStatus(200)->json('data')
+        );
+
+        $this->assertCount(1, $data, 'Expected one entry per distinct subject name.');
+        $this->assertSame(2, $data[0]['question_count']);
+        $this->assertEqualsCanonicalizing([$lower->id, $padded->id], $data[0]['subject_ids']);
+
+        $this->assertCount(
+            2,
+            $this->getJson(
+                '/api/subjects/content?user_id='.$this->user->id.'&subject='.urlencode($data[0]['key'])
+            )->assertStatus(200)->json('questions')
+        );
+    }
+
+    /**
+     * Normalising the lookup must not start matching unrelated names.
+     *
+     * @test
+     */
     public function content_404s_for_a_subject_the_user_cannot_reach()
     {
         $this->subject('Biology', '2015');
@@ -298,6 +364,10 @@ class SubjectDownloadApiTest extends TestCase
         ]);
     }
 
+    /**
+     * `released_at` is required: ReleasedQuestionScope hides questions without
+     * it from every study query, which is exactly what these endpoints are.
+     */
     private function question(Subject $subject, array $attributes = []): Question
     {
         return Question::create(array_merge([
@@ -306,6 +376,7 @@ class SubjectDownloadApiTest extends TestCase
             'type_id' => $this->type->id,
             'question_text' => 'Placeholder question',
             'explanation' => 'Placeholder explanation',
+            'released_at' => now(),
         ], $attributes));
     }
 
