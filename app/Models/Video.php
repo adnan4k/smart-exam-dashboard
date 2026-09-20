@@ -72,14 +72,44 @@ class Video extends Model
 
     public function fileExists(): bool
     {
-        return $this->file_path && Storage::disk(self::DISK)->exists($this->file_path);
+        if (!$this->file_path) {
+            return false;
+        }
+
+        return Storage::disk(self::DISK)->exists($this->file_path)
+            || Storage::disk(self::THUMB_DISK)->exists($this->file_path)
+            || file_exists(storage_path('app/' . $this->file_path))
+            || file_exists(storage_path('app/public/' . $this->file_path))
+            || file_exists(public_path('storage/' . $this->file_path));
     }
 
     public function absolutePath(): ?string
     {
-        return $this->fileExists()
-            ? Storage::disk(self::DISK)->path($this->file_path)
-            : null;
+        if (!$this->file_path) {
+            return null;
+        }
+
+        if (Storage::disk(self::DISK)->exists($this->file_path)) {
+            return Storage::disk(self::DISK)->path($this->file_path);
+        }
+
+        if (Storage::disk(self::THUMB_DISK)->exists($this->file_path)) {
+            return Storage::disk(self::THUMB_DISK)->path($this->file_path);
+        }
+
+        if (file_exists(storage_path('app/' . $this->file_path))) {
+            return storage_path('app/' . $this->file_path);
+        }
+
+        if (file_exists(storage_path('app/public/' . $this->file_path))) {
+            return storage_path('app/public/' . $this->file_path);
+        }
+
+        if (file_exists(public_path('storage/' . $this->file_path))) {
+            return public_path('storage/' . $this->file_path);
+        }
+
+        return null;
     }
 
     protected static function booted()

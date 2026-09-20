@@ -64,7 +64,7 @@ class VideoController extends Controller
      */
     private function isEntitled(?User $user, ?Subject $subject = null): bool
     {
-        if (!$user || !$user->type_id) {
+        if (!$user) {
             return false;
         }
 
@@ -77,9 +77,11 @@ class VideoController extends Controller
 
     private function resolveUser(Request $request): ?User
     {
-        return $request->filled('user_id')
-            ? User::find($request->input('user_id'))
-            : null;
+        if ($request->filled('user_id')) {
+            return User::find($request->input('user_id'));
+        }
+
+        return $request->user() ?: auth('sanctum')->user();
     }
 
     /**
@@ -151,16 +153,17 @@ class VideoController extends Controller
      */
     public function download(Request $request, Video $video)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
+        $userId = $request->input('user_id') ?: auth('sanctum')->id();
 
-        $user = User::findOrFail($request->input('user_id'));
-
-        if (!$user->type_id) {
-            return $this->refuseDownload($video, $user, 'no_exam_type',
-                'No exam type associated with this user.', 400);
+        if (!$userId) {
+            return response()->json([
+                'status'  => 'error',
+                'reason'  => 'missing_user',
+                'message' => 'User ID is required to download this video.',
+            ], 400);
         }
+
+        $user = User::findOrFail($userId);
 
         $subject = $video->subject_id ? ($video->subject ?: Subject::find($video->subject_id)) : null;
 
@@ -169,8 +172,12 @@ class VideoController extends Controller
                 'An active subscription is required to download this video.', 403);
         }
 
-        // A video scoped to another exam type is not this user's to download.
-        if ($video->type_id && (int) $video->type_id !== (int) $user->type_id) {
+        $hasAllAccess = $user->hasPaidAllAccess();
+        $isSubjectEntitled = $subject && $user->canAccessSubject($subject);
+
+        // A video scoped to another exam type is not this user's to download,
+        // unless they hold All Access or are entitled to this subject.
+        if (!$hasAllAccess && !$isSubjectEntitled && $video->type_id && $user->type_id && (int) $video->type_id !== (int) $user->type_id) {
             return $this->refuseDownload($video, $user, 'exam_type_mismatch',
                 'This video is not available for your exam type.', 403);
         }
