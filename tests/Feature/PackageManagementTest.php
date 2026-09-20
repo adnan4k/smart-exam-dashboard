@@ -15,6 +15,8 @@ use Tests\TestCase;
 
 class PackageManagementTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected $admin;
 
     protected function setUp(): void

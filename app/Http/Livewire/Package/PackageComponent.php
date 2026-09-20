@@ -259,6 +259,7 @@ class PackageComponent extends Component
             ->paginate(10);
 
         $availableSubjects = \App\Models\Subject::with('type')
+            ->withCount('questions')
             ->orderBy('name')
             ->get();
 

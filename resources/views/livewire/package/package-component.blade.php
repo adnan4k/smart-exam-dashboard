@@ -367,6 +367,7 @@
                                             <span class="truncate font-medium text-slate-700" title="{{ $availSub->name }}">
                                                 {{ $availSub->name }}
                                                 @if($availSub->year) <span class="text-[10px] text-slate-400">({{ $availSub->year }})</span> @endif
+                                                <span class="text-[10px] font-bold text-slate-500 ml-1">({{ $availSub->questions_count }} Qs)</span>
                                             </span>
                                         </label>
                                     @empty
