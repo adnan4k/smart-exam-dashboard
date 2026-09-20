@@ -312,8 +312,26 @@
                                 @error('price') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
 
+                            <!-- Max Subjects Slot Limit -->
+                            <div class="col-12 col-md-2">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                    Max Subs <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input
+                                        wire:model="maxSubjects"
+                                        type="number"
+                                        min="1"
+                                        max="50"
+                                        class="form-control w-full text-xs font-bold pl-3 pr-10"
+                                        placeholder="7">
+                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-semibold">max</span>
+                                </div>
+                                @error('maxSubjects') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                            </div>
+
                             <!-- Description -->
-                            <div class="col-12 col-md-5">
+                            <div class="col-12 col-md-3">
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                                     Description <span class="text-slate-400 font-normal">(Optional)</span>
                                 </label>
@@ -321,8 +339,42 @@
                                     wire:model="description"
                                     type="text"
                                     class="form-control w-full text-xs"
-                                    placeholder="Brief description of materials unlocked...">
+                                    placeholder="Brief description of materials...">
                                 @error('description') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Default Bundled Subjects Multi-select -->
+                            <div class="col-12">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-0">
+                                        Default Bundled Subjects
+                                    </label>
+                                    <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                        {{ count($defaultSubjectIds) }} defaults selected (Max {{ $maxSubjects }} slots)
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 mb-2">
+                                    Select subjects pre-bundled into this package. Students receive these automatically and can select additional electives up to <strong>{{ $maxSubjects }} subjects max</strong>.
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                    @forelse($availableSubjects as $availSub)
+                                        <label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-slate-200/80 hover:border-[#58706D] cursor-pointer text-xs transition">
+                                            <input
+                                                type="checkbox"
+                                                wire:model="defaultSubjectIds"
+                                                value="{{ $availSub->id }}"
+                                                class="rounded border-slate-300 text-[#58706D] focus:ring-[#58706D] w-3.5 h-3.5">
+                                            <span class="truncate font-medium text-slate-700" title="{{ $availSub->name }}">
+                                                {{ $availSub->name }}
+                                                @if($availSub->year) <span class="text-[10px] text-slate-400">({{ $availSub->year }})</span> @endif
+                                            </span>
+                                        </label>
+                                    @empty
+                                        <div class="col-span-full py-3 text-center text-xs text-slate-400">
+                                            No subjects created yet.
+                                        </div>
+                                    @endforelse
+                                </div>
                             </div>
 
                             <!-- Status & Submit Bar -->
@@ -445,7 +497,7 @@
                                         </td>
                                         <td class="text-center">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                                                {{ $pkg->subjects_count }} subjects
+                                                {{ $pkg->defaultSubjects->count() }} defaults &bull; Max {{ $pkg->max_subjects ?? 7 }}
                                             </span>
                                         </td>
                                         <td class="text-center">

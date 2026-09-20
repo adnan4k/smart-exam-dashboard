@@ -68,6 +68,9 @@
                                                     <span class="inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full {{ $pkgBadge }}">
                                                         {{ $subscription->package->name }}
                                                     </span>
+                                                    <span class="text-[10px] text-slate-500 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">
+                                                        {{ $subscription->subjects->count() }}/{{ $subscription->package->max_subjects ?? 7 }} subs
+                                                    </span>
                                                     @if(optional($subscription->user)->type)
                                                         <span class="text-[10px] text-slate-400 font-medium">
                                                             {{ $subscription->user->type->name }}
@@ -138,13 +141,8 @@
 
                     <!-- Pagination -->
                     @if($subscriptions->hasPages())
-                        <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
-                            <div class="text-xs text-slate-500">
-                                Showing {{ $subscriptions->firstItem() }} to {{ $subscriptions->lastItem() }} of {{ $subscriptions->total() }} records
-                            </div>
-                            <div>
-                                {{ $subscriptions->links() }}
-                            </div>
+                        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                            {{ $subscriptions->links() }}
                         </div>
                     @endif
                 </div>
@@ -152,20 +150,25 @@
         </div>
     </div>
 
-    <!-- Modal for updating subscription status or viewing payment proof -->
+    <!-- Review / Edit Status Modal -->
     @if($showModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto"
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto"
              x-transition:enter="ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100">
-            <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-fade-in">
+            <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden my-8">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-800">Verify Payment</h3>
-                        <p class="text-xs text-slate-400 mb-0">Confirm candidate payment receipt and activate access.</p>
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-lg bg-[#58706D] text-white flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </span>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 mb-0">Subscription Review</h3>
+                            <p class="text-xs text-slate-400 mb-0">Verify payment proof and update enrollment status.</p>
+                        </div>
                     </div>
-                    <button wire:click="$set('showModal', false)" type="button" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition">
+                    <button type="button" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition" wire:click="$set('showModal', false)">
                         <i class="fas fa-times text-sm"></i>
                     </button>
                 </div>
@@ -196,6 +199,20 @@
                                 <span class="text-slate-400">Payment Amount:</span>
                                 <span class="font-bold text-slate-800">ETB {{ number_format($selectedSubscription->amount ?? 0, 2) }}</span>
                             </div>
+                            @if($selectedSubscription->subjects && $selectedSubscription->subjects->isNotEmpty())
+                                <div class="pt-2 border-t border-slate-200">
+                                    <span class="text-slate-500 font-semibold block mb-1">
+                                        Enrolled Subjects ({{ $selectedSubscription->subjects->count() }}/{{ $selectedSubscription->package->max_subjects ?? 7 }} max):
+                                    </span>
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($selectedSubscription->subjects as $sub)
+                                            <span class="px-2 py-0.5 rounded text-[11px] bg-white border border-slate-200 text-slate-700 font-medium">
+                                                {{ $sub->name }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     @endif
 

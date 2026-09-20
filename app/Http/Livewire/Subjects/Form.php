@@ -84,8 +84,15 @@ class Form extends Component
             $subject->update($subjectData);
             $message = "Subject Updated Successfully!";
         } else {
-           $subject  =  Subject::create($subjectData);
+            $subject = Subject::create($subjectData);
             $message = "Subject Created Successfully!";
+        }
+
+        if ($this->packageId) {
+            \Illuminate\Support\Facades\DB::table('package_subject')->updateOrInsert(
+                ['package_id' => $this->packageId, 'subject_id' => $subject->id],
+                ['is_default' => true, 'updated_at' => now()]
+            );
         }
 
         Toaster::success($message);

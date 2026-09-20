@@ -33,8 +33,8 @@ class SubscriptionComponent extends Component
      */
     public function render()
     {
-        // Eager load related user, package, and yearGroup data with pagination
-        $subscriptions = Subscription::with(['user.type', 'yearGroup', 'package'])
+        // Eager load related user, package, subjects, and yearGroup data with pagination
+        $subscriptions = Subscription::with(['user.type', 'yearGroup', 'package', 'subjects'])
             ->latest('created_at')
             ->orderBy('id', 'desc')
             ->paginate(10);
@@ -50,7 +50,7 @@ class SubscriptionComponent extends Component
      */
     public function edit($subscriptionId)
     {
-        $subscription = Subscription::with(['user.type', 'package'])->findOrFail($subscriptionId);
+        $subscription = Subscription::with(['user.type', 'package', 'subjects'])->findOrFail($subscriptionId);
         $this->subscriptionId = $subscription->id;
         $this->selectedSubscription = $subscription;
         $this->selectedStatus = $subscription->payment_status;
@@ -69,6 +69,10 @@ class SubscriptionComponent extends Component
         $subscription = Subscription::findOrFail($this->subscriptionId);
         $subscription->payment_status = $this->selectedStatus;
         $subscription->save();
+
+        if ($this->selectedStatus === 'paid' && $subscription->package_id) {
+            $subscription->syncDefaultSubjects();
+        }
 
         session()->flash('message', 'Subscription status updated successfully.');
         Toaster::success('Subscription status updated successfully.');

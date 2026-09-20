@@ -159,7 +159,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user has paid access to a given subject's package.
+     * Check if user has paid access to a given subject's package or selected subjects.
      */
     public function canAccessSubject($subject): bool
     {
@@ -176,23 +176,32 @@ class User extends Authenticatable
             return true;
         }
 
-        // Subjects not tied to any package require a paid subscription
-        if (! $subject->package_id && ! $subject->package_type) {
-            return $this->hasPaidPackage();
-        }
-
         // Students with All-Access unlock all subjects
         if ($this->hasPaidAllAccess()) {
             return true;
         }
 
-        // Check if student paid for this specific package
-        return $this->subscriptions()
+        // Check if student has an active paid subscription that covers this subject:
+        // 1. Subject was selected by user in their subscription (or shares name with selected variant)
+        // 2. Subject is a default package subject for their subscribed package
+        // 3. Legacy: subject.package_id matches subscription.package_id
+        // 4. Legacy: subject.package_type matches subscription package slug
+        $hasAccessViaSubscription = $this->subscriptions()
             ->where('payment_status', 'paid')
             ->where(function ($query) use ($subject) {
+                $query->whereHas('subjects', function ($subQuery) use ($subject) {
+                    $subQuery->where('subjects.id', $subject->id)
+                             ->orWhere('subjects.name', $subject->name);
+                })
+                ->orWhereHas('package.defaultSubjects', function ($subQuery) use ($subject) {
+                    $subQuery->where('subjects.id', $subject->id)
+                             ->orWhere('subjects.name', $subject->name);
+                });
+
                 if ($subject->package_id) {
-                    $query->where('package_id', $subject->package_id);
+                    $query->orWhere('package_id', $subject->package_id);
                 }
+
                 if ($subject->package_type) {
                     $query->orWhereHas('package', function ($q) use ($subject) {
                         $q->where('slug', $subject->package_type);
@@ -200,6 +209,21 @@ class User extends Authenticatable
                 }
             })
             ->exists();
+
+        if ($hasAccessViaSubscription) {
+            return true;
+        }
+
+        // Subjects not tied to any package require a paid subscription
+        $isTiedToPackage = (bool) $subject->package_id
+            || (bool) $subject->package_type
+            || \Illuminate\Support\Facades\DB::table('package_subject')->where('subject_id', $subject->id)->exists();
+
+        if (! $isTiedToPackage) {
+            return $this->hasPaidPackage();
+        }
+
+        return false;
     }
 
     /**

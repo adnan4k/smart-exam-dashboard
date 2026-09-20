@@ -26,6 +26,8 @@ class PackageComponent extends Component
     public $selectedPreset = 'semester_1';
     public $name = '1st Semester';
     public $price = 300.00;
+    public $maxSubjects = 7;
+    public $defaultSubjectIds = [];
     public $description = '';
     public $isActive = true;
 
@@ -38,6 +40,9 @@ class PackageComponent extends Component
         return [
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
+            'maxSubjects' => 'required|integer|min:1|max:50',
+            'defaultSubjectIds' => 'nullable|array',
+            'defaultSubjectIds.*' => 'exists:subjects,id',
             'description' => 'nullable|string|max:500',
             'isActive' => 'boolean',
         ];
@@ -97,8 +102,10 @@ class PackageComponent extends Component
         $this->packageId = $package->id;
         $this->name = $package->name;
         $this->price = (float) $package->price;
+        $this->maxSubjects = (int) ($package->max_subjects ?? 7);
         $this->description = $package->description ?? '';
         $this->isActive = (bool) $package->is_active;
+        $this->defaultSubjectIds = $package->defaultSubjects()->pluck('subjects.id')->map(fn ($v) => (int) $v)->toArray();
 
         if (in_array($package->slug, ['semester_1', 'semester_2', 'coc', 'all_access'])) {
             $this->selectedPreset = $package->slug;
@@ -138,6 +145,7 @@ class PackageComponent extends Component
             'description' => $this->description ? trim($this->description) : null,
             'price' => $this->price,
             'duration_days' => 365,
+            'max_subjects' => $this->maxSubjects ?: 7,
             'is_active' => $this->isActive,
             'order' => $order,
         ];
@@ -147,9 +155,18 @@ class PackageComponent extends Component
             $package->update($data);
             Toaster::success("Package '{$package->name}' updated successfully.");
         } else {
-            Package::create($data);
+            $package = Package::create($data);
             Toaster::success("Package '{$data['name']}' created successfully.");
         }
+
+        // Sync default subjects into package_subject pivot
+        $syncData = [];
+        foreach ($this->defaultSubjectIds as $subId) {
+            if ($subId) {
+                $syncData[$subId] = ['is_default' => true];
+            }
+        }
+        $package->subjects()->sync($syncData);
 
         $this->resetForm();
     }
@@ -209,6 +226,8 @@ class PackageComponent extends Component
         $this->packageId = null;
         $this->name = '';
         $this->price = 0.00;
+        $this->maxSubjects = 7;
+        $this->defaultSubjectIds = [];
         $this->description = '';
         $this->isActive = true;
         $this->selectedPreset = 'semester_1';
@@ -224,7 +243,8 @@ class PackageComponent extends Component
             ->get()
             ->keyBy('slug');
 
-        $query = Package::withCount(['subjects', 'subscriptions']);
+        $query = Package::withCount(['subjects', 'subscriptions'])
+            ->with(['defaultSubjects']);
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -238,9 +258,14 @@ class PackageComponent extends Component
             ->orderBy('id', 'asc')
             ->paginate(10);
 
+        $availableSubjects = \App\Models\Subject::with('type')
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.package.package-component', [
             'packages' => $packages,
             'corePackages' => $corePackages,
+            'availableSubjects' => $availableSubjects,
         ]);
     }
 }

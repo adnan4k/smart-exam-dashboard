@@ -21,11 +21,13 @@ class SubscriptionController extends Controller
         $user = $request->filled('user_id') ? User::find($request->input('user_id')) : null;
 
         $packages = Package::active()
+            ->with(['defaultSubjects'])
             ->ordered()
             ->get()
             ->map(function ($pkg) use ($user) {
                 $isSubscribed = false;
                 $paymentStatus = null;
+                $sub = null;
 
                 if ($user) {
                     if ($user->hasPaidAllAccess()) {
@@ -34,6 +36,7 @@ class SubscriptionController extends Controller
                     } else {
                         $sub = $user->subscriptions()
                             ->where('package_id', $pkg->id)
+                            ->with('subjects')
                             ->latest()
                             ->first();
 
@@ -51,6 +54,18 @@ class SubscriptionController extends Controller
                     'description' => $pkg->description,
                     'price' => (float) $pkg->price,
                     'duration_days' => $pkg->duration_days,
+                    'max_subjects' => $pkg->max_subjects ?? 7,
+                    'default_subjects' => $pkg->defaultSubjects->map(fn ($s) => [
+                        'id' => $s->id,
+                        'name' => $s->name,
+                        'year' => $s->year,
+                        'region' => $s->region,
+                    ]),
+                    'selected_subjects' => $sub ? $sub->subjects->map(fn ($s) => [
+                        'id' => $s->id,
+                        'name' => $s->name,
+                    ]) : [],
+                    'remaining_subject_slots' => $sub ? $sub->remainingSubjectSlots() : ($pkg->max_subjects ?? 7),
                     'is_subscribed' => $isSubscribed,
                     'payment_status' => $paymentStatus,
                 ];
@@ -70,9 +85,11 @@ class SubscriptionController extends Controller
     public function subscribe(Request $request)
     {
         $request->validate([
-            'user_id'    => 'required|exists:users,id',
-            'image'      => 'required',
-            'package_id' => 'nullable|exists:packages,id',
+            'user_id'     => 'required|exists:users,id',
+            'image'       => 'required',
+            'package_id'  => 'nullable|exists:packages,id',
+            'subject_ids' => 'nullable|array',
+            'subject_ids.*' => 'exists:subjects,id',
         ]);
 
         // Handle receipt image upload
@@ -86,6 +103,18 @@ class SubscriptionController extends Controller
         // Path A: Subscribing to a specific Package (1st Sem, 2nd Sem, COC, All Access)
         if ($request->filled('package_id')) {
             $package = Package::findOrFail($request->package_id);
+            $maxAllowed = $package->max_subjects ?: 7;
+
+            // Optional custom subject selection validation
+            $subjectIds = null;
+            if ($request->has('subject_ids')) {
+                $subjectIds = array_values(array_unique((array) $request->input('subject_ids', [])));
+                if (count($subjectIds) > $maxAllowed) {
+                    return response()->json([
+                        'message' => "Package '{$package->name}' allows a maximum of {$maxAllowed} subjects. You provided " . count($subjectIds) . ".",
+                    ], 422);
+                }
+            }
 
             $existing = $user->subscriptions()
                 ->where('package_id', $package->id)
@@ -108,9 +137,15 @@ class SubscriptionController extends Controller
                         'payment_status' => 'pending',
                     ]);
 
+                    if ($subjectIds !== null && count($subjectIds) > 0) {
+                        $existing->subjects()->sync($subjectIds);
+                    } else {
+                        $existing->syncDefaultSubjects();
+                    }
+
                     return response()->json([
                         'message' => 'Subscription payment proof resubmitted successfully.',
-                        'subscription' => $existing,
+                        'subscription' => $existing->load('subjects'),
                         'package' => $package,
                     ], 200);
                 }
@@ -126,9 +161,15 @@ class SubscriptionController extends Controller
                 'payment_status' => 'pending',
             ]);
 
+            if ($subjectIds !== null && count($subjectIds) > 0) {
+                $subscription->subjects()->sync($subjectIds);
+            } else {
+                $subscription->syncDefaultSubjects();
+            }
+
             return response()->json([
                 'message' => 'Subscription created successfully. Awaiting verification.',
-                'subscription' => $subscription,
+                'subscription' => $subscription->load('subjects'),
                 'package' => $package,
             ], 201);
         }
@@ -204,7 +245,7 @@ class SubscriptionController extends Controller
 
         $activeSubscriptions = $user->subscriptions()
             ->where('payment_status', 'paid')
-            ->with('package')
+            ->with(['package', 'subjects'])
             ->get();
 
         $subscribedPackages = $activeSubscriptions
@@ -213,8 +254,14 @@ class SubscriptionController extends Controller
                 'id' => $s->package->id,
                 'name' => $s->package->name,
                 'slug' => $s->package->slug,
+                'max_subjects' => $s->package->max_subjects ?? 7,
                 'start_date' => $s->start_date,
                 'end_date' => $s->end_date,
+                'selected_subjects' => $s->subjects->map(fn ($sub) => [
+                    'id' => $sub->id,
+                    'name' => $sub->name,
+                ]),
+                'remaining_slots' => $s->remainingSubjectSlots(),
             ])
             ->values();
 
@@ -230,6 +277,58 @@ class SubscriptionController extends Controller
             'type_id' => $user->type_id,
             'type_price' => $user->type_id && ($type = Type::find($user->type_id)) ? $type->price : null,
             'message' => $hasPaidPackage ? 'Active subscription found.' : 'No active subscription found.',
+        ], 200);
+    }
+
+    /**
+     * Choose or update subjects for a user's package subscription (up to max_subjects).
+     *
+     * POST /api/subscriptions/select-subjects
+     */
+    public function selectSubjects(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'package_id' => 'required|exists:packages,id',
+            'subject_ids' => 'required|array|min:1',
+            'subject_ids.*' => 'exists:subjects,id',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        $package = Package::findOrFail($request->package_id);
+
+        $subscription = $user->subscriptions()
+            ->where('package_id', $package->id)
+            ->whereIn('payment_status', ['paid', 'pending'])
+            ->latest()
+            ->first();
+
+        if (! $subscription) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "No active or pending subscription found for package '{$package->name}'. Please subscribe first.",
+            ], 404);
+        }
+
+        $maxAllowed = $package->max_subjects ?: 7;
+        $uniqueSubjectIds = array_values(array_unique($request->subject_ids));
+
+        if (count($uniqueSubjectIds) > $maxAllowed) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Package '{$package->name}' allows a maximum of {$maxAllowed} subjects. You selected " . count($uniqueSubjectIds) . ".",
+            ], 422);
+        }
+
+        $subscription->subjects()->sync($uniqueSubjectIds);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Subjects updated successfully.',
+            'max_subjects' => $maxAllowed,
+            'selected_count' => count($uniqueSubjectIds),
+            'remaining_slots' => max(0, $maxAllowed - count($uniqueSubjectIds)),
+            'selected_subjects' => $subscription->subjects()->get(['subjects.id', 'subjects.name', 'subjects.year']),
         ], 200);
     }
 }

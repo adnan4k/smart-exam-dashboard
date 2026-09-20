@@ -55,6 +55,8 @@ Route::post('sample-questions', [QuestionController::class, 'sampleQuestions']);
 Route::get('packages', [SubscriptionController::class, 'packages']);
 Route::get('subscription/packages', [SubscriptionController::class, 'packages']);
 Route::post('subscribe', [SubscriptionController::class, 'subscribe']);
+Route::post('subscriptions/select-subjects', [SubscriptionController::class, 'selectSubjects']);
+Route::post('package/select-subjects', [SubscriptionController::class, 'selectSubjects']);
 Route::post('register',[UserController::class,'register']);
 Route::post('login', [UserController::class,'login']);
 

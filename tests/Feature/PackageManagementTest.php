@@ -126,4 +126,30 @@ class PackageManagementTest extends TestCase
             'package_type' => 'semester_1',
         ]);
     }
+
+    /** @test */
+    public function it_can_configure_default_subjects_and_max_subjects_for_a_package()
+    {
+        $this->actingAs($this->admin);
+
+        $type = Type::firstOrCreate(['name' => 'Biomedical Science']);
+        $sub1 = Subject::create(['name' => 'Biochem I', 'type_id' => $type->id, 'year' => '2026']);
+        $sub2 = Subject::create(['name' => 'Genetics', 'type_id' => $type->id, 'year' => '2026']);
+
+        Livewire::test(PackageComponent::class)
+            ->set('selectedPreset', 'custom')
+            ->set('name', 'Flexible Pre-Med Bundle')
+            ->set('price', 499.00)
+            ->set('maxSubjects', 7)
+            ->set('defaultSubjectIds', [$sub1->id, $sub2->id])
+            ->call('savePackage')
+            ->assertHasNoErrors();
+
+        $pkg = Package::where('name', 'Flexible Pre-Med Bundle')->first();
+        $this->assertNotNull($pkg);
+        $this->assertEquals(7, $pkg->max_subjects);
+        $this->assertCount(2, $pkg->defaultSubjects);
+        $this->assertTrue($pkg->defaultSubjects->contains($sub1));
+        $this->assertTrue($pkg->defaultSubjects->contains($sub2));
+    }
 }

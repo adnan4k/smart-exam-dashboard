@@ -509,6 +509,164 @@ class PackageApiAccessTest extends TestCase
         $this->assertSame($this->allAccessPackage->id, $sub2->fresh()->package_id);
     }
 
+    /** @test */
+    public function packages_endpoint_returns_max_subjects_and_default_subjects()
+    {
+        $sub1 = Subject::create(['name' => 'Default Sub A', 'type_id' => $this->type->id, 'year' => '2026']);
+        $sub2 = Subject::create(['name' => 'Default Sub B', 'type_id' => $this->type->id, 'year' => '2026']);
+
+        $this->sem1Package->subjects()->sync([
+            $sub1->id => ['is_default' => true],
+            $sub2->id => ['is_default' => true],
+        ]);
+
+        $response = $this->getJson('/api/packages')
+            ->assertStatus(200);
+
+        $packages = collect($response->json('data'));
+        $sem1 = $packages->firstWhere('slug', 'semester_1');
+
+        $this->assertEquals(7, $sem1['max_subjects']);
+        $this->assertCount(2, $sem1['default_subjects']);
+        $this->assertEquals('Default Sub A', $sem1['default_subjects'][0]['name']);
+    }
+
+    /** @test */
+    public function subscribe_endpoint_auto_assigns_default_subjects_when_none_specified()
+    {
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        $sub1 = Subject::create(['name' => 'Core Math', 'type_id' => $this->type->id, 'year' => '2026']);
+        $sub2 = Subject::create(['name' => 'Core English', 'type_id' => $this->type->id, 'year' => '2026']);
+
+        $this->sem1Package->subjects()->sync([
+            $sub1->id => ['is_default' => true],
+            $sub2->id => ['is_default' => true],
+        ]);
+
+        $response = $this->post('/api/subscribe', [
+            'user_id' => $user->id,
+            'package_id' => $this->sem1Package->id,
+            'image' => UploadedFile::fake()->image('receipt.jpg'),
+        ])->assertStatus(201);
+
+        $subscription = Subscription::where('user_id', $user->id)
+            ->where('package_id', $this->sem1Package->id)
+            ->first();
+
+        $this->assertNotNull($subscription);
+        $this->assertCount(2, $subscription->subjects);
+        $this->assertTrue($subscription->subjects->contains($sub1));
+        $this->assertTrue($subscription->subjects->contains($sub2));
+    }
+
+    /** @test */
+    public function subscribe_endpoint_accepts_custom_subjects_up_to_max_subjects_and_rejects_excess()
+    {
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        // Create 8 subjects
+        $subjects = collect(range(1, 8))->map(function ($i) {
+            return Subject::create(['name' => "Subject {$i}", 'type_id' => $this->type->id, 'year' => '2026']);
+        });
+
+        // 1. Trying to select 8 subjects when max is 7 must be rejected with 422
+        $this->postJson('/api/subscribe', [
+            'user_id' => $user->id,
+            'package_id' => $this->sem1Package->id,
+            'image' => UploadedFile::fake()->image('receipt.jpg'),
+            'subject_ids' => $subjects->pluck('id')->all(),
+        ])->assertStatus(422);
+
+        // 2. Selecting 7 subjects succeeds
+        $allowedSubjects = $subjects->take(7);
+        $this->post('/api/subscribe', [
+            'user_id' => $user->id,
+            'package_id' => $this->sem1Package->id,
+            'image' => UploadedFile::fake()->image('receipt.jpg'),
+            'subject_ids' => $allowedSubjects->pluck('id')->all(),
+        ])->assertStatus(201);
+
+        $subscription = Subscription::where('user_id', $user->id)
+            ->where('package_id', $this->sem1Package->id)
+            ->first();
+
+        $this->assertCount(7, $subscription->subjects);
+        $this->assertEquals(0, $subscription->remainingSubjectSlots());
+    }
+
+    /** @test */
+    public function select_subjects_endpoint_updates_student_selection_up_to_max_subjects()
+    {
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        $sub1 = Subject::create(['name' => 'Default 1', 'type_id' => $this->type->id, 'year' => '2026']);
+        $sub2 = Subject::create(['name' => 'Elective 1', 'type_id' => $this->type->id, 'year' => '2026']);
+        $sub3 = Subject::create(['name' => 'Elective 2', 'type_id' => $this->type->id, 'year' => '2026']);
+
+        $this->sem1Package->subjects()->sync([
+            $sub1->id => ['is_default' => true],
+        ]);
+
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'type_id' => $this->type->id,
+            'package_id' => $this->sem1Package->id,
+            'payment_status' => 'paid',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+        ]);
+        $subscription->syncDefaultSubjects();
+
+        // Student updates their selection to include Elective 1 and Elective 2
+        $response = $this->postJson('/api/subscriptions/select-subjects', [
+            'user_id' => $user->id,
+            'package_id' => $this->sem1Package->id,
+            'subject_ids' => [$sub1->id, $sub2->id, $sub3->id],
+        ])->assertStatus(200)
+          ->assertJsonPath('status', 'success')
+          ->assertJsonPath('selected_count', 3)
+          ->assertJsonPath('remaining_slots', 4);
+
+        $this->assertCount(3, $subscription->fresh()->subjects);
+    }
+
+    /** @test */
+    public function student_can_access_default_and_custom_selected_subjects_but_not_unselected_subjects()
+    {
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        $defaultSubject = Subject::create(['name' => 'General Psychology Core', 'type_id' => $this->type->id, 'year' => '2026']);
+        $selectedSubject = Subject::create(['name' => 'Elective Statistics', 'type_id' => $this->type->id, 'year' => '2026']);
+        $unselectedSubject = Subject::create(['name' => 'Excluded Subject', 'type_id' => $this->type->id, 'year' => '2026']);
+
+        // Default subject on Sem 1
+        $this->sem1Package->subjects()->sync([
+            $defaultSubject->id => ['is_default' => true],
+        ]);
+
+        // Put unselected subject on Sem 2 so it is tied to a package
+        $this->sem2Package->subjects()->sync([
+            $unselectedSubject->id => ['is_default' => true],
+        ]);
+
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'type_id' => $this->type->id,
+            'package_id' => $this->sem1Package->id,
+            'payment_status' => 'paid',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+        ]);
+
+        // Student selected the default subject + elective statistics
+        $subscription->subjects()->sync([$defaultSubject->id, $selectedSubject->id]);
+
+        $this->assertTrue($user->canAccessSubject($defaultSubject), 'Student should access default package subject');
+        $this->assertTrue($user->canAccessSubject($selectedSubject), 'Student should access customized elective subject');
+        $this->assertFalse($user->canAccessSubject($unselectedSubject), 'Student should NOT access unselected subject from another package');
+    }
+
     private function makeQuestion(Subject $subject, string $text): Question
     {
         return Question::create([

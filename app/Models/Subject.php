@@ -47,4 +47,17 @@ class Subject extends Model
     {
         return $this->belongsTo(Package::class);
     }
+
+    public function packages()
+    {
+        return $this->belongsToMany(Package::class, 'package_subject')
+            ->withPivot('is_default')
+            ->withTimestamps();
+    }
+
+    public function subscriptions()
+    {
+        return $this->belongsToMany(Subscription::class, 'subscription_subject')
+            ->withTimestamps();
+    }
 }

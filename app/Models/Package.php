@@ -21,6 +21,7 @@ class Package extends Model
         'price',
         'type_id',
         'duration_days',
+        'max_subjects',
         'is_active',
         'order',
     ];
@@ -29,6 +30,7 @@ class Package extends Model
         'price' => 'decimal:2',
         'is_active' => 'boolean',
         'duration_days' => 'integer',
+        'max_subjects' => 'integer',
         'order' => 'integer',
     ];
 
@@ -57,9 +59,29 @@ class Package extends Model
     }
 
     /**
-     * Subjects assigned to this package.
+     * Default subjects assigned to this package.
+     */
+    public function defaultSubjects()
+    {
+        return $this->belongsToMany(Subject::class, 'package_subject')
+            ->wherePivot('is_default', true)
+            ->withTimestamps();
+    }
+
+    /**
+     * All subjects associated with this package.
      */
     public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'package_subject')
+            ->withPivot('is_default')
+            ->withTimestamps();
+    }
+
+    /**
+     * Legacy direct subjects where subject.package_id = package.id.
+     */
+    public function directSubjects()
     {
         return $this->hasMany(Subject::class);
     }
