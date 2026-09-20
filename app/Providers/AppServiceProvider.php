@@ -23,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        \Illuminate\Support\Facades\Gate::define('viewApiDocs', function (?\App\Models\User $user) {
+            return env('APP_ENV') === 'local' || env('API_DOCS_PUBLIC', true) || ($user && $user->role === 'admin');
+        });
     }
 }

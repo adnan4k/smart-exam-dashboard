@@ -226,6 +226,17 @@
                 </a>
             </li>
 
+            <!-- API Documentation -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/docs/api') }}" target="_blank">
+                    <div class="nav-icon">
+                        <i class="fas fa-book-open text-xs"></i>
+                    </div>
+                    <span class="nav-text">API Docs</span>
+                    <i class="fas fa-arrow-up-right-from-square text-[10px] text-slate-400 ms-auto me-2"></i>
+                </a>
+            </li>
+
             <!-- GROUP: ACCOUNT -->
             <li class="pt-3 pb-1 px-3">
                 <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Account</span>
