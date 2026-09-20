@@ -69,8 +69,9 @@ class ContestQuestionController extends Controller
                 $position = 1;
 
                 foreach ($data['questions'] as $uid => $q) {
-                    // Choice rows are fixed at A-D in the bulk form; unused rows
-                    // arrive empty and are dropped here.
+                    // Rows the author left blank are dropped, so a question can
+                    // be banked with as few as two choices whether the author
+                    // removed the spare rows or just left them empty.
                     $keptIndexes = array_values(array_filter(
                         array_keys($q['choices']),
                         fn ($i) => trim((string) ($q['choices'][$i]['text'] ?? '')) !== ''
@@ -258,7 +259,10 @@ class ContestQuestionController extends Controller
             'questions.*.choices'           => 'required|array|min:2|max:6',
             'questions.*.choices.*.text'    => 'nullable|string',
             'questions.*.choices.*.formula' => 'nullable|string',
-            'questions.*.correct_choice'    => 'required|integer|min:0|max:3',
+            // Indexes into the submitted choice rows, so this tracks the
+            // max on `choices` above (six rows => 0-5). It was pinned at 3
+            // from when the bulk form had a fixed A-D.
+            'questions.*.correct_choice'    => 'required|integer|min:0|max:5',
         ]);
     }
 

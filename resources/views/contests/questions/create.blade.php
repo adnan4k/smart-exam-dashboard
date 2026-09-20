@@ -142,11 +142,18 @@
 
                                 {{-- Answer Choices --}}
                                 <div class="border-t border-slate-100 pt-4">
-                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Answer Choices <span class="text-rose-500">*</span></label>
-                                    <p class="text-[11px] text-slate-400 mb-3"><strong class="text-slate-600">Click the row of the correct answer</strong> (or its lettered circle) &mdash; the circle fills in and the row highlights. Leave unused choices blank. Students see these shuffled, and never receive the answer &mdash; it is only used server-side to score the contest.</p>
+                                    <div class="flex flex-wrap items-center gap-2.5 mb-1.5">
+                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Answer Choices <span class="text-rose-500">*</span></label>
+                                        <span class="flex-1 h-px bg-slate-100 min-w-8"></span>
+                                        <button type="button" class="btn-brand-outline text-xs px-3 py-1.5"
+                                                @click="addChoice(q)" x-show="q.choices.length < maxChoices">
+                                            <i class="fa-solid fa-plus text-[10px]"></i> Add Choice
+                                        </button>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mb-3"><strong class="text-slate-600">Click the row of the correct answer</strong> (or its lettered circle) &mdash; the circle fills in and the row highlights. Two choices is enough; remove any you do not need, or leave them blank and they are dropped on save. Students see these shuffled, and never receive the answer &mdash; it is only used server-side to score the contest.</p>
 
                                     <div class="space-y-2">
-                                        <template x-for="(c, ci) in q.choices" :key="ci">
+                                        <template x-for="(c, ci) in q.choices" :key="c.uid">
                                             {{-- The whole row is the hit area. The two text fields stop the
                                                  click so typing an option never marks it correct by accident.
                                                  Style overrides are objects, not strings: Alpine replaces the
@@ -198,6 +205,11 @@
                                                         <i class="fa-solid fa-check"></i> Correct
                                                     </span>
                                                 </div>
+                                                <button type="button" class="action-icon-btn text-rose-500 hover:bg-rose-50 hover:text-rose-700 shrink-0"
+                                                        @click.stop="removeChoice(q, ci)" x-show="q.choices.length > minChoices"
+                                                        :title="'Remove choice ' + String.fromCharCode(65 + ci)">
+                                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                                </button>
                                             </div>
                                         </template>
                                     </div>
@@ -251,12 +263,16 @@
 
     <script>
         function bulkQuestions() {
-            const blankChoices = () => [
-                { text: '', formula: '' },
-                { text: '', formula: '' },
-                { text: '', formula: '' },
-                { text: '', formula: '' },
-            ];
+            const MIN_CHOICES = 2;
+            const MAX_CHOICES = 6;
+
+            // Rows are keyed by uid, not by index: splicing renumbers every
+            // index after the removed one, and Alpine would then reuse the
+            // wrong row's nested state (the per-row math preview) for it.
+            let choiceSeq = 0;
+            const blankChoice = () => ({ uid: 'c' + (++choiceSeq), text: '', formula: '' });
+            const blankChoices = () => Array.from({ length: 4 }, blankChoice);
+
             const blankQuestion = (uid) => ({
                 uid,
                 text: '',
@@ -270,6 +286,32 @@
                 questions: [blankQuestion('q1')],
                 seq: 1,
                 submitError: [],
+                minChoices: MIN_CHOICES,
+                maxChoices: MAX_CHOICES,
+
+                addChoice(q) {
+                    if (q.choices.length >= MAX_CHOICES) return;
+                    q.choices.push(blankChoice());
+                },
+
+                // Two choices is a legitimate question (true/false, and plenty
+                // of two-way items), so removal stops there rather than at four.
+                removeChoice(q, ci) {
+                    if (q.choices.length <= MIN_CHOICES) return;
+
+                    q.choices.splice(ci, 1);
+
+                    // Keep the marker on the choice the user actually picked.
+                    // Without this, removing a row above it silently promotes
+                    // the next choice to "correct".
+                    if (q.correct === null || q.correct === undefined || q.correct === '') return;
+
+                    if (q.correct === ci) {
+                        q.correct = null;
+                    } else if (q.correct > ci) {
+                        q.correct = q.correct - 1;
+                    }
+                },
 
                 addQuestion() {
                     if (this.questions.length >= 50) return;

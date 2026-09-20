@@ -22,13 +22,27 @@
                 <form method="POST" enctype="multipart/form-data"
                       action="{{ $isEdit ? route('contest-questions.update', $question->id) : route('contest-questions.store') }}"
                       x-data="{
-                          choices: {{ \Illuminate\Support\Js::from($existingChoices) }},
+                          seq: 0,
+                          choices: {{ \Illuminate\Support\Js::from($existingChoices) }}.map((c, i) => ({ ...c, uid: 'c' + i })),
                           correct: {{ (int) ($correctIndex === false ? 0 : $correctIndex) }},
-                          addChoice() { if (this.choices.length < 6) this.choices.push({ text: '', formula: '' }); },
+                          blank() { return { uid: 'n' + (++this.seq), text: '', formula: '' }; },
+                          addChoice() { if (this.choices.length < 6) this.choices.push(this.blank()); },
                           removeChoice(i) {
+                              // Two choices is a legitimate question, so removal stops there.
                               if (this.choices.length <= 2) return;
                               this.choices.splice(i, 1);
-                              if (this.correct >= this.choices.length) this.correct = this.choices.length - 1;
+                              // Follow the marked answer to its new index. Comparing
+                              // against the length alone missed the common case:
+                              // removing a row ABOVE the correct one shifts it down,
+                              // which silently marked the next choice correct.
+                              if (this.correct === i) {
+                                  // The marked answer is the row being removed. Leave
+                                  // nothing selected so the required radio forces a
+                                  // deliberate re-pick instead of quietly choosing A.
+                                  this.correct = null;
+                              } else if (this.correct > i) {
+                                  this.correct = this.correct - 1;
+                              }
                           }
                       }">
                     @csrf
@@ -146,7 +160,7 @@
                                 </div>
 
                                 <div class="space-y-2 mt-3">
-                                    <template x-for="(choice, i) in choices" :key="i">
+                                    <template x-for="(choice, i) in choices" :key="choice.uid">
                                         <div class="flex items-start gap-2 p-2 rounded-xl bg-slate-50/70 border border-slate-200/70">
                                             <div class="px-2 flex items-center">
                                                 <input type="radio" name="correct_choice" :value="i" x-model.number="correct"
