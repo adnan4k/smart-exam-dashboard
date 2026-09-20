@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Subjects;
 
+use App\Models\Package;
 use App\Models\Subject;
 use App\Models\Type;
 use Livewire\Attributes\On;
@@ -15,6 +16,7 @@ class Form extends Component
     public $id;
     public $openModal = false;
     public $typeId;
+    public $packageId;
     public $defaultDuration;
     public $year;
     public $region;
@@ -54,18 +56,23 @@ class Form extends Component
     protected $rules = [
         'name' => 'required',
         'typeId' => 'required|exists:types,id',
+        'packageId' => 'nullable|exists:packages,id',
         'defaultDuration' => 'required|integer|min:1',
         'region' => 'required_if:isRegional,true',
-         'year' => 'required',
-         'isSample' => 'boolean'
+        'year' => 'required',
+        'isSample' => 'boolean'
     ];
 
     public function saveSubject()
     {
         $this->validate();
+        $package = $this->packageId ? Package::find($this->packageId) : null;
+
         $subjectData = [
             'name' => $this->name,
             'type_id' => $this->typeId,
+            'package_id' => $this->packageId ?: null,
+            'package_type' => $package ? $package->slug : null,
             'default_duration' => $this->defaultDuration,
             'region' => $this->isRegional ? $this->region : null,
             'year' => $this->year, // Store the year directly
@@ -77,9 +84,7 @@ class Form extends Component
             $subject->update($subjectData);
             $message = "Subject Updated Successfully!";
         } else {
-
            $subject  =  Subject::create($subjectData);
-
             $message = "Subject Created Successfully!";
         }
 
@@ -91,7 +96,7 @@ class Form extends Component
 
     public function resetForm()
     {
-        $this->reset(['name', 'typeId', 'year','defaultDuration', 'is_edit', 'id', 'region', 'isRegional', 'isSample']);
+        $this->reset(['name', 'typeId', 'packageId', 'year','defaultDuration', 'is_edit', 'id', 'region', 'isRegional', 'isSample']);
     }
 
     #[On('edit-subject')]
@@ -101,6 +106,7 @@ class Form extends Component
         $this->id = $subject->id;
         $this->name = $subject->name;
         $this->typeId = $subject->type_id;
+        $this->packageId = $subject->package_id;
         $this->defaultDuration = $subject->default_duration;
         $this->region = $subject->region;
         $this->isRegional = $this->checkIfRegional($subject->type_id);
@@ -114,6 +120,7 @@ class Form extends Component
     {
         return view('livewire.subjects.form', [
             'types' => Type::all(),
+            'packages' => Package::active()->ordered()->get(),
         ]);
     }
 }

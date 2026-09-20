@@ -54,7 +54,27 @@
                                             </div>
                                         </td>
                                         <td class="text-center">
-                                            @if(optional($subscription->user)->type)
+                                            @if($subscription->package)
+                                                @php
+                                                    $pkgBadge = match($subscription->package->slug) {
+                                                        'semester_1' => 'bg-blue-50 text-blue-700 border border-blue-200',
+                                                        'semester_2' => 'bg-teal-50 text-teal-700 border border-teal-200',
+                                                        'coc' => 'bg-amber-50 text-amber-700 border border-amber-200',
+                                                        'all_access' => 'bg-purple-50 text-purple-700 border border-purple-200',
+                                                        default => 'bg-slate-100 text-slate-700 border border-slate-200',
+                                                    };
+                                                @endphp
+                                                <div class="flex flex-col items-center gap-0.5">
+                                                    <span class="inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full {{ $pkgBadge }}">
+                                                        {{ $subscription->package->name }}
+                                                    </span>
+                                                    @if(optional($subscription->user)->type)
+                                                        <span class="text-[10px] text-slate-400 font-medium">
+                                                            {{ $subscription->user->type->name }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @elseif(optional($subscription->user)->type)
                                                 <span class="badge-subtle-brand">{{ $subscription->user->type->name }}</span>
                                             @else
                                                 <span class="text-xs text-slate-400">Standard Tier</span>
@@ -157,6 +177,24 @@
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Attached Receipt</label>
                             <div class="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-2 text-center">
                                 <img src="{{ asset('storage/'.$selectedSubscription->image) }}" alt="Payment Proof" class="max-h-56 mx-auto rounded-lg object-contain shadow-xs" />
+                            </div>
+                        </div>
+                    @endif
+                    @if(isset($selectedSubscription))
+                        <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Candidate:</span>
+                                <span class="font-bold text-slate-800">{{ optional($selectedSubscription->user)->name ?: 'Unknown' }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Target Package:</span>
+                                <span class="font-bold text-[#58706D]">
+                                    {{ optional($selectedSubscription->package)->name ?: (optional(optional($selectedSubscription->user)->type)->name ?: 'Standard Exam Access') }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-400">Payment Amount:</span>
+                                <span class="font-bold text-slate-800">ETB {{ number_format($selectedSubscription->amount ?? 0, 2) }}</span>
                             </div>
                         </div>
                     @endif

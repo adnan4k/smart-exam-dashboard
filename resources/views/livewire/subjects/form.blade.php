@@ -56,6 +56,25 @@
                         </div>
                     </div>
 
+                    <!-- Access Package / Semester -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Access Package / Semester
+                        </label>
+                        <select wire:model="packageId" class="form-select w-full">
+                            <option value="">No Package / Open (Free)</option>
+                            @foreach ($packages as $pkg)
+                                <option value="{{ $pkg->id }}">
+                                    {{ $pkg->name }} ({{ $pkg->slug }}) — ETB {{ number_format($pkg->price, 2) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1 mb-0">
+                            Students will need a subscription for this package (or All Access) to unlock all questions in this subject.
+                        </p>
+                        @error('packageId') <span class="text-rose-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+
                     <!-- Region Dropdown - Only shown when type is regional -->
                     <div x-show="$wire.isRegional" x-cloak class="transition-all duration-200">
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Administrative Region <span class="text-rose-500">*</span></label>

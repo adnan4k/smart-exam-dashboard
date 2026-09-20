@@ -182,6 +182,17 @@
                 </a>
             </li>
 
+            <!-- Packages -->
+            <li class="nav-item">
+                <a class="nav-link {{ Route::currentRouteName() == 'packages' ? 'is-active' : '' }}"
+                    wire:navigate href="{{ route('packages') }}">
+                    <div class="nav-icon">
+                        <i class="fas fa-cubes-stacked text-xs"></i>
+                    </div>
+                    <span class="nav-text">Packages</span>
+                </a>
+            </li>
+
             <!-- Referrals -->
             <li class="nav-item">
                 <a class="nav-link {{ Route::currentRouteName() == 'referral' ? 'is-active' : '' }}"

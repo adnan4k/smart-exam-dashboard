@@ -42,4 +42,9 @@ class Subject extends Model
     {
         return $this->hasMany(Video::class);
     }
-} 
+
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
+    }
+}

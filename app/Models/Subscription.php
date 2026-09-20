@@ -26,4 +26,20 @@ class Subscription extends Model
     {
         return $this->belongsTo(YearGroup::class);
     }
-} 
+
+    /**
+     * A subscription belongs to a package.
+     */
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
+    }
+
+    /**
+     * A subscription optionally belongs to an exam type.
+     */
+    public function type()
+    {
+        return $this->belongsTo(Type::class);
+    }
+}

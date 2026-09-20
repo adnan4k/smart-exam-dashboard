@@ -16,6 +16,7 @@ class SubscriptionComponent extends Component
 
     public $subscriptionId;
     public $selectedStatus;
+    public $selectedSubscription;
     public $showModal = false;
     public $fullScreenImage;
     public $showImageModal = false;
@@ -32,8 +33,8 @@ class SubscriptionComponent extends Component
      */
     public function render()
     {
-        // Eager load related user and yearGroup data with pagination
-        $subscriptions = Subscription::with(['user.type', 'yearGroup'])
+        // Eager load related user, package, and yearGroup data with pagination
+        $subscriptions = Subscription::with(['user.type', 'yearGroup', 'package'])
             ->latest('created_at')
             ->orderBy('id', 'desc')
             ->paginate(10);
@@ -49,8 +50,9 @@ class SubscriptionComponent extends Component
      */
     public function edit($subscriptionId)
     {
-        $subscription = Subscription::findOrFail($subscriptionId);
+        $subscription = Subscription::with(['user.type', 'package'])->findOrFail($subscriptionId);
         $this->subscriptionId = $subscription->id;
+        $this->selectedSubscription = $subscription;
         $this->selectedStatus = $subscription->payment_status;
         $this->showModal = true;
     }

@@ -29,6 +29,7 @@
                                     <th class="text-center w-12">#</th>
                                     <th>Subject Name</th>
                                     <th class="text-center">Exam Type</th>
+                                    <th class="text-center">Access Package</th>
                                     <th class="text-center">Region</th>
                                     <th class="text-center">Duration</th>
                                     <th class="text-center">Year</th>
@@ -58,6 +59,26 @@
                                                 <span class="badge-subtle-brand">{{ $subject->type->name }}</span>
                                             @else
                                                 <span class="text-xs text-slate-300">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($subject->package)
+                                                @php
+                                                    $pkgBadge = match($subject->package->slug) {
+                                                        'semester_1' => 'bg-blue-50 text-blue-700 border border-blue-200',
+                                                        'semester_2' => 'bg-teal-50 text-teal-700 border border-teal-200',
+                                                        'coc' => 'bg-amber-50 text-amber-700 border border-amber-200',
+                                                        'all_access' => 'bg-purple-50 text-purple-700 border border-purple-200',
+                                                        default => 'bg-slate-100 text-slate-700 border border-slate-200',
+                                                    };
+                                                @endphp
+                                                <span class="inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full {{ $pkgBadge }}">
+                                                    {{ $subject->package->name }}
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
+                                                    Open / Free
+                                                </span>
                                             @endif
                                         </td>
                                         <td class="text-center">

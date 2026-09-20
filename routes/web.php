@@ -24,6 +24,7 @@ use App\Http\Livewire\YearGroups\YearGroupComponent;
 use App\Http\Livewire\Notes\NoteComponent;
 use App\Http\Livewire\Videos\VideoComponent;
 use App\Http\Livewire\Notifications\NotificationComponent as AppNotificationComponent;
+use App\Http\Livewire\Package\PackageComponent;
 use App\Models\Referral;
 
 /*
@@ -61,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/year-group', YearGroupComponent::class)->name('year-group');
     Route::get('/subject', SubjectComponent::class)->name('subject'); // ✅ Corrected
     Route::get('/subscription', SubscriptionComponent::class)->name('subscription'); // ✅ Corrected
+    Route::get('/packages', PackageComponent::class)->name('packages');
     Route::get('/users', UserComponent::class)->name('users');
     Route::get('/type', TypeComponent::class)->name('type');
     Route::get('referral', ReferralComponent::class)->name('referral');
