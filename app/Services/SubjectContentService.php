@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\Question;
 use App\Models\Subject;
 use App\Models\User;
+use App\Models\Video;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
@@ -380,6 +381,12 @@ class SubjectContentService
             'package_name' => optional($firstRow?->package)->name,
             'is_subscribed' => $user ? (bool) $rows->contains(fn (Subject $s) => $user->canAccessSubject($s)) : false,
             'subject_ids' => $ids->values()->all(),
+            // /api/videos/by-subject accepts one concrete subjects.id. Prefer
+            // a variant that actually has active videos; null means there are none.
+            'video_subject_id' => Video::active()
+                ->whereIn('subject_id', $ids)
+                ->orderBy('subject_id')
+                ->value('subject_id'),
             'years' => $rows->pluck('year')->filter()->unique()->sortDesc()->values()->all(),
             'regions' => $rows->pluck('region')->filter()->unique()->sort()->values()->all(),
             'duration' => $rows->first()->default_duration === null

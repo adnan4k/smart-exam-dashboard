@@ -42,6 +42,7 @@ Small, called on every app launch. Never carries question or note bodies.
       "key": "Biology",
       "name": "Biology",
       "subject_ids": [12, 45, 78],
+      "video_subject_id": 45,
       "years": ["2017", "2016", "2015"],
       "regions": ["Addis Ababa", "Oromia"],
       "duration": 2,
@@ -60,6 +61,7 @@ Small, called on every app launch. Never carries question or note bodies.
 |---|---|
 | `key` | download key — pass as `subject` to the content endpoint |
 | `subject_ids` | the underlying `subjects` rows, for debugging |
+| `video_subject_id` | nullable ID of the first underlying subject row with active videos; pass it as `subject_id` to `/api/videos/by-subject`. `null` means no active videos exist for this subject name |
 | `duration` | `subjects.default_duration`, normalised to an integer or null |
 | `is_sample` | true if **any** variant is flagged as a sample subject |
 | `estimated_size_bytes` | **uncompressed** JSON estimate. Wire transfer is gzipped, so the real download is roughly a quarter of this. Rough by design — do not display it as exact |
