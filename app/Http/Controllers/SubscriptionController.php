@@ -8,8 +8,6 @@ use App\Models\User;
 use App\Models\YearGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
@@ -94,19 +92,15 @@ class SubscriptionController extends Controller
             'subject_ids.*' => 'exists:subjects,id',
         ]);
 
-        // Handle receipt image: a multipart file, or a base64 string for JSON clients
+        // Handle receipt image upload
         $imagePath = '';
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $imagePath = $request->file('image')->store('subscriptions', 'public');
-        } elseif (is_string($request->input('image'))) {
-            $imagePath = $this->storeBase64Receipt($request->input('image'));
-        }
-
-        if ($imagePath === '') {
-            // `image` passed `required` but held neither a file nor a decodable
-            // base64 image, so there is no receipt to store.
+        } else {
+            // `image` passed `required` but is not an uploaded file (e.g. the
+            // app sent JSON or a string), so there is no receipt to store.
             $image = $request->input('image');
-            Log::warning('Subscription receipt was neither a file nor a base64 image; no receipt stored.', [
+            Log::warning('Subscription receipt was not a file upload; no receipt stored.', [
                 'user_id' => $request->input('user_id'),
                 'content_type' => $request->header('Content-Type'),
                 'image_type' => get_debug_type($image),
@@ -348,42 +342,5 @@ class SubscriptionController extends Controller
             'remaining_slots' => max(0, $maxAllowed - count($uniqueSubjectIds)),
             'selected_subjects' => $subscription->subjects()->get(['subjects.id', 'subjects.name', 'subjects.year']),
         ], 200);
-    }
-
-    /** Receipt image types accepted as base64, keyed by detected MIME type. */
-    private const BASE64_RECEIPT_TYPES = [
-        'image/jpeg' => 'jpg',
-        'image/png' => 'png',
-        'image/webp' => 'webp',
-        'image/gif' => 'gif',
-    ];
-
-    private const BASE64_RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
-
-    /**
-     * Stores a receipt sent as base64 — raw, or as a data URI
-     * ("data:image/jpeg;base64,..."). The type is taken from the decoded bytes,
-     * not from the prefix. Returns the stored path, or '' when the string is
-     * not a supported image.
-     */
-    private function storeBase64Receipt(string $value): string
-    {
-        $encoded = preg_replace('/^data:[^;,]*;base64,/i', '', trim($value));
-        $bytes = base64_decode(preg_replace('/\s+/', '', $encoded), true);
-
-        if ($bytes === false || $bytes === '' || strlen($bytes) > self::BASE64_RECEIPT_MAX_BYTES) {
-            return '';
-        }
-
-        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
-        $extension = self::BASE64_RECEIPT_TYPES[$mime] ?? null;
-
-        if (! $extension) {
-            return '';
-        }
-
-        $path = 'subscriptions/' . Str::random(40) . '.' . $extension;
-
-        return Storage::disk('public')->put($path, $bytes) ? $path : '';
     }
 }

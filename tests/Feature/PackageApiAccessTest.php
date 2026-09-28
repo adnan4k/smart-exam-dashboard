@@ -621,42 +621,6 @@ class PackageApiAccessTest extends TestCase
     }
 
     /** @test */
-    public function subscribe_accepts_the_receipt_as_base64_in_a_json_body()
-    {
-        $upload = UploadedFile::fake()->image('receipt.png');
-        $png = file_get_contents($upload->getPathname());
-
-        foreach (['data:image/png;base64,' . base64_encode($png), base64_encode($png)] as $image) {
-            $user = User::factory()->create(['type_id' => $this->type->id]);
-
-            $this->postJson('/api/subscribe', [
-                'user_id' => $user->id,
-                'package_id' => $this->sem1Package->id,
-                'image' => $image,
-            ])->assertStatus(201);
-
-            $receipt = $user->subscriptions()->first()->image;
-            $this->assertMatchesRegularExpression('#^subscriptions/\w{40}\.png$#', $receipt);
-            $this->assertSame($png, Storage::disk('public')->get($receipt));
-        }
-    }
-
-    /** @test */
-    public function subscribe_stores_nothing_for_base64_that_is_not_an_image()
-    {
-        $user = User::factory()->create(['type_id' => $this->type->id]);
-
-        $this->postJson('/api/subscribe', [
-            'user_id' => $user->id,
-            'package_id' => $this->sem1Package->id,
-            'image' => 'data:image/png;base64,' . base64_encode('<?php echo "hi";'),
-        ])->assertStatus(201);
-
-        $this->assertSame('', $user->subscriptions()->first()->image);
-        $this->assertSame([], Storage::disk('public')->allFiles('subscriptions'));
-    }
-
-    /** @test */
     public function select_subjects_endpoint_updates_student_selection_up_to_max_subjects()
     {
         $user = User::factory()->create(['type_id' => $this->type->id]);
