@@ -245,6 +245,25 @@ class Form extends Component
         $this->activeIndex = (int) $this->activeIndex === (int) $index ? -1 : (int) $index;
     }
 
+    /**
+     * A client-side write aimed at an index that no longer exists (a request
+     * racing a removal, say) makes Livewire build a partial draft there. Drop
+     * it rather than letting a keyless row break the render.
+     */
+    public function updatedDrafts($value, $key)
+    {
+        $index = explode('.', (string) $key)[0];
+
+        if (! isset($this->drafts[$index]) || isset($this->drafts[$index]['key'])) {
+            return;
+        }
+
+        unset($this->drafts[$index]);
+        $this->drafts = array_values($this->drafts);
+
+        $this->activeIndex = min((int) $this->activeIndex, count($this->drafts) - 1);
+    }
+
     /* ---------------------------------------------------------------------
      | Choices
      |--------------------------------------------------------------------*/

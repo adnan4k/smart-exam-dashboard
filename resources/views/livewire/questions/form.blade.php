@@ -16,7 +16,7 @@
         /* The editor wrapper carries a wire:key tied to the open question, so
            Livewire hands us a brand new node whenever the author switches
            questions and x-init remounts Quill onto it. */
-        mountEditor(wrapper, wire, index, initialHtml) {
+        mountEditor(wrapper, wire, key, initialHtml) {
             this.destroyEditor();
 
             const target = wrapper.querySelector('[data-editor-target]');
@@ -44,18 +44,27 @@
                 editor.root.innerHTML = initialHtml;
             }
 
+            /* The wrapper survives questions above it being removed (same
+               wire:key, wire:ignore), so its index can shift under us. Look it
+               up by key on every write rather than trusting the mount-time one,
+               or the editor writes into a neighbour - or past the end of the
+               list, leaving a half-built draft behind. */
+            const sync = (live) => {
+                const index = (wire.drafts || []).findIndex((draft) => draft && draft.key === key);
+
+                if (index !== -1) {
+                    wire.set('drafts.' + index + '.explanation', editor.root.innerHTML, live);
+                }
+            };
+
             /* Deferred on purpose: a round trip per keystroke would fight the
                editor. The value rides along with the next Livewire request,
                which is always the save, the next question, or a blur. */
-            editor.on('text-change', () => {
-                wire.set('drafts.' + index + '.explanation', editor.root.innerHTML, false);
-            });
+            editor.on('text-change', () => sync(false));
 
             /* Leaving the editor is the moment to sync for real, so the
                'ready / needs explanation' badges never lie about this question. */
-            editor.root.addEventListener('blur', () => {
-                wire.set('drafts.' + index + '.explanation', editor.root.innerHTML, true);
-            });
+            editor.root.addEventListener('blur', () => sync(true));
 
             this.editor = editor;
 
@@ -573,7 +582,7 @@
                                                 <div>
                                                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Explanation <span class="text-rose-500">*</span></label>
                                                     <div wire:key="editor-{{ $draft['key'] }}" wire:ignore
-                                                         x-init="$data.mountEditor($el, $wire, {{ $index }}, @js($draft['explanation']))">
+                                                         x-init="$data.mountEditor($el, $wire, @js($draft['key']), @js($draft['explanation']))">
                                                         <div class="qbf-editor">
                                                             <div data-editor-target></div>
                                                         </div>
