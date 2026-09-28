@@ -96,7 +96,21 @@ class SubscriptionController extends Controller
         $imagePath = '';
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $imagePath = $request->file('image')->store('subscriptions', 'public');
+        } else {
+            // `image` passed `required` but is not an uploaded file (e.g. the
+            // app sent JSON or a string), so there is no receipt to store.
+            $image = $request->input('image');
+            Log::warning('Subscription receipt was not a file upload; no receipt stored.', [
+                'user_id' => $request->input('user_id'),
+                'content_type' => $request->header('Content-Type'),
+                'image_type' => get_debug_type($image),
+                'image_length' => is_string($image) ? strlen($image) : null,
+                'image_prefix' => is_string($image) ? substr($image, 0, 30) : null,
+            ]);
         }
+
+        // A resubmission without a new file keeps the receipt already on file.
+        $receipt = $imagePath !== '' ? ['image' => $imagePath] : [];
 
         $user = User::findOrFail($request->user_id);
 
@@ -129,10 +143,9 @@ class SubscriptionController extends Controller
                 }
 
                 if (in_array($existing->payment_status, ['pending', 'failed'])) {
-                    $existing->update([
+                    $existing->update($receipt + [
                         'start_date' => now(),
                         'end_date' => now()->addDays($package->duration_days ?: 365),
-                        'image' => $imagePath,
                         'amount' => $package->price,
                         'payment_status' => 'pending',
                     ]);
@@ -196,10 +209,9 @@ class SubscriptionController extends Controller
             }
 
             if (in_array($existingSubscription->payment_status, ['pending', 'failed'])) {
-                $existingSubscription->update([
+                $existingSubscription->update($receipt + [
                     'start_date' => now(),
                     'end_date' => now()->addYear(),
-                    'image' => $imagePath,
                     'amount' => $type->price,
                     'payment_status' => 'pending',
                 ]);

@@ -596,6 +596,31 @@ class PackageApiAccessTest extends TestCase
     }
 
     /** @test */
+    public function subscribe_stores_the_receipt_and_a_fileless_resubmit_keeps_it()
+    {
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        $this->post('/api/subscribe', [
+            'user_id' => $user->id,
+            'package_id' => $this->sem1Package->id,
+            'image' => UploadedFile::fake()->image('receipt.jpg'),
+        ], ['Accept' => 'application/json'])->assertStatus(201);
+
+        $receipt = $user->subscriptions()->first()->image;
+        $this->assertStringStartsWith('subscriptions/', $receipt);
+        Storage::disk('public')->assertExists($receipt);
+
+        // The app sending JSON (no file) must not wipe the receipt on file.
+        $this->postJson('/api/subscribe', [
+            'user_id' => $user->id,
+            'package_id' => $this->sem1Package->id,
+            'image' => 'receipt.jpg',
+        ])->assertStatus(200);
+
+        $this->assertSame($receipt, $user->subscriptions()->first()->image);
+    }
+
+    /** @test */
     public function select_subjects_endpoint_updates_student_selection_up_to_max_subjects()
     {
         $user = User::factory()->create(['type_id' => $this->type->id]);
