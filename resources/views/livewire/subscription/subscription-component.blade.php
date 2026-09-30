@@ -29,7 +29,7 @@
                                     <th class="text-center">Fee Amount</th>
                                     <th class="text-center">Payment Proof</th>
                                     <th class="text-center">Status</th>
-                                    <th class="text-center w-28">Action</th>
+                                    <th class="text-center w-36">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -121,6 +121,12 @@
                                                 class="btn-brand-outline text-xs px-3 py-1.5 inline-flex items-center gap-1.5"
                                                 title="Review & Update Status">
                                                 <i class="fa-solid fa-file-invoice-dollar text-xs"></i> Review
+                                            </button>
+                                            <button
+                                                wire:click="confirmDelete({{ $subscription->id }})"
+                                                class="text-xs px-2.5 py-1.5 inline-flex items-center rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition ml-1"
+                                                title="Delete Subscription">
+                                                <i class="fas fa-trash text-[11px]"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -246,6 +252,50 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto"
+             x-transition:enter="ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center animate-fade-in">
+                <div class="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4 text-xl">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h5 class="text-base font-bold text-slate-800 mb-1">Delete Subscription</h5>
+                <p class="text-xs text-slate-500 mb-4">
+                    Are you sure you want to delete this subscription for <span class="font-bold text-slate-700">"{{ optional(optional($subscriptionToDelete)->user)->name ?? 'Unknown Candidate' }}"</span>? This will permanently remove it, its enrolled subjects, and the attached receipt. The candidate will lose access granted by it.
+                </p>
+
+                @if($subscriptionToDelete)
+                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-5 text-left text-xs text-slate-600 flex flex-col gap-1.5">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Package:</span>
+                            <span class="font-semibold text-slate-700">{{ optional($subscriptionToDelete->package)->name ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Amount:</span>
+                            <span class="font-semibold text-slate-700">ETB {{ number_format($subscriptionToDelete->amount ?? 0, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Status:</span>
+                            <span class="font-semibold text-slate-700">{{ ucfirst($subscriptionToDelete->payment_status ?? 'N/A') }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="flex items-center justify-end gap-2.5">
+                    <button type="button" class="btn-brand-outline text-xs px-4 py-2" wire:click="cancelDelete">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg px-4 py-2 flex items-center gap-1.5 transition" wire:click="deleteSubscription" wire:loading.attr="disabled" wire:target="deleteSubscription">
+                        <i class="fas fa-trash text-[11px]"></i> Delete Permanently
+                    </button>
                 </div>
             </div>
         </div>

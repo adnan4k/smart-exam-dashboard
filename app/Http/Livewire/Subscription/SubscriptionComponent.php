@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Masmerise\Toaster\Toaster;
 
 class SubscriptionComponent extends Component
@@ -20,6 +21,8 @@ class SubscriptionComponent extends Component
     public $showModal = false;
     public $fullScreenImage;
     public $showImageModal = false;
+    public $showDeleteModal = false;
+    public $subscriptionToDelete;
 
     // We use the rules property for validation when updating the status.
     protected $rules = [
@@ -89,5 +92,45 @@ class SubscriptionComponent extends Component
             $this->fullScreenImage = $subscription->image;
             $this->showImageModal = true;
         }
+    }
+
+    public function confirmDelete($subscriptionId)
+    {
+        $this->subscriptionToDelete = Subscription::with(['user', 'package'])->findOrFail($subscriptionId);
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteSubscription()
+    {
+        if (! $this->subscriptionToDelete) {
+            return;
+        }
+
+        try {
+            $subscription = Subscription::findOrFail($this->subscriptionToDelete->id);
+            $image = $subscription->image;
+
+            // subscription_subject rows are removed by the FK cascade.
+            $subscription->delete();
+
+            if ($image && Storage::disk('public')->exists($image)) {
+                Storage::disk('public')->delete($image);
+            }
+
+            $this->showDeleteModal = false;
+            $this->subscriptionToDelete = null;
+            $this->resetPage();
+
+            Toaster::success('Subscription deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Failed to delete subscription.', ['id' => $this->subscriptionToDelete->id, 'error' => $e->getMessage()]);
+            Toaster::error('Failed to delete subscription. Please try again.');
+        }
+    }
+
+    public function cancelDelete()
+    {
+        $this->showDeleteModal = false;
+        $this->subscriptionToDelete = null;
     }
 }
