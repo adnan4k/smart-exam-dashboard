@@ -91,6 +91,7 @@ class SubjectContentService
         $questionStats = $this->questionStats($typeId, $subjectIds);
         $choiceStats = $this->choiceStats($typeId, $subjectIds);
         $noteStats = $this->noteStats($typeId, $subjectIds);
+        $videoCounts = $this->videoCounts($subjectIds);
 
         return $variants
             ->groupBy(fn (Subject $subject) => $this->nameKey($subject->name))
@@ -100,6 +101,7 @@ class SubjectContentService
                 $questionStats,
                 $choiceStats,
                 $noteStats,
+                $videoCounts,
                 $user
             ))
             ->values();
@@ -132,6 +134,7 @@ class SubjectContentService
             $this->questionStats($typeId, $subjectIds),
             $this->choiceStats($typeId, $subjectIds),
             $this->noteStats($typeId, $subjectIds),
+            $this->videoCounts($subjectIds),
             $user
         );
     }
@@ -353,6 +356,7 @@ class SubjectContentService
         Collection $questionStats,
         Collection $choiceStats,
         Collection $noteStats,
+        Collection $videoCounts,
         ?User $user = null
     ): array {
         $ids = $rows->pluck('id');
@@ -363,6 +367,7 @@ class SubjectContentService
 
         $questionCount = (int) $questions->sum('question_count');
         $noteCount = (int) $notes->sum('note_count');
+        $videoCount = (int) $ids->sum(fn ($id) => $videoCounts->get($id, 0));
 
         $textBytes = (int) $questions->sum('text_bytes')
             + (int) $choices->sum('text_bytes')
@@ -383,10 +388,7 @@ class SubjectContentService
             'subject_ids' => $ids->values()->all(),
             // /api/videos/by-subject accepts one concrete subjects.id. Prefer
             // a variant that actually has active videos; null means there are none.
-            'video_subject_id' => Video::active()
-                ->whereIn('subject_id', $ids)
-                ->orderBy('subject_id')
-                ->value('subject_id'),
+            'video_subject_id' => $videoCounts->keys()->intersect($ids)->min(),
             'years' => $rows->pluck('year')->filter()->unique()->sortDesc()->values()->all(),
             'regions' => $rows->pluck('region')->filter()->unique()->sort()->values()->all(),
             'duration' => $rows->first()->default_duration === null
@@ -395,6 +397,7 @@ class SubjectContentService
             'is_sample' => (bool) $rows->contains(fn (Subject $s) => (bool) $s->is_sample),
             'question_count' => $questionCount,
             'note_count' => $noteCount,
+            'video_count' => $videoCount ?: null,
             'image_count' => $imageCount,
             // Uncompressed JSON estimate. The wire transfer is gzipped, so the
             // real download is roughly a quarter of this. Labelled "estimated"
@@ -471,5 +474,15 @@ class SubjectContentService
             )
             ->get()
             ->keyBy('subject_id');
+    }
+
+    /** Active video count per subject_id; subjects without videos are absent. */
+    private function videoCounts(Collection $subjectIds): Collection
+    {
+        return Video::active()
+            ->whereIn('subject_id', $subjectIds)
+            ->groupBy('subject_id')
+            ->selectRaw('subject_id, COUNT(*) as c')
+            ->pluck('c', 'subject_id');
     }
 }

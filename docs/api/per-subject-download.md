@@ -49,6 +49,7 @@ Small, called on every app launch. Never carries question or note bodies.
       "is_sample": false,
       "question_count": 420,
       "note_count": 33,
+      "video_count": 12,
       "image_count": 86,
       "estimated_size_bytes": 3810422,
       "content_version": "2026-02-11 09:00:00"
