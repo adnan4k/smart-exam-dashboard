@@ -185,12 +185,13 @@ avoided because it interacts badly with Dio's response handling.
 
 ---
 
-## Subscription behaviour
+## Question access
 
-Unsubscribed users receive at most `SubjectContentService::FREE_QUESTION_LIMIT`
-(40) questions per subject. This mirrors the existing cap in
-`QuestionController::getQuestionsByType`, so moving the app onto these endpoints
-does not change who can see what.
+Users with all access or any active paid package receive all questions. Other
+users receive up to `SubjectContentService::FREE_QUESTION_LIMIT` (40) questions
+only when the subject is marked `is_sample`; the stable first 40 questions by
+ID are returned. Other subjects return an empty `questions` array. Notes keep
+their existing access behavior.
 
 Two pre-existing inconsistencies were **left alone** rather than changed
 silently, because both are product decisions:
@@ -201,9 +202,9 @@ silently, because both are product decisions:
 2. Notes are currently free to everyone — the subscription gate in
    `forUserGrouped` is commented out (and has been). The new content endpoint
    returns notes on the same terms.
-3. `subjects.is_sample` exists and the app treats sample subjects as the free
-   ones, but no backend endpoint consults it. The 40-question cap applies
-   uniformly instead. Worth deciding on.
+3. The catalogue's content version includes the sample flag, and content
+   versions are scoped to full or limited access so cached question payloads
+   cannot cross entitlement changes.
 
 ---
 

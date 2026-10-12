@@ -108,22 +108,39 @@ class SubjectController extends Controller
         // and `subject.name` agree with the card the user tapped.
         $subjectName = $entry['name'] ?? $requestedName;
 
+        $hasFullAccess = $this->subjects->hasFullContentAccess($user);
+        $isSample = (bool) $variants->contains(fn ($subject) => (bool) $subject->is_sample);
+        $isSubscribed = $hasFullAccess;
+
+        // Select the authorized question set before checking the client's
+        // version, so versions can never cross entitlement boundaries.
+        $questions = ($hasFullAccess || $isSample)
+            ? $this->subjects->questionsFor($variants, $hasFullAccess, $user->type_id)
+            : [];
+
+        $catalogueVersion = (string) ($entry['content_version'] ?? '');
+        $entry['content_version'] = hash('sha256', $catalogueVersion
+            .'|access:'.($hasFullAccess ? 'full' : 'limited')
+            .'|sample:'.(int) $isSample);
+        $entry['question_count'] = count($questions);
+
         $knownVersion = $request->input('known_version');
 
-        if ($knownVersion !== null && $entry !== null && $entry['content_version'] === $knownVersion) {
+        if ($knownVersion !== null && $entry !== null && (
+            $entry['content_version'] === $knownVersion
+            || ($hasFullAccess && $catalogueVersion === $knownVersion)
+        )) {
             return $this->jsonResponse([
                 'status' => 'not_modified',
                 'subject' => $entry,
             ]);
         }
 
-        $isSubscribed = $variants->contains(fn ($s) => $user->canAccessSubject($s));
-
         return $this->jsonResponse([
             'status' => 'success',
             'is_subscribed' => $isSubscribed,
             'subject' => $entry,
-            'questions' => $this->subjects->questionsFor($variants, $isSubscribed, $user->type_id),
+            'questions' => $questions,
             'notes' => $this->subjects->notesFor($variants, $subjectName, $user->type_id),
         ]);
     }

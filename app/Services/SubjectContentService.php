@@ -60,6 +60,15 @@ class SubjectContentService
             ->exists();
     }
 
+    /** Any active paid package grants full content on this endpoint. */
+    public function hasFullContentAccess(User $user): bool
+    {
+        return $user->hasPaidAllAccess() || $user->subscriptions()
+            ->where('payment_status', 'paid')
+            ->whereNotNull('package_id')
+            ->exists();
+    }
+
     /**
      * Checks if a user is entitled to the full content of a subject
      * under the new 4-package model.
@@ -218,14 +227,14 @@ class SubjectContentService
      * @param  EloquentCollection<int, Subject>  $variants
      * @return array<int, array<string, mixed>>
      */
-    public function questionsFor(EloquentCollection $variants, bool $isSubscribed, int $typeId): array
+    public function questionsFor(EloquentCollection $variants, bool $hasFullAccess, int $typeId): array
     {
         $query = Question::where('type_id', $typeId)
             ->whereIn('subject_id', $variants->pluck('id'))
             ->with(['choices', 'subject', 'yearGroup', 'chapter'])
             ->orderBy('id', 'asc');
 
-        if (! $isSubscribed) {
+        if (! $hasFullAccess) {
             $query->limit(self::FREE_QUESTION_LIMIT);
         }
 
@@ -407,7 +416,8 @@ class SubjectContentService
                 + ($noteCount * self::NOTE_JSON_OVERHEAD_BYTES),
             // Changes whenever any question or note in this subject changes, so
             // the app can offer "update available" without re-downloading.
-            'content_version' => $this->contentVersion($questions, $notes),
+            'content_version' => hash('sha256', (string) $this->contentVersion($questions, $notes)
+                .'|sample:'.(int) $rows->contains(fn (Subject $s) => (bool) $s->is_sample)),
         ];
     }
 
