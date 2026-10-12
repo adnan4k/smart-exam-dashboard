@@ -53,11 +53,23 @@ class SubjectController extends Controller
             ], 400);
         }
 
+        $hasFullAccess = $this->subjects->hasFullContentAccess($user);
+        $catalogue = $this->subjects->catalogue($user)
+            ->map(function (array $entry) use ($hasFullAccess) {
+                $entry['content_version'] = $this->scopedContentVersion(
+                    (string) ($entry['content_version'] ?? ''),
+                    $hasFullAccess,
+                    (bool) ($entry['is_sample'] ?? false),
+                );
+
+                return $entry;
+            });
+
         return $this->jsonResponse([
             'status' => 'success',
             'is_subscribed' => $this->subjects->isSubscribed($user),
             'free_question_limit' => SubjectContentService::FREE_QUESTION_LIMIT,
-            'data' => $this->subjects->catalogue($user)->all(),
+            'data' => $catalogue->all(),
         ]);
     }
 
@@ -119,9 +131,11 @@ class SubjectController extends Controller
             : [];
 
         $catalogueVersion = (string) ($entry['content_version'] ?? '');
-        $entry['content_version'] = hash('sha256', $catalogueVersion
-            .'|access:'.($hasFullAccess ? 'full' : 'limited')
-            .'|sample:'.(int) $isSample);
+        $entry['content_version'] = $this->scopedContentVersion(
+            $catalogueVersion,
+            $hasFullAccess,
+            $isSample,
+        );
         $entry['question_count'] = count($questions);
 
         $knownVersion = $request->input('known_version');
@@ -143,5 +157,15 @@ class SubjectController extends Controller
             'questions' => $questions,
             'notes' => $this->subjects->notesFor($variants, $subjectName, $user->type_id),
         ]);
+    }
+
+    private function scopedContentVersion(
+        string $catalogueVersion,
+        bool $hasFullAccess,
+        bool $isSample,
+    ): string {
+        return hash('sha256', $catalogueVersion
+            .'|access:'.($hasFullAccess ? 'full' : 'limited')
+            .'|sample:'.(int) $isSample);
     }
 }
