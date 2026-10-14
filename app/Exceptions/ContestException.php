@@ -21,6 +21,11 @@ class ContestException extends Exception
         return new self('contest_not_open', 'This contest is not open right now.', 403);
     }
 
+    public static function ended(): self
+    {
+        return new self('contest_ended', 'This contest has ended.', 403);
+    }
+
     public static function joinWindowClosed(): self
     {
         return new self('join_window_closed', 'Entry for this contest has closed.', 403);

@@ -67,6 +67,10 @@ class ContestService
                 throw ContestException::subscriptionRequired();
             }
 
+            if ($contest->hasEnded()) {
+                throw ContestException::ended();
+            }
+
             if (! $contest->isLive()) {
                 throw ContestException::notOpen();
             }
