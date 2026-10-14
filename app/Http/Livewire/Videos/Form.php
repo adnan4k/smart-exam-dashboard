@@ -165,8 +165,34 @@ class Form extends Component
     /* Save                                                                */
     /* ------------------------------------------------------------------ */
 
+    /**
+     * Move the Livewire temp upload into place instead of copying it.
+     * store() streams a full copy, which for a ~1GB video doubles disk usage and
+     * can outlast the request time limit on shared hosting. A rename is instant.
+     */
+    protected function moveUploadedVideo(): string
+    {
+        $path   = 'videos/' . $this->videoFile->hashName();
+        $disk   = Storage::disk(Video::DISK);
+        $source = $this->videoFile->getRealPath();
+
+        $disk->makeDirectory('videos');
+
+        if (is_file($source) && @rename($source, $disk->path($path))) {
+            return $path;
+        }
+
+        // Temp disk isn't on the same filesystem (e.g. s3) — fall back to a copy.
+        return $this->videoFile->store('videos', Video::DISK);
+    }
+
     public function saveVideo()
     {
+        // Large videos take a while to move and checksum; don't let PHP or a
+        // closed tab cut the save off halfway.
+        @set_time_limit(0);
+        ignore_user_abort(true);
+
         $this->isSubmitting = true;
 
         try {
@@ -207,9 +233,9 @@ class Form extends Component
                 if ($video && $video->file_path) {
                     Storage::disk(Video::DISK)->delete($video->file_path);
                 }
-                $data['file_path'] = $this->videoFile->store('videos', Video::DISK);
                 $data['mime_type'] = $this->videoFile->getMimeType();
                 $data['file_size'] = $this->videoFile->getSize();
+                $data['file_path'] = $this->moveUploadedVideo();
                 $data['checksum']  = md5_file(Storage::disk(Video::DISK)->path($data['file_path']));
             }
 
