@@ -17,8 +17,8 @@ class Form extends Component
 {
     use WithFileUploads;
 
-    /** Max upload size in kilobytes (500MB). Mirror of config/livewire.php rule. */
-    public const MAX_VIDEO_KB = 512000;
+    /** Max upload size in kilobytes (1000MB). Mirror of config/livewire.php rule. */
+    public const MAX_VIDEO_KB = 1024000;
 
     public $id;
     public $is_edit = false;
@@ -70,7 +70,7 @@ class Form extends Component
 
     protected $messages = [
         'videoFile.mimetypes' => 'The video must be an mp4, mov, avi, mkv, webm or mpeg file.',
-        'videoFile.max'       => 'The video may not be larger than 500MB.',
+        'videoFile.max'       => 'The video may not be larger than 1000MB.',
     ];
 
     /* ------------------------------------------------------------------ */

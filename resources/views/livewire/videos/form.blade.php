@@ -79,7 +79,7 @@
                     <!-- Upload -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                            Video Stream Asset <span class="text-xs text-slate-400 font-normal lowercase">(mp4, mov, avi, webm — max 500MB)</span>
+                            Video Stream Asset <span class="text-xs text-slate-400 font-normal lowercase">(mp4, mov, avi, webm — max 1000MB)</span>
                         </label>
 
                         <div x-data="{ uploading: false, progress: 0, sizeMb: 0 }"

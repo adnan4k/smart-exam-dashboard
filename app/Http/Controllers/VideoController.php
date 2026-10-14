@@ -14,8 +14,8 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class VideoController extends Controller
 {
-    /** Max upload size in kilobytes (500MB). */
-    private const MAX_VIDEO_KB = 512000;
+    /** Max upload size in kilobytes (1000MB). */
+    private const MAX_VIDEO_KB = 1024000;
 
     private const VIDEO_MIMETYPES = 'video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,video/mpeg';
 

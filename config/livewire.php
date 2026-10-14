@@ -67,7 +67,7 @@ return [
         'disk' => null,        // Example: 'local', 's3'              | Default: 'default'
         // Raised from Livewire's 12MB default so lecture videos can be uploaded.
         // Keep php.ini upload_max_filesize / post_max_size >= this value on the server.
-        'rules' => ['required', 'file', 'max:512000'], // 500MB
+        'rules' => ['required', 'file', 'max:1024000'], // 1000MB — keep under php post_max_size (1G)
         'directory' => null,   // Example: 'tmp'                      | Default: 'livewire-tmp'
         'middleware' => null,  // Example: 'throttle:5,1'             | Default: 'throttle:60,1'
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
