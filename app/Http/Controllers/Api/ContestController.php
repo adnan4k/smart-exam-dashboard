@@ -66,7 +66,8 @@ class ContestController extends Controller
                     'duration_minutes'   => $contest->duration_minutes,
                     'starts_at'          => $contest->starts_at->toIso8601String(),
                     'ends_at'            => $contest->ends_at->toIso8601String(),
-                    'join_closes_at'     => $contest->joinClosesAt()->toIso8601String(),
+                    // Entry stays open for the whole contest; kept for older app builds.
+                    'join_closes_at'     => $contest->ends_at->toIso8601String(),
                     'state'              => $this->stateOf($contest),
                     'has_attempted'      => $attempt !== null,
                     'attempt_status'     => $attempt?->status,
@@ -122,7 +123,8 @@ class ContestController extends Controller
                 'duration_minutes' => $contest->duration_minutes,
                 'starts_at'        => $contest->starts_at->toIso8601String(),
                 'ends_at'          => $contest->ends_at->toIso8601String(),
-                'join_closes_at'   => $contest->joinClosesAt()->toIso8601String(),
+                // Entry stays open for the whole contest; kept for older app builds.
+                'join_closes_at'   => $contest->ends_at->toIso8601String(),
                 'state'            => $this->stateOf($contest),
                 // Prize bands the contest pays out; the contest's own rules win,
                 // otherwise the global defaults are shown.

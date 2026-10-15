@@ -75,10 +75,6 @@ class ContestService
                 throw ContestException::notOpen();
             }
 
-            if (! $contest->acceptsNewEntries()) {
-                throw ContestException::joinWindowClosed();
-            }
-
             // One entry per device, checked here rather than by a unique index so
             // an admin can clear a genuinely shared phone.
             if ($deviceId && ContestAttempt::where('contest_id', $contest->id)

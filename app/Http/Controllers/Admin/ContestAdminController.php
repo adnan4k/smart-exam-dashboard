@@ -37,7 +37,7 @@ class ContestAdminController extends Controller
     public function create()
     {
         return view('contests.form', [
-            'contest'  => new Contest(['duration_minutes' => 40, 'join_window_minutes' => 10]),
+            'contest'  => new Contest(['duration_minutes' => 40]),
             'types'    => Type::orderBy('name')->get(),
             'subjects' => Subject::orderBy('name')->get(),
         ]);
@@ -308,7 +308,6 @@ class ContestAdminController extends Controller
             'type_id'             => 'nullable|exists:types,id',
             'subject_id'          => 'nullable|exists:subjects,id',
             'duration_minutes'    => 'required|integer|min:1|max:600',
-            'join_window_minutes' => 'required|integer|min:0|max:600',
             'starts_at'           => 'required|date',
             'ends_at'             => 'required|date|after:starts_at',
         ]);

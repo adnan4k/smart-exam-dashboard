@@ -287,7 +287,6 @@ class UiVerificationTest extends TestCase
             'description' => 'Test contest for paper builder',
             'status' => 'draft',
             'duration_minutes' => 45,
-            'join_window_minutes' => 15,
             'starts_at' => now()->addDay(),
             'ends_at' => now()->addDays(2),
         ]);

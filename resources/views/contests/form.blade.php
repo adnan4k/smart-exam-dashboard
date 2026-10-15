@@ -16,19 +16,12 @@
                       action="{{ $isEdit ? route('contests.update', $contest) : route('contests.store') }}"
                       x-data="{
                           duration: {{ (int) old('duration_minutes', $contest->duration_minutes ?? 40) }},
-                          joinWindow: {{ (int) old('join_window_minutes', $contest->join_window_minutes ?? 10) }},
                           startsAt: '{{ $startAt }}',
                           endsAt: '{{ $endAt }}',
-                          get joinClosesAt() {
-                              if (! this.startsAt) return null;
-                              const t = new Date(this.startsAt);
-                              t.setMinutes(t.getMinutes() + Number(this.joinWindow));
-                              return t;
-                          },
                           get suggestedEnd() {
                               if (! this.startsAt) return null;
                               const t = new Date(this.startsAt);
-                              t.setMinutes(t.getMinutes() + Number(this.duration) + Number(this.joinWindow));
+                              t.setMinutes(t.getMinutes() + Number(this.duration));
                               return t;
                           },
                           format(d) {
@@ -92,7 +85,7 @@
                                           placeholder="Brief description of scope, topics covered, and eligibility...">{{ old('description', $contest->description) }}</textarea>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Subject (Optional)</label>
                                     <select name="subject_id" class="input-modern bg-white">
@@ -111,13 +104,6 @@
                                     <input type="number" name="duration_minutes" min="1" max="600" required
                                            x-model.number="duration" class="input-modern">
                                     <span class="text-[11px] text-slate-400 block mt-1">Time allowed per student</span>
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Join Window (Minutes) <span class="text-rose-500">*</span></label>
-                                    <input type="number" name="join_window_minutes" min="0" max="600" required
-                                           x-model.number="joinWindow" class="input-modern">
-                                    <span class="text-[11px] text-slate-400 block mt-1">Leniency period after start</span>
                                 </div>
                             </div>
 
@@ -150,12 +136,12 @@
                                 </div>
                                 <div class="space-y-1 text-slate-600">
                                     <p class="mb-1">
-                                        &bull; Candidates may join between start time and <strong class="text-slate-800" x-text="format(joinClosesAt)"></strong>.
+                                        &bull; Candidates may join any time until the contest ends.
                                     </p>
                                     <p class="mb-0">
-                                        &bull; A candidate entering at the deadline needs until
-                                        <strong class="text-[#58706D]" x-text="format(suggestedEnd)"></strong> to receive their complete
-                                        <strong class="text-slate-800" x-text="duration"></strong> minutes.
+                                        &bull; A candidate entering at the start gets their full
+                                        <strong class="text-slate-800" x-text="duration"></strong> minutes, finishing by
+                                        <strong class="text-[#58706D]" x-text="format(suggestedEnd)"></strong>. Late joiners are cut off at the end time.
                                     </p>
                                 </div>
                             </div>

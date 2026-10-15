@@ -15,9 +15,8 @@ class Contest extends Model
         'finalized_at'        => 'datetime',
         // These columns feed Carbon's addMinutes(), which under Carbon 3 rejects
         // a string argument. The MySQL driver can return smallint columns as
-        // strings, so cast them here or joinClosesAt()/deadlineFor() throw a
-        // TypeError (500 on GET /contests and /contests/{id}).
-        'join_window_minutes' => 'integer',
+        // strings, so cast them here or deadlineFor() throws a TypeError
+        // (500 on GET /contests and /contests/{id}).
         'duration_minutes'    => 'integer',
         'question_count'      => 'integer',
     ];
@@ -54,14 +53,6 @@ class Contest extends Model
         return $this->hasMany(ContestRewardRule::class)->orderBy('rank_from');
     }
 
-    /**
-     * The paper is open for new entries only during the join window.
-     */
-    public function joinClosesAt(): Carbon
-    {
-        return $this->starts_at->copy()->addMinutes($this->join_window_minutes);
-    }
-
     public function hasStarted(): bool
     {
         return now()->gte($this->starts_at);
@@ -78,11 +69,6 @@ class Contest extends Model
     public function isLive(): bool
     {
         return $this->status === 'scheduled' && $this->hasStarted() && ! $this->hasEnded();
-    }
-
-    public function acceptsNewEntries(): bool
-    {
-        return $this->isLive() && now()->lte($this->joinClosesAt());
     }
 
     /**
