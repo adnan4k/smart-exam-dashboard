@@ -67,7 +67,7 @@
                                                     <div>
                                                         <p class="text-xs font-bold text-slate-800 mb-0">{{ $contest->title }}</p>
                                                         <p class="text-[11px] text-slate-400 mb-0">
-                                                            {{ $contest->duration_minutes }} mins &bull; {{ $contest->join_window_minutes }} mins window
+                                                            {{ $contest->duration_minutes }} mins
                                                         </p>
                                                     </div>
                                                 </div>

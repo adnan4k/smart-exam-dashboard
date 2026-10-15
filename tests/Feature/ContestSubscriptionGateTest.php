@@ -278,7 +278,6 @@ class ContestSubscriptionGateTest extends TestCase
             'description' => 'A contest',
             'type_id' => $this->type->id,
             'duration_minutes' => 40,
-            'join_window_minutes' => 10,
             'starts_at' => now()->subMinutes(2),
             'ends_at' => now()->addHour(),
             'status' => 'scheduled',
