@@ -8,8 +8,8 @@
 
                 @php
                     $isEdit  = $contest->exists;
-                    $startAt = old('starts_at', optional($contest->starts_at)->format('Y-m-d\TH:i'));
-                    $endAt   = old('ends_at', optional($contest->ends_at)->format('Y-m-d\TH:i'));
+                    $startAt = old('starts_at', $contest->starts_at?->tz(\App\Models\Contest::TIMEZONE)->format('Y-m-d\TH:i'));
+                    $endAt   = old('ends_at', $contest->ends_at?->tz(\App\Models\Contest::TIMEZONE)->format('Y-m-d\TH:i'));
                 @endphp
 
                 <form method="POST"
@@ -109,13 +109,13 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Starts At <span class="text-rose-500">*</span></label>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Starts At (EAT) <span class="text-rose-500">*</span></label>
                                     <input type="datetime-local" name="starts_at" required
                                            x-model="startsAt" class="input-modern">
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Ends At <span class="text-rose-500">*</span></label>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Ends At (EAT) <span class="text-rose-500">*</span></label>
                                     <input type="datetime-local" name="ends_at" required
                                            x-model="endsAt" class="input-modern">
                                     <div class="mt-1" x-show="suggestedEnd">

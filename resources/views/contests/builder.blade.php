@@ -31,7 +31,7 @@
                                 <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                                     <span class="flex items-center gap-1.5">
                                         <i class="fa-regular fa-clock text-slate-400"></i>
-                                        {{ $contest->starts_at->format('D, M d, Y \a\t H:i') }}
+                                        {{ $contest->starts_at->tz(\App\Models\Contest::TIMEZONE)->format('D, M d, Y \a\t H:i') }} EAT
                                     </span>
                                     <span>&bull;</span>
                                     <span class="flex items-center gap-1.5">

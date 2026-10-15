@@ -9,6 +9,12 @@ class Contest extends Model
 {
     protected $guarded = [];
 
+    /**
+     * Admins schedule and read contests in local time. The database and the
+     * API stay in UTC; the app converts to the device's zone itself.
+     */
+    public const TIMEZONE = 'Africa/Addis_Ababa';
+
     protected $casts = [
         'starts_at'           => 'datetime',
         'ends_at'             => 'datetime',

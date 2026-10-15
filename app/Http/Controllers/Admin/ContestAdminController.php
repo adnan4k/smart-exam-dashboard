@@ -13,6 +13,7 @@ use App\Models\Type;
 use App\Services\ContestFinalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -302,7 +303,7 @@ class ContestAdminController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'title'               => 'required|string|max:255',
             'description'         => 'nullable|string',
             'type_id'             => 'nullable|exists:types,id',
@@ -311,5 +312,12 @@ class ContestAdminController extends Controller
             'starts_at'           => 'required|date',
             'ends_at'             => 'required|date|after:starts_at',
         ]);
+
+        // The datetime-local inputs carry no zone; they are Addis Ababa wall-clock time.
+        foreach (['starts_at', 'ends_at'] as $field) {
+            $data[$field] = Carbon::parse($data[$field], Contest::TIMEZONE)->utc();
+        }
+
+        return $data;
     }
 }

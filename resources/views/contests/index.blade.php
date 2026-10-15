@@ -76,8 +76,8 @@
                                                 <span class="badge-subtle-brand">{{ $contest->type?->name ?? 'All Types' }}</span>
                                             </td>
                                             <td class="text-center">
-                                                <p class="text-xs font-medium text-slate-700 mb-0">{{ $contest->starts_at->format('M d, Y') }}</p>
-                                                <p class="text-[11px] text-slate-400 mb-0">{{ $contest->starts_at->format('H:i') }} &ndash; {{ $contest->ends_at->format('H:i') }}</p>
+                                                <p class="text-xs font-medium text-slate-700 mb-0">{{ $contest->starts_at->tz(\App\Models\Contest::TIMEZONE)->format('M d, Y') }}</p>
+                                                <p class="text-[11px] text-slate-400 mb-0">{{ $contest->starts_at->tz(\App\Models\Contest::TIMEZONE)->format('H:i') }} &ndash; {{ $contest->ends_at->tz(\App\Models\Contest::TIMEZONE)->format('H:i') }} EAT</p>
                                             </td>
                                             <td class="text-center">
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-700">
