@@ -299,7 +299,14 @@ class ContestService
      */
     private function storeAnswers(ContestAttempt $attempt, array $answers): int
     {
-        $paperQuestionIds = $attempt->contest->contestQuestions()->pluck('question_id')->all();
+        // PDO drivers may hydrate integer columns as strings. Normalize IDs
+        // before using strict membership checks so a valid question is not
+        // silently discarded just because the database and JSON use different
+        // scalar types.
+        $paperQuestionIds = $attempt->contest->contestQuestions()
+            ->pluck('question_id')
+            ->map(static fn ($id) => (int) $id)
+            ->all();
         $saved = 0;
 
         foreach ($answers as $answer) {
