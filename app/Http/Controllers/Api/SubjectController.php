@@ -127,7 +127,9 @@ class SubjectController extends Controller
         // Select the authorized question set before checking the client's
         // version, so versions can never cross entitlement boundaries.
         $questions = ($hasFullAccess || $isSample)
-            ? $this->subjects->questionsFor($variants, $hasFullAccess, $user->type_id)
+            // A sample subject grants full question access for this subject,
+            // even when the user has no paid package.
+            ? $this->subjects->questionsFor($variants, $hasFullAccess || $isSample, $user->type_id)
             : [];
 
         $catalogueVersion = (string) ($entry['content_version'] ?? '');

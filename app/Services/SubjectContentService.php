@@ -222,7 +222,8 @@ class SubjectContentService
     /**
      * Every question for one subject name, already transformed for the app.
      *
-     * Unsubscribed users get the first FREE_QUESTION_LIMIT questions.
+     * Call with full access when the subject is marked as a sample; the content
+     * endpoint treats sample subjects as fully accessible for that subject.
      *
      * @param  EloquentCollection<int, Subject>  $variants
      * @return array<int, array<string, mixed>>
