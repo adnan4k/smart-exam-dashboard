@@ -65,12 +65,16 @@ class Form extends Component
 
         $this->subjectId = $value;
         $this->chapterId = null;
-        $this->chaptersForSubject = Chapter::whereIn('id', function ($q) use ($value) {
-            $q->select('chapter_id')
-              ->from('questions')
-              ->where('subject_id', $value)
-              ->whereNotNull('chapter_id');
-        })->orderBy('name')->get();
+        $this->chaptersForSubject = $this->allChapters();
+    }
+
+    /**
+     * Chapters are global (no subject_id), so every chapter must be selectable.
+     * Natural sort keeps "Chapter 2" before "Chapter 10".
+     */
+    protected function allChapters()
+    {
+        return Chapter::all()->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values();
     }
 
     #[On('edit-note')]
@@ -103,35 +107,7 @@ class Form extends Component
         $this->language = $note->language ?? 'english';
         $this->is_edit = true;
 
-        // Load chapters for the subject
-        if ($this->subjectId) {
-            // Get chapters from notes table first (most relevant)
-            $noteChapters = Chapter::whereIn('id', function ($q) {
-                $q->select('chapter_id')
-                  ->from('notes')
-                  ->where('subject_id', $this->subjectId)
-                  ->whereNotNull('chapter_id');
-            })->get();
-            
-            // Also get chapters from questions
-            $questionChapters = Chapter::whereIn('id', function ($q) {
-                $q->select('chapter_id')
-                  ->from('questions')
-                  ->where('subject_id', $this->subjectId)
-                  ->whereNotNull('chapter_id');
-            })->get();
-            
-            // Merge and get unique chapters
-            $this->chaptersForSubject = $noteChapters->merge($questionChapters)->unique('id')->sortBy('name')->values();
-            
-            // If still no chapters, get all chapters
-            if ($this->chaptersForSubject->isEmpty()) {
-                $this->chaptersForSubject = Chapter::orderBy('name')->get();
-            }
-        } else {
-            // If no subject, get all chapters
-            $this->chaptersForSubject = Chapter::orderBy('name')->get();
-        }
+        $this->chaptersForSubject = $this->allChapters();
 
         $this->openModal = true;
     }
@@ -271,7 +247,7 @@ class Form extends Component
             'subjects' => Subject::when($this->typeId, function ($q) {
                 $q->where('type_id', $this->typeId);
             })->orderBy('name')->get(),
-            'allChapters' => Chapter::orderBy('name')->get(),
+            'allChapters' => $this->allChapters(),
         ]);
     }
 }
