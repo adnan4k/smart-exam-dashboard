@@ -62,7 +62,7 @@ Small, called on every app launch. Never carries question or note bodies.
 |---|---|
 | `key` | download key — pass as `subject` to the content endpoint |
 | `subject_ids` | the underlying `subjects` rows, for debugging |
-| `video_subject_id` | nullable ID of the first underlying subject row with active videos; pass it as `subject_id` to `/api/videos/by-subject`. `null` means no active videos exist for this subject name |
+| `video_subject_id` | nullable ID of the first underlying subject row with active videos; pass it as `subject_id` to `/api/videos/by-subject`, which returns the active videos of **every** `subjects` row sharing that name (any variant's id works). Videos are narrowed to one exam type (plus untyped ones): the `type_id` query parameter if sent, else the type of the user identified by `user_id` or the bearer token. With neither, videos from every type are returned. `null` means no active videos exist for this subject name |
 | `duration` | `subjects.default_duration`, normalised to an integer or null |
 | `is_sample` | true if **any** variant is flagged as a sample subject |
 | `estimated_size_bytes` | **uncompressed** JSON estimate. Wire transfer is gzipped, so the real download is roughly a quarter of this. Rough by design — do not display it as exact |
@@ -187,11 +187,11 @@ avoided because it interacts badly with Dio's response handling.
 
 ## Question access
 
-Users with all access or any active paid package receive all questions. Other
-users receive up to `SubjectContentService::FREE_QUESTION_LIMIT` (40) questions
-only when the subject is marked `is_sample`; the stable first 40 questions by
-ID are returned. Other subjects return an empty `questions` array. Notes keep
-their existing access behavior.
+Users with all access or any active paid package receive all questions. Users
+without a paid package also receive all questions for a subject marked
+`is_sample`. Other unsubscribed users receive an empty `questions` array. The
+40-question cap used by other question endpoints does not apply to sample
+subjects on this content endpoint. Notes keep their existing access behavior.
 
 Two pre-existing inconsistencies were **left alone** rather than changed
 silently, because both are product decisions:

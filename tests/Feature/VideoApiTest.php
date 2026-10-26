@@ -12,6 +12,7 @@ use App\Models\YearGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -155,6 +156,52 @@ class VideoApiTest extends TestCase
 
         $this->assertSame([], $body['subject_videos']);
         $this->assertSame([], $body['chapters']);
+    }
+
+    /** @test */
+    public function by_subject_collects_videos_from_every_year_of_the_subject_name()
+    {
+        $this->subscribe();
+        $otherYear = Subject::create(['name' => 'Psychology', 'year' => '2016', 'type_id' => $this->type->id]);
+        $unrelated = Subject::create(['name' => 'Biology', 'year' => '2015', 'type_id' => $this->type->id]);
+
+        $own = $this->video(['title' => 'From 2015']);
+        $sibling = $this->video(['subject_id' => $otherYear->id, 'title' => 'From 2016']);
+        $this->video(['subject_id' => $unrelated->id, 'title' => 'Biology']);
+
+        $body = $this->getJson(
+            '/api/videos/by-subject?subject_id='.$this->subject->id.'&user_id='.$this->user->id
+        )->assertStatus(200)->json('data');
+
+        $this->assertSame($this->subject->id, $body['subject_id']);
+        $this->assertCount(1, $body['chapters']);
+        $this->assertEqualsCanonicalizing(
+            [$own->id, $sibling->id],
+            array_column($body['chapters'][0]['videos'], 'id')
+        );
+    }
+
+    /** @test */
+    public function by_subject_narrows_to_the_sent_type_else_the_users_type()
+    {
+        $this->subscribe();
+        $otherType = Type::create(['name' => 'Grade 12']);
+        $otherTypeSubject = Subject::create(['name' => 'Psychology', 'year' => '2015', 'type_id' => $otherType->id]);
+
+        $own = $this->video();
+        $foreign = $this->video(['subject_id' => $otherTypeSubject->id, 'type_id' => $otherType->id]);
+
+        $url = '/api/videos/by-subject?subject_id='.$this->subject->id;
+        $ids = fn (string $url) => array_column($this->getJson($url)->assertStatus(200)->json('data.chapters.0.videos'), 'id');
+
+        // Anonymous, no type: every type.
+        $this->assertEqualsCanonicalizing([$own->id, $foreign->id], $ids($url));
+        // An explicit type_id wins over the user's own type.
+        $this->assertSame([$foreign->id], $ids($url.'&user_id='.$this->user->id.'&type_id='.$otherType->id));
+        // No type_id: the user's type, whether identified by user_id or by token.
+        $this->assertSame([$own->id], $ids($url.'&user_id='.$this->user->id));
+        Sanctum::actingAs($this->user);
+        $this->assertSame([$own->id], $ids($url));
     }
 
     /** @test */

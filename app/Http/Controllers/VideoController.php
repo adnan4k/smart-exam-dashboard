@@ -314,6 +314,7 @@ class VideoController extends Controller
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
             'user_id'    => 'nullable|exists:users,id',
+            'type_id'    => 'nullable|exists:types,id',
             'language'   => 'nullable|in:amharic,afan_oromo,english,tigrinya,somali,afar,other',
         ]);
 
@@ -321,9 +322,21 @@ class VideoController extends Controller
         $user = $this->resolveUser($request);
         $entitled = $this->isEntitled($user, $subject);
 
+        // One subject is many `subjects` rows (one per year/region), so the id
+        // only identifies the name; collect videos across every row sharing it.
+        // The name match is left to MySQL's collation, as in SubjectContentService::variantsFor().
+        $subjectIds = Subject::where('name', $subject->name)->pluck('id');
+        $typeId = $request->input('type_id') ?? $user?->type_id;
+
         $videos = Video::with(['chapter', 'type'])
             ->active()
-            ->forSubject($subject->id)
+            ->whereIn('subject_id', $subjectIds)
+            // Same-named subjects can exist under several exam types. Untyped videos
+            // are shared, matching SubjectContentService::notesFor(). The type comes from
+            // the request, else the user (user_id or token); with neither, all types.
+            ->when($typeId, fn ($q) => $q->where(
+                fn ($q) => $q->whereNull('type_id')->orWhere('type_id', $typeId)
+            ))
             ->when($request->filled('language'), fn ($q) => $q->where('language', $request->input('language')))
             ->ordered()
             ->get();
