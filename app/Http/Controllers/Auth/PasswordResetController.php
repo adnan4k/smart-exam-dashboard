@@ -146,9 +146,14 @@ class PasswordResetController extends Controller
             ], 404);
         }
 
-        // Update password
+        // Update password and release the device lock, since the user may have
+        // lost access to the old device (reinstall, new phone) and cannot log out
         $user->password = Hash::make($validated['new_password']);
+        $user->device_id = null;
         $user->save();
+
+        // Revoke existing sessions so old devices are signed out
+        $user->tokens()->delete();
 
         // Mark OTP record as used
         DB::table('password_reset_otps')
