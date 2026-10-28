@@ -9,8 +9,16 @@
                             <h5 class="font-bold text-slate-800 text-base mb-0.5 tracking-tight">User Management</h5>
                             <p class="text-xs text-slate-400 mb-0">Monitor registered candidates, institution affiliations, access roles, and account status.</p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-[#58706D]">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div class="relative w-full sm:w-72">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input
+                                    wire:model.live.debounce.300ms="search"
+                                    type="text"
+                                    placeholder="Search by name, email, phone, ID..."
+                                    class="form-control pl-8 w-full text-xs py-2 rounded-xl border-slate-200 focus:border-[#58706D]">
+                            </div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-[#58706D] whitespace-nowrap">
                                 Total Users: {{ $users->total() }}
                             </span>
                         </div>
@@ -124,8 +132,8 @@
                                     <tr>
                                         <td colspan="9" class="p-0">
                                             <x-empty-state
-                                                title="No Users Registered"
-                                                description="No user accounts match the current filters."
+                                                title="{{ $search ? 'No Matching Users' : 'No Users Registered' }}"
+                                                description="{{ $search ? 'No users match “' . $search . '”.' : 'No user accounts match the current filters.' }}"
                                                 icon="fas fa-users"
                                             />
                                         </td>

@@ -24,10 +24,18 @@ class SubscriptionComponent extends Component
     public $showDeleteModal = false;
     public $subscriptionToDelete;
 
+    // Search filter
+    public $search = '';
+
     // We use the rules property for validation when updating the status.
     protected $rules = [
         'selectedStatus' => 'required|in:pending,paid,failed',
     ];
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
 
     /**
      * Render the component view with all subscriptions.
@@ -37,8 +45,29 @@ class SubscriptionComponent extends Component
     public function render()
     {
         // Eager load related user, package, subjects, and yearGroup data with pagination
-        $subscriptions = Subscription::with(['user.type', 'yearGroup', 'package', 'subjects'])
-            ->latest('created_at')
+        $query = Subscription::with(['user.type', 'yearGroup', 'package', 'subjects']);
+
+        if ($search = trim($this->search)) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($u) use ($search) {
+                    $u->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('email', 'like', '%' . $search . '%')
+                      ->orWhere('phone_number', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('package', function ($p) use ($search) {
+                    $p->where('name', 'like', '%' . $search . '%');
+                })
+                ->orWhere('payment_status', 'like', '%' . $search . '%');
+
+                // Numeric input also matches subscription ID or user ID (UID)
+                if (ctype_digit($search)) {
+                    $q->orWhere('id', $search)
+                      ->orWhere('user_id', $search);
+                }
+            });
+        }
+
+        $subscriptions = $query->latest('created_at')
             ->orderBy('id', 'desc')
             ->paginate(10);
         

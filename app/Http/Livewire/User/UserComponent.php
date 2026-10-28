@@ -19,9 +19,17 @@ class UserComponent extends Component
     public $selectedStatus;
     public $userToDelete;
 
+    // Search filter
+    public $search = '';
+
     protected $rules = [
         'selectedStatus' => 'required|in:active,inactive,suspended',
     ];
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
 
     public function edit($userId)
     {
@@ -75,8 +83,23 @@ class UserComponent extends Component
 
     public function render()
     {
-        $users = User::with(['type', 'referredBy'])
-            ->latest('created_at')
+        $query = User::with(['type', 'referredBy']);
+
+        if ($search = trim($this->search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('phone_number', 'like', '%' . $search . '%')
+                  ->orWhere('institution_name', 'like', '%' . $search . '%')
+                  ->orWhere('referral_code', 'like', '%' . $search . '%');
+
+                if (ctype_digit($search)) {
+                    $q->orWhere('id', $search);
+                }
+            });
+        }
+
+        $users = $query->latest('created_at')
             ->orderBy('id', 'desc')
             ->paginate(10);
 
