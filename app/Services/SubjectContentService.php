@@ -56,17 +56,24 @@ class SubjectContentService
     public function isSubscribed(User $user): bool
     {
         return $user->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->exists();
     }
 
-    /** Any active paid package grants full content on this endpoint. */
-    public function hasFullContentAccess(User $user): bool
+    /**
+     * Whether the user's active subscriptions cover this subject name. One name
+     * is several `subjects` rows (see the class docblock); access to any of them
+     * unlocks the name, matching the catalogue's `is_subscribed`.
+     *
+     * Sample subjects are excluded here on purpose: they open questions to
+     * everyone, but they are not a subscription.
+     *
+     * @param  EloquentCollection<int, Subject>  $variants
+     */
+    public function hasFullContentAccess(User $user, EloquentCollection $variants): bool
     {
-        return $user->hasPaidAllAccess() || $user->subscriptions()
-            ->where('payment_status', 'paid')
-            ->whereNotNull('package_id')
-            ->exists();
+        return $user->accessibleSubjectIds($variants->reject(fn (Subject $subject) => (bool) $subject->is_sample))
+            ->isNotEmpty();
     }
 
     /**
@@ -101,6 +108,7 @@ class SubjectContentService
         $choiceStats = $this->choiceStats($typeId, $subjectIds);
         $noteStats = $this->noteStats($typeId, $subjectIds);
         $videoCounts = $this->videoCounts($subjectIds);
+        $accessibleIds = $user->accessibleSubjectIds($variants);
 
         return $variants
             ->groupBy(fn (Subject $subject) => $this->nameKey($subject->name))
@@ -111,7 +119,8 @@ class SubjectContentService
                 $choiceStats,
                 $noteStats,
                 $videoCounts,
-                $user
+                $user,
+                $accessibleIds
             ))
             ->values();
     }
@@ -367,9 +376,15 @@ class SubjectContentService
         Collection $choiceStats,
         Collection $noteStats,
         Collection $videoCounts,
-        ?User $user = null
+        ?User $user = null,
+        ?Collection $accessibleIds = null
     ): array {
         $ids = $rows->pluck('id');
+
+        // Callers building many entries pass the user's accessible ids once.
+        if ($user && $accessibleIds === null) {
+            $accessibleIds = $user->accessibleSubjectIds($rows);
+        }
 
         $questions = $ids->map(fn ($id) => $questionStats->get($id))->filter();
         $choices = $ids->map(fn ($id) => $choiceStats->get($id))->filter();
@@ -394,7 +409,7 @@ class SubjectContentService
             'package_id' => $firstRow?->package_id,
             'package_type' => $firstRow?->package_type,
             'package_name' => optional($firstRow?->package)->name,
-            'is_subscribed' => $user ? (bool) $rows->contains(fn (Subject $s) => $user->canAccessSubject($s)) : false,
+            'is_subscribed' => $user ? $ids->intersect($accessibleIds)->isNotEmpty() : false,
             'subject_ids' => $ids->values()->all(),
             // /api/videos/by-subject accepts one concrete subjects.id. Prefer
             // a variant that actually has active videos; null means there are none.

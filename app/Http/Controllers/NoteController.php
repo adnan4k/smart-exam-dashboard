@@ -7,6 +7,7 @@ use App\Models\Subject;
 use App\Models\Chapter;
 use App\Models\User;
 use App\Http\Traits\RespondsWithJson;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -31,7 +32,8 @@ class NoteController extends Controller
             'page' => 'nullable|integer|min:1',
         ]);
 
-        $query = Note::with(['subject', 'chapter', 'user', 'type']);
+        $query = Note::with(['subject', 'chapter', 'user', 'type'])
+            ->whereIn('subject_id', $this->readableSubjectIds(auth('sanctum')->user()));
 
         // Apply filters
         if ($request->has('subject_id') && $request->input('subject_id')) {
@@ -129,10 +131,30 @@ class NoteController extends Controller
 
     public function show(Note $note)
     {
+        // A locked note answers like a missing one, so the response shapes the
+        // app already handles stay the only ones it can receive.
+        if (! $this->readableSubjectIds(auth('sanctum')->user())->contains($note->subject_id)) {
+            throw (new ModelNotFoundException)->setModel(Note::class, [$note->id]);
+        }
+
         return $this->jsonResponse([
             'status' => 'success',
             'data' => $note->load(['subject', 'chapter', 'user', 'type']),
         ]);
+    }
+
+    /**
+     * Subjects whose notes the viewer may read: samples, plus whatever their
+     * active subscriptions cover. These listing routes are public and their
+     * `user_id` filters by author, so the viewer comes from the Sanctum token.
+     */
+    private function readableSubjectIds(?User $viewer)
+    {
+        $subjects = Subject::whereIn('id', Note::whereNotNull('subject_id')->distinct()->pluck('subject_id'))->get();
+
+        return $viewer
+            ? $viewer->accessibleSubjectIds($subjects)
+            : $subjects->filter(fn (Subject $subject) => (bool) $subject->is_sample)->pluck('id');
     }
 
     public function update(Request $request, Note $note)
@@ -236,19 +258,6 @@ class NoteController extends Controller
             ], 400);
         }
 
-        $hasActiveSubscription = $user->subscriptions()
-            ->where('type_id', $user->type_id)
-            ->where('payment_status', 'paid')
-            ->exists();
-
-        // if (!$hasActiveSubscription) {
-        //     return response()->json([
-        //         'status' => 'success',
-        //         'message' => 'No active subscription found.',
-        //         'data' => [],
-        //     ], 200);
-        // }
-
         // Get all subjects for the user's exam type, optionally narrowed to one.
         $subjects = Subject::where('type_id', $user->type_id)
             ->when($request->input('subject_id'), fn ($q, $id) => $q->where('id', $id))
@@ -257,8 +266,21 @@ class NoteController extends Controller
             ->get();
 
         $subjectsData = [];
+        $accessibleIds = $user->accessibleSubjectIds($subjects);
 
         foreach ($subjects as $subject) {
+            // Locked subjects are still listed, in the same shape, but carry no
+            // chapters until an active subscription covers them.
+            if (! $accessibleIds->contains($subject->id)) {
+                $subjectsData[] = [
+                    'id' => (string) $subject->id,
+                    'name' => $subject->name,
+                    'chapters' => [],
+                ];
+
+                continue;
+            }
+
             // Get all chapters for this subject that have notes
             $chapters = Chapter::whereHas('notes', function($query) use ($user, $subject) {
                 $query->where('subject_id', $subject->id)
@@ -340,7 +362,8 @@ class NoteController extends Controller
             'page' => 'nullable|integer|min:1',
         ]);
 
-        $query = Note::with(['subject', 'chapter', 'user', 'type']);
+        $query = Note::with(['subject', 'chapter', 'user', 'type'])
+            ->whereIn('subject_id', $this->readableSubjectIds(auth('sanctum')->user()));
 
         // Apply filters
         if ($request->has('type_id') && $request->input('type_id')) {

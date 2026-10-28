@@ -44,7 +44,7 @@ class SubscriptionController extends Controller
 
                         if ($sub) {
                             $paymentStatus = $sub->payment_status;
-                            $isSubscribed = ($sub->payment_status === 'paid');
+                            $isSubscribed = $sub->isActive();
                         }
                     }
                 }
@@ -141,14 +141,15 @@ class SubscriptionController extends Controller
                 ->first();
 
             if ($existing) {
-                if ($existing->payment_status === 'paid') {
+                // An expired subscription is renewed in place, like a failed one.
+                if ($existing->isActive()) {
                     return response()->json([
                         'message' => "User already has an active subscription for package '{$package->name}'.",
                         'subscription' => $existing,
                     ], 400);
                 }
 
-                if (in_array($existing->payment_status, ['pending', 'failed'])) {
+                if (in_array($existing->payment_status, ['pending', 'failed', 'paid'])) {
                     $existing->update($receipt + [
                         'start_date' => now(),
                         'end_date' => now()->addDays($package->duration_days ?: 365),
@@ -207,14 +208,14 @@ class SubscriptionController extends Controller
             ->first();
 
         if ($existingSubscription) {
-            if ($existingSubscription->payment_status === 'paid') {
+            if ($existingSubscription->isActive()) {
                 return response()->json([
                     'message' => 'User already has an active subscription.',
                     'subscription' => $existingSubscription,
                 ], 400);
             }
 
-            if (in_array($existingSubscription->payment_status, ['pending', 'failed'])) {
+            if (in_array($existingSubscription->payment_status, ['pending', 'failed', 'paid'])) {
                 $existingSubscription->update($receipt + [
                     'start_date' => now(),
                     'end_date' => now()->addYear(),
@@ -262,7 +263,7 @@ class SubscriptionController extends Controller
         $hasPaidPackage = $user->hasPaidPackage();
 
         $activeSubscriptions = $user->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->with(['package', 'subjects'])
             ->get();
 
@@ -336,6 +337,22 @@ class SubscriptionController extends Controller
                 'status' => 'error',
                 'message' => "Package '{$package->name}' allows a maximum of {$maxAllowed} subjects. You selected " . count($uniqueSubjectIds) . ".",
             ], 422);
+        }
+
+        // Once paid, a choice is final: a student may fill empty slots but not
+        // swap subjects out, or one payment would unlock every subject in turn.
+        // Rejected with the same 422 shape as the limit check above.
+        if ($subscription->isActive()) {
+            $removed = $subscription->subjects()
+                ->whereNotIn('subjects.id', $uniqueSubjectIds)
+                ->pluck('subjects.name');
+
+            if ($removed->isNotEmpty()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Subjects of a paid subscription cannot be removed or swapped. You can only add subjects to free slots. Missing: ' . $removed->implode(', ') . '.',
+                ], 422);
+            }
         }
 
         $subscription->subjects()->sync($uniqueSubjectIds);

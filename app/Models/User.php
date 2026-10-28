@@ -105,7 +105,7 @@ class User extends Authenticatable
 
         // Active package subscription or legacy type subscription
         return $this->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->where(function ($q) {
                 $q->where('type_id', $this->type_id)
                   ->orWhereNotNull('package_id');
@@ -122,7 +122,7 @@ class User extends Authenticatable
     public function paidPackageSlugs(): array
     {
         return $this->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->whereNotNull('package_id')
             ->with('package')
             ->get()
@@ -141,7 +141,7 @@ class User extends Authenticatable
     {
         // 1. Paid All-Access package
         $hasAllAccessPkg = $this->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->whereHas('package', function ($q) {
                 $q->where('slug', Package::SLUG_ALL_ACCESS);
             })
@@ -153,7 +153,7 @@ class User extends Authenticatable
 
         // 2. Backward-compatibility: legacy subscription without package_id
         return $this->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->whereNull('package_id')
             ->exists();
     }
@@ -187,7 +187,7 @@ class User extends Authenticatable
         // 3. Legacy: subject.package_id matches subscription.package_id
         // 4. Legacy: subject.package_type matches subscription package slug
         $hasAccessViaSubscription = $this->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->where(function ($query) use ($subject) {
                 $query->whereHas('subjects', function ($subQuery) use ($subject) {
                     $subQuery->where('subjects.id', $subject->id)
@@ -224,6 +224,73 @@ class User extends Authenticatable
         }
 
         return false;
+    }
+
+    /**
+     * canAccessSubject() for many subjects at once: the ids of the ones this
+     * user may open, in a fixed handful of queries instead of several per
+     * subject. It must stay equivalent to canAccessSubject(), which
+     * UserAccessibleSubjectIdsTest checks; change the two together.
+     *
+     * Names and slugs are compared in SQL, so the column collation decides
+     * what "same name" means, exactly as it does in canAccessSubject().
+     *
+     * @param  iterable<int, Subject>  $subjects
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    public function accessibleSubjectIds($subjects)
+    {
+        $subjects = collect($subjects);
+
+        if ($subjects->isEmpty()) {
+            return collect();
+        }
+
+        if ($this->hasPaidAllAccess()) {
+            return $subjects->pluck('id')->values();
+        }
+
+        $active = $this->subscriptions()->active()->with('package')->get();
+        $packageIds = $active->pluck('package_id')->filter()->unique()->values();
+        $slugs = $active->pluck('package.slug')->filter()->unique()->values();
+
+        // Subjects the student selected, plus their packages' default subjects.
+        $chosenIds = \Illuminate\Support\Facades\DB::table('subscription_subject')
+            ->whereIn('subscription_id', $active->pluck('id'))
+            ->pluck('subject_id')
+            ->merge(\Illuminate\Support\Facades\DB::table('package_subject')
+                ->whereIn('package_id', $packageIds)
+                ->where('is_default', true)
+                ->pluck('subject_id'))
+            ->unique()
+            ->values();
+
+        $covered = $active->isEmpty() ? collect() : Subject::whereIn('id', $subjects->pluck('id'))
+            ->where(function ($query) use ($chosenIds, $packageIds, $slugs) {
+                $query->whereIn('id', $chosenIds)
+                    ->orWhereIn('name', Subject::select('name')->whereIn('id', $chosenIds))
+                    ->orWhereIn('package_id', $packageIds)
+                    ->orWhereIn('package_type', $slugs);
+            })
+            ->pluck('id');
+
+        $inAnyPackage = \Illuminate\Support\Facades\DB::table('package_subject')
+            ->whereIn('subject_id', $subjects->pluck('id'))
+            ->pluck('subject_id');
+
+        $hasPaidPackage = null;
+
+        return $subjects->filter(function (Subject $subject) use ($covered, $inAnyPackage, &$hasPaidPackage) {
+            if ($subject->is_sample || $covered->contains($subject->id)) {
+                return true;
+            }
+
+            $isTiedToPackage = (bool) $subject->package_id
+                || (bool) $subject->package_type
+                || $inAnyPackage->contains($subject->id);
+
+            return ! $isTiedToPackage && ($hasPaidPackage ??= $this->hasPaidPackage());
+        })->pluck('id')->values();
     }
 
     /**

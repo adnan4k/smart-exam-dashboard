@@ -12,6 +12,23 @@ class Subscription extends Model
    protected $guarded = [];
 
     /**
+     * Paid and not yet expired. This is the only definition of a subscription
+     * that grants access; `payment_status = paid` alone stays true forever.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('payment_status', 'paid')
+            ->whereDate('end_date', '>=', now()->toDateString());
+    }
+
+    public function isActive(): bool
+    {
+        return $this->payment_status === 'paid'
+            && $this->end_date
+            && \Illuminate\Support\Carbon::parse($this->end_date)->endOfDay()->gte(now());
+    }
+
+    /**
      * A subscription belongs to a user.
      */
     public function user()

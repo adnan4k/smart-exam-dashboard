@@ -53,12 +53,13 @@ class SubjectController extends Controller
             ], 400);
         }
 
-        $hasFullAccess = $this->subjects->hasFullContentAccess($user);
         $catalogue = $this->subjects->catalogue($user)
-            ->map(function (array $entry) use ($hasFullAccess) {
+            ->map(function (array $entry) {
+                // Scoped per subject: paying for one package must not change
+                // the version of a subject that package does not cover.
                 $entry['content_version'] = $this->scopedContentVersion(
                     (string) ($entry['content_version'] ?? ''),
-                    $hasFullAccess,
+                    (bool) ($entry['is_subscribed'] ?? false),
                     (bool) ($entry['is_sample'] ?? false),
                 );
 
@@ -120,7 +121,9 @@ class SubjectController extends Controller
         // and `subject.name` agree with the card the user tapped.
         $subjectName = $entry['name'] ?? $requestedName;
 
-        $hasFullAccess = $this->subjects->hasFullContentAccess($user);
+        // Entitlement is per subject: a paid COC package does not unlock a
+        // Semester 1 subject, and an expired subscription unlocks nothing.
+        $hasFullAccess = $this->subjects->hasFullContentAccess($user, $variants);
         $isSample = (bool) $variants->contains(fn ($subject) => (bool) $subject->is_sample);
         $isSubscribed = $hasFullAccess;
 
@@ -157,17 +160,25 @@ class SubjectController extends Controller
             'is_subscribed' => $isSubscribed,
             'subject' => $entry,
             'questions' => $questions,
-            'notes' => $this->subjects->notesFor($variants, $subjectName, $user->type_id),
+            // Notes are paid content, open only to subscribers and on samples.
+            'notes' => ($hasFullAccess || $isSample)
+                ? $this->subjects->notesFor($variants, $subjectName, $user->type_id)
+                : ['id' => (string) ($variants->first()->id ?? ''), 'name' => $subjectName, 'chapters' => []],
         ]);
     }
 
+    /**
+     * A sample serves the same full payload to everyone, so it always hashes as
+     * full. The catalogue counts samples as subscribed and content does not;
+     * without this the two disagree and the app re-downloads samples forever.
+     */
     private function scopedContentVersion(
         string $catalogueVersion,
         bool $hasFullAccess,
         bool $isSample,
     ): string {
         return hash('sha256', $catalogueVersion
-            .'|access:'.($hasFullAccess ? 'full' : 'limited')
+            .'|access:'.(($hasFullAccess || $isSample) ? 'full' : 'limited')
             .'|sample:'.(int) $isSample);
     }
 }

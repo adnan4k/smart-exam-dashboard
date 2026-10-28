@@ -105,19 +105,20 @@ class ContestSubscriptionGateTest extends TestCase
     }
 
     /**
-     * No feature in this app enforces start_date/end_date, so contests must not
-     * either - a lapsed student keeps their notes and videos, and losing only
-     * contests would be an invisible, inconsistent takeaway.
+     * Every paid feature stops at end_date (Subscription::scopeActive), so
+     * contests do too: a lapsed student loses contests along with questions,
+     * notes and videos, not instead of them.
      *
      * @test
      */
-    public function a_past_dated_subscription_still_unlocks_contests()
+    public function an_expired_subscription_does_not_unlock_contests()
     {
         $this->subscribe(start: now()->subYears(2), end: now()->subYear());
         Sanctum::actingAs($this->user);
 
         $this->postJson('/api/contests/'.$this->contest->id.'/start')
-            ->assertStatus(200);
+            ->assertStatus(403)
+            ->assertJsonPath('error_code', 'subscription_required');
     }
 
     /**

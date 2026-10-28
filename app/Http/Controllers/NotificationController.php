@@ -53,7 +53,7 @@ class NotificationController extends Controller
 
         // Get the user's active paid subscription (only one exam type per user)
         $subscription = $user->subscriptions()
-            ->where('payment_status', 'paid')
+            ->active()
             ->first();
 
         if (!$subscription) {

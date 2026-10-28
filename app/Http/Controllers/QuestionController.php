@@ -52,13 +52,14 @@ class QuestionController extends Controller
             ], 400);
         }
 
-
         $year = $request->year;
 
-        // Fetch questions with necessary relations
-        $questions = Question::whereHas('yearGroup', function ($q) use ($year) {
-            $q->where('year', $year);
-        })->with(['choices', 'subject', 'yearGroup'])->get();
+        // Fetch questions with necessary relations. Every exam type, as before;
+        // only subjects the caller's active subscription covers come back in full.
+        $questions = $this->entitledQuestions($this->optionalUser($request), null, function ($query) use ($year) {
+            $query->whereHas('yearGroup', fn ($q) => $q->where('year', $year))
+                ->with(['choices', 'subject', 'yearGroup']);
+        })->sortBy('id')->values();
         
         // Map full image URLs
         $questions->transform(function ($question) {
@@ -175,22 +176,7 @@ class QuestionController extends Controller
         // Check if user has any active package subscription
         $hasActiveSubscription = $user->hasPaidPackage();
 
-        // Get questions per subject, unlocking full question pool for packages the user owns
-        $subjects = Subject::where('type_id', $user->type_id)->get();
-        $questions = collect();
-
-        foreach ($subjects as $subject) {
-            $query = Question::where('type_id', $user->type_id)
-                ->where('subject_id', $subject->id)
-                ->with(['choices', 'subject', 'yearGroup', 'chapter'])
-                ->orderBy('id', 'asc');
-
-            if (! $user->canAccessSubject($subject)) {
-                $query->limit(SubjectContentService::FREE_QUESTION_LIMIT);
-            }
-
-            $questions = $questions->concat($query->get());
-        }
+        $questions = $this->entitledQuestions($user, $user->type_id, fn ($query) => $query->with(['choices', 'subject', 'yearGroup', 'chapter']));
 
         // Group questions by subject
         $response = $questions->groupBy(function ($question) {
@@ -293,10 +279,11 @@ class QuestionController extends Controller
     }
     
 
-    public function getAllQuestionsGroupedByType()
+    public function getAllQuestionsGroupedByType(Request $request)
     {
-        // Fetch all questions and group them by type
-        $questions = Question::with(['choices', 'subject', 'type','chapter'])->get();
+        $questions = $this->entitledQuestions($this->optionalUser($request), null, fn ($query) => $query->with(['choices', 'subject', 'type', 'chapter']))
+            ->sortBy('id')
+            ->values();
 
         $response = $questions->groupBy(function ($question) {
             return $question->type->name; // Assuming 'name' is the field in the types table
@@ -361,10 +348,11 @@ class QuestionController extends Controller
 
     
 
-    public function getAllQuestionsGroupedBySubject()
+    public function getAllQuestionsGroupedBySubject(Request $request)
     {
-        // Fetch all questions and group them by subject
-        $questions = Question::with(['choices', 'subject', 'type'])->get();
+        $questions = $this->entitledQuestions($this->optionalUser($request), null, fn ($query) => $query->with(['choices', 'subject', 'type']))
+            ->sortBy('id')
+            ->values();
 
         $response = $questions->groupBy(function ($question) {
             return $question->subject->name; // Grouping by subject name
@@ -374,6 +362,72 @@ class QuestionController extends Controller
             'status'   => 'success',
             'response' => $response
         ]);
+    }
+
+    /**
+     * The questions a caller is allowed to see, decided per subject:
+     * everything for a subject the user's active subscription covers (or a
+     * sample subject), otherwise that subject's free preview. A null `$user`
+     * gets only previews; a null `$typeId` means every exam type.
+     *
+     * The preview is pinned to the subject's first FREE_QUESTION_LIMIT questions
+     * overall, before `$scope` narrows them, so filtering by year cannot be used
+     * to page through a different 40 questions per year.
+     */
+    private function entitledQuestions(?User $user, ?int $typeId, ?callable $scope = null)
+    {
+        $subjects = $typeId
+            ? Subject::where('type_id', $typeId)->get()
+            : Subject::whereIn('id', Question::whereNotNull('subject_id')->distinct()->pluck('subject_id'))->get();
+
+        if ($subjects->isEmpty()) {
+            return collect();
+        }
+
+        $entitledIds = $user
+            ? $user->accessibleSubjectIds($subjects)
+            : $subjects->filter(fn (Subject $subject) => (bool) $subject->is_sample)->pluck('id');
+
+        // A locked subject's preview is its questions up to and including the
+        // FREE_QUESTION_LIMIT-th one, so it is expressed as an id cutoff.
+        $lockedIds = $subjects->pluck('id')->diff($entitledIds)->values();
+        $previewCutoffs = $lockedIds->isEmpty() ? collect() : Question::query()
+            ->whereIn('subject_id', $lockedIds)
+            ->when($typeId, fn ($q) => $q->where('type_id', $typeId))
+            ->orderBy('id')
+            ->toBase()
+            ->get(['id', 'subject_id'])
+            ->groupBy('subject_id')
+            ->map(fn ($rows) => $rows->take(SubjectContentService::FREE_QUESTION_LIMIT)->last()->id);
+
+        // One query for every subject. Ordered by subject, then id, which is the
+        // order the old one-query-per-subject loop produced.
+        $query = Question::query()
+            ->when($typeId, fn ($q) => $q->where('type_id', $typeId))
+            ->where(function ($q) use ($entitledIds, $previewCutoffs) {
+                $q->whereIn('subject_id', $entitledIds);
+
+                foreach ($previewCutoffs as $subjectId => $cutoff) {
+                    $q->orWhere(fn ($preview) => $preview->where('subject_id', $subjectId)->where('id', '<=', $cutoff));
+                }
+            })
+            ->orderBy('subject_id')
+            ->orderBy('id');
+
+        if ($scope) {
+            $scope($query);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * These endpoints never required a user, so `user_id` stays optional and an
+     * unknown one is treated as anonymous rather than turned into a new error.
+     */
+    private function optionalUser(Request $request): ?User
+    {
+        return $request->filled('user_id') ? User::find($request->input('user_id')) : null;
     }
 }
 
