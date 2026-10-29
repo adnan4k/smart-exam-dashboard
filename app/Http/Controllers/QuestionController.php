@@ -24,12 +24,14 @@ class QuestionController extends Controller
 
     public function examType()
     {
+        // The mobile app hard-casts `decription` and `price` to String, so a null
+        // in either column breaks the whole exam-type list during registration.
         $types = Type::all()->map(function ($type) {
             return [
                 'id' => $type->id,
-                'name' => $type->name,
-                'decription'=>$type->description,
-                'price'=>$type->price,
+                'name' => (string) $type->name,
+                'decription' => (string) $type->description,
+                'price' => (string) $type->price,
                 'image' => $type->image ? asset('storage/' . $type->image) : null
             ];
         });
