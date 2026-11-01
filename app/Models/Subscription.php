@@ -83,6 +83,13 @@ class Subscription extends Model
             return;
         }
 
+        // Defaults only stand in for a missing choice. If the student already
+        // picked subjects, adding defaults on top would exceed max_subjects
+        // (e.g. 7 picks + 3 defaults = 10 when an admin approves the payment).
+        if ($this->subjects()->exists()) {
+            return;
+        }
+
         // Get default subject IDs from package_subject
         $defaultSubjectIds = \Illuminate\Support\Facades\DB::table('package_subject')
             ->where('package_id', $this->package_id)

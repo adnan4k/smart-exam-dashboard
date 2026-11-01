@@ -783,6 +783,42 @@ class PackageApiAccessTest extends TestCase
         $this->assertCount(0, $user->accessibleSubjectIds([$linked]));
     }
 
+    /** @test */
+    public function approving_payment_does_not_add_defaults_on_top_of_the_students_choice()
+    {
+        $this->sem1Package->update(['max_subjects' => 7]);
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        $defaults = collect(range(1, 3))->map(fn ($i) => Subject::create([
+            'name' => "Default {$i}", 'type_id' => $this->type->id, 'year' => '2026',
+        ]));
+        $chosen = collect(range(1, 7))->map(fn ($i) => Subject::create([
+            'name' => "Chosen {$i}", 'type_id' => $this->type->id, 'year' => '2026',
+        ]));
+        $this->sem1Package->subjects()->sync(
+            $defaults->mapWithKeys(fn ($s) => [$s->id => ['is_default' => true]])->all()
+        );
+
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'type_id' => $this->type->id,
+            'package_id' => $this->sem1Package->id,
+            'payment_status' => 'pending',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+        ]);
+        $subscription->subjects()->sync($chosen->pluck('id')->all());
+
+        // What the admin "Paid" verification does.
+        $subscription->update(['payment_status' => 'paid']);
+        $subscription->syncDefaultSubjects();
+
+        $this->assertEqualsCanonicalizing(
+            $chosen->pluck('id')->all(),
+            $subscription->subjects()->pluck('subjects.id')->all()
+        );
+    }
+
     private function makeQuestion(Subject $subject, string $text): Question
     {
         return Question::create([
