@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
 /**
- * Hides questions that have not been released to students yet.
+ * Hides contest questions and any question not released to students yet.
+ *
+ * Only `bank = 'study'` questions are ever visible to the study API and the
+ * normal admin screens. Contest questions stay separate permanently.
  *
  * Contest questions are authored in the same table as study questions, so
  * without this they would appear in the study API before their contest runs and
@@ -30,7 +33,10 @@ class ReleasedQuestionScope implements Scope
         $table = $model->getTable();
 
         $builder->where(function (Builder $query) use ($table) {
-            $query->whereNotNull($table . '.released_at')
+            // Contest questions never join the study bank - not even after
+            // their contest has finished.
+            $query->where($table . '.bank', 'study')
+                ->whereNotNull($table . '.released_at')
                 ->where($table . '.released_at', '<=', now());
         });
     }

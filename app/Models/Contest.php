@@ -40,6 +40,7 @@ class Contest extends Model
     public function questions()
     {
         return $this->belongsToMany(Question::class, 'contest_questions')
+            ->withoutGlobalScope(\App\Models\Scopes\ReleasedQuestionScope::class)
             ->withPivot(['position', 'points'])
             ->orderBy('contest_questions.position');
     }

@@ -475,6 +475,7 @@ class SubjectContentService
     {
         return Choice::join('questions', 'choices.question_id', '=', 'questions.id')
             ->where('questions.type_id', $typeId)
+            ->where('questions.bank', 'study')
             ->whereIn('questions.subject_id', $subjectIds)
             ->groupBy('questions.subject_id')
             ->selectRaw(

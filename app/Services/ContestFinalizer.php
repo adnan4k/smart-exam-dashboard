@@ -119,8 +119,9 @@ class ContestFinalizer
     }
 
     /**
-     * The contest is over, so its questions become study material - complete
-     * with explanations, and with real difficulty data behind them.
+     * Marks the contest's questions as used so they leave the contest pool.
+     * They stay in the contest bank and never appear among study questions -
+     * ReleasedQuestionScope only shows bank = 'study'.
      */
     private function releaseQuestions(Contest $contest): void
     {
