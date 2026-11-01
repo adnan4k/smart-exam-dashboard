@@ -220,7 +220,7 @@ class PackageApiAccessTest extends TestCase
         $student = User::factory()->create(['type_id' => $this->type->id]);
 
         // Student pays for 1st Semester
-        Subscription::create([
+        $subscription = Subscription::create([
             'user_id' => $student->id,
             'type_id' => $this->type->id,
             'year_group_id' => $this->yearGroup->id,
@@ -245,6 +245,9 @@ class PackageApiAccessTest extends TestCase
             'package_id' => $this->sem2Package->id,
             'package_type' => 'semester_2',
         ]);
+
+        // Access comes only from what the student selected in the app.
+        $subscription->subjects()->sync([$sem1Subject->id]);
 
         // Seed 45 questions for each subject
         foreach (range(1, 45) as $i) {
@@ -378,7 +381,7 @@ class PackageApiAccessTest extends TestCase
         $student = User::factory()->create(['type_id' => $this->type->id]);
 
         // Student only pays for 1st Semester
-        Subscription::create([
+        $subscription = Subscription::create([
             'user_id' => $student->id,
             'type_id' => $this->type->id,
             'year_group_id' => $this->yearGroup->id,
@@ -403,6 +406,8 @@ class PackageApiAccessTest extends TestCase
             'package_id' => $this->sem2Package->id,
             'package_type' => 'semester_2',
         ]);
+
+        $subscription->subjects()->sync([$sem1Subject->id]);
 
         $chapter1 = Chapter::create(['name' => 'Mechanics']);
         $chapter2 = Chapter::create(['name' => 'Formal Logic']);
@@ -732,6 +737,50 @@ class PackageApiAccessTest extends TestCase
         $this->assertTrue($user->canAccessSubject($defaultSubject), 'Student should access default package subject');
         $this->assertTrue($user->canAccessSubject($selectedSubject), 'Student should access customized elective subject');
         $this->assertFalse($user->canAccessSubject($unselectedSubject), 'Student should NOT access unselected subject from another package');
+    }
+
+    /** @test */
+    public function chosen_subjects_replace_package_defaults_so_access_never_exceeds_max_subjects()
+    {
+        $this->sem1Package->update(['max_subjects' => 7]);
+        $user = User::factory()->create(['type_id' => $this->type->id]);
+
+        $defaults = collect(range(1, 2))->map(fn ($i) => Subject::create([
+            'name' => "Default {$i}", 'type_id' => $this->type->id, 'year' => '2026',
+        ]));
+        $chosen = collect(range(1, 7))->map(fn ($i) => Subject::create([
+            'name' => "Chosen {$i}", 'type_id' => $this->type->id, 'year' => '2026',
+        ]));
+        $this->sem1Package->subjects()->sync(
+            $defaults->merge($chosen)->mapWithKeys(fn ($s) => [
+                $s->id => ['is_default' => $defaults->contains('id', $s->id)],
+            ])->all()
+        );
+
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'type_id' => $this->type->id,
+            'package_id' => $this->sem1Package->id,
+            'payment_status' => 'paid',
+            'start_date' => now(),
+            'end_date' => now()->addYear(),
+        ]);
+        $subscription->subjects()->sync($chosen->pluck('id')->all());
+
+        $all = $defaults->merge($chosen);
+        $this->assertCount(7, $user->accessibleSubjectIds($all));
+        $this->assertSame(7, $all->filter(fn ($s) => $user->canAccessSubject($s))->count());
+        foreach ($defaults as $default) {
+            $this->assertFalse($user->canAccessSubject($default), 'An unchosen default must not unlock on top of the choice');
+        }
+
+        // A subject merely linked to the package is not unlocked either.
+        $linked = Subject::create([
+            'name' => 'Linked only', 'type_id' => $this->type->id, 'year' => '2026',
+            'package_id' => $this->sem1Package->id, 'package_type' => $this->sem1Package->slug,
+        ]);
+        $this->assertFalse($user->canAccessSubject($linked));
+        $this->assertCount(0, $user->accessibleSubjectIds([$linked]));
     }
 
     private function makeQuestion(Subject $subject, string $text): Question

@@ -181,32 +181,15 @@ class User extends Authenticatable
             return true;
         }
 
-        // Check if student has an active paid subscription that covers this subject:
-        // 1. Subject was selected by user in their subscription (or shares name with selected variant)
-        // 2. Subject is a default package subject for their subscribed package
-        // 3. Legacy: subject.package_id matches subscription.package_id
-        // 4. Legacy: subject.package_type matches subscription package slug
+        // Access comes only from the subjects the student selected in an active
+        // subscription (or a same-name variant of one). Package defaults and the
+        // legacy package_id / package_type links grant nothing on their own -
+        // otherwise they would unlock on top of the choice and exceed max_subjects.
         $hasAccessViaSubscription = $this->subscriptions()
             ->active()
-            ->where(function ($query) use ($subject) {
-                $query->whereHas('subjects', function ($subQuery) use ($subject) {
-                    $subQuery->where('subjects.id', $subject->id)
-                             ->orWhere('subjects.name', $subject->name);
-                })
-                ->orWhereHas('package.defaultSubjects', function ($subQuery) use ($subject) {
-                    $subQuery->where('subjects.id', $subject->id)
-                             ->orWhere('subjects.name', $subject->name);
-                });
-
-                if ($subject->package_id) {
-                    $query->orWhere('package_id', $subject->package_id);
-                }
-
-                if ($subject->package_type) {
-                    $query->orWhereHas('package', function ($q) use ($subject) {
-                        $q->where('slug', $subject->package_type);
-                    });
-                }
+            ->whereHas('subjects', function ($subQuery) use ($subject) {
+                $subQuery->where('subjects.id', $subject->id)
+                         ->orWhere('subjects.name', $subject->name);
             })
             ->exists();
 
@@ -250,27 +233,20 @@ class User extends Authenticatable
             return $subjects->pluck('id')->values();
         }
 
-        $active = $this->subscriptions()->active()->with('package')->get();
-        $packageIds = $active->pluck('package_id')->filter()->unique()->values();
-        $slugs = $active->pluck('package.slug')->filter()->unique()->values();
+        $active = $this->subscriptions()->active()->get();
 
-        // Subjects the student selected, plus their packages' default subjects.
+        // Only the subjects the student selected, plus their same-name variants.
+        // Must match canAccessSubject().
         $chosenIds = \Illuminate\Support\Facades\DB::table('subscription_subject')
             ->whereIn('subscription_id', $active->pluck('id'))
             ->pluck('subject_id')
-            ->merge(\Illuminate\Support\Facades\DB::table('package_subject')
-                ->whereIn('package_id', $packageIds)
-                ->where('is_default', true)
-                ->pluck('subject_id'))
             ->unique()
             ->values();
 
-        $covered = $active->isEmpty() ? collect() : Subject::whereIn('id', $subjects->pluck('id'))
-            ->where(function ($query) use ($chosenIds, $packageIds, $slugs) {
+        $covered = $chosenIds->isEmpty() ? collect() : Subject::whereIn('id', $subjects->pluck('id'))
+            ->where(function ($query) use ($chosenIds) {
                 $query->whereIn('id', $chosenIds)
-                    ->orWhereIn('name', Subject::select('name')->whereIn('id', $chosenIds))
-                    ->orWhereIn('package_id', $packageIds)
-                    ->orWhereIn('package_type', $slugs);
+                    ->orWhereIn('name', Subject::select('name')->whereIn('id', $chosenIds));
             })
             ->pluck('id');
 
