@@ -172,7 +172,28 @@ class ContestStarsTest extends TestCase
             ->assertJsonPath('top_students.0.stars', 9)
             ->assertJsonPath('top_students.1.stars', 9)
             ->assertJsonPath('top_students.2.stars', 6)
-            ->assertJsonPath('top_students.2.user_id', $students[2]->id);
+            ->assertJsonPath('top_students.2.user_id', $students[2]->id)
+            // Two students tied on 9 share first place; the next is third.
+            ->assertJsonPath('top_students.0.rank', 1)
+            ->assertJsonPath('top_students.1.rank', 1)
+            ->assertJsonPath('top_students.2.rank', 3)
+            ->assertJsonPath('me.rank', 1)
+            ->assertJsonPath('me.stars', 9);
+
+        // Outside the top three, the caller still sees where they stand.
+        Sanctum::actingAs($students[1]);
+
+        $this->getJson('/api/contests/top-students')
+            ->assertJsonPath('me.user_id', $students[1]->id)
+            ->assertJsonPath('me.rank', 4)
+            ->assertJsonPath('me.stars', 3);
+
+        // No stars earned yet means no rank.
+        Sanctum::actingAs($students[4]);
+
+        $this->getJson('/api/contests/top-students')
+            ->assertJsonPath('me.rank', null)
+            ->assertJsonPath('me.stars', 0);
     }
 
     /** @test */

@@ -463,14 +463,17 @@ class ContestController extends Controller
     {
         $user = $request->user();
 
-        $totals = RewardTransaction::selectRaw('user_id, SUM(stars) as stars')
+        // Per-student totals within the caller's cohort.
+        $cohortTotals = fn () => RewardTransaction::selectRaw('user_id, SUM(stars) as stars')
             ->where('source_type', ContestAttempt::class)
             ->when($user->type_id, fn ($q) => $q->whereIn(
                 'user_id',
                 \App\Models\User::where('type_id', $user->type_id)->select('id')
             ))
             ->groupBy('user_id')
-            ->havingRaw('SUM(stars) > 0')
+            ->havingRaw('SUM(stars) > 0');
+
+        $totals = $cohortTotals()
             ->orderByDesc('stars')
             ->orderBy('user_id')
             ->limit(3)
@@ -480,15 +483,32 @@ class ContestController extends Controller
             ->get(['id', 'name', 'institution_name'])
             ->keyBy('id');
 
+        $myStars = (int) RewardTransaction::where('source_type', ContestAttempt::class)
+            ->where('user_id', $user->id)
+            ->sum('stars');
+
         return response()->json([
             'status'       => 'success',
-            'top_students' => $totals->values()->map(fn ($row, $i) => [
-                'rank'        => $i + 1,
+            'top_students' => $totals->values()->map(fn ($row) => [
+                // Ties share a rank, the same way "me" is ranked below.
+                'rank'        => $totals->where('stars', '>', $row->stars)->count() + 1,
                 'user_id'     => (int) $row->user_id,
                 'name'        => $names[$row->user_id]->name ?? null,
                 'institution' => $names[$row->user_id]->institution_name ?? null,
                 'stars'       => (int) $row->stars,
             ]),
+            // The caller's own standing, even when they are outside the top three.
+            // No rank until they have earned a star.
+            'me' => [
+                'user_id' => $user->id,
+                'rank'    => $myStars > 0
+                    ? \Illuminate\Support\Facades\DB::query()
+                        ->fromSub($cohortTotals(), 't')
+                        ->where('stars', '>', $myStars)
+                        ->count() + 1
+                    : null,
+                'stars'   => max(0, $myStars),
+            ],
         ]);
     }
 
