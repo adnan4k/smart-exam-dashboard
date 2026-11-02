@@ -25,6 +25,7 @@ class Contest extends Model
         // (500 on GET /contests and /contests/{id}).
         'duration_minutes'    => 'integer',
         'question_count'      => 'integer',
+        'stars_per_question'  => 'integer',
     ];
 
     public function type()

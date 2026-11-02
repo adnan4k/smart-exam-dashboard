@@ -9,9 +9,11 @@ class ContestAttempt extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'started_at'   => 'datetime',
-        'expires_at'   => 'datetime',
-        'submitted_at' => 'datetime',
+        'started_at'     => 'datetime',
+        'expires_at'     => 'datetime',
+        'submitted_at'   => 'datetime',
+        'score'          => 'integer',
+        'question_stars' => 'integer',
     ];
 
     public function contest()
@@ -43,9 +45,15 @@ class ContestAttempt extends Model
         return max(0, (int) floor(now()->diffInSeconds($this->expires_at, false)));
     }
 
+    /**
+     * Stars earned first, then score, then speed. For a contest that pays no
+     * stars per question every question_stars is 0, so this falls back to the
+     * old score-then-time order.
+     */
     public function scopeRanked($query)
     {
         return $query->where('status', 'submitted')
+            ->orderByDesc('question_stars')
             ->orderByDesc('score')
             ->orderBy('time_taken_seconds')
             ->orderBy('submitted_at');

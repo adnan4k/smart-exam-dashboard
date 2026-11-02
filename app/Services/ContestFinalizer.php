@@ -46,7 +46,7 @@ class ContestFinalizer
 
             foreach ($ranked as $index => $attempt) {
                 // Genuine ties share a rank; the next attempt skips ahead.
-                $key = $attempt->score . ':' . $attempt->time_taken_seconds;
+                $key = $attempt->question_stars . ':' . $attempt->score . ':' . $attempt->time_taken_seconds;
                 if ($key !== $lastKey) {
                     $rank = $index + 1;
                     $lastKey = $key;
@@ -54,7 +54,9 @@ class ContestFinalizer
 
                 $rule = $rules->first(fn ($r) => $r->covers($rank));
 
-                $stars = $rule?->stars ?? 0;
+                // Stars earned on the paper, plus whatever the rank band adds.
+                $bonusStars = $rule?->stars ?? 0;
+                $stars = (int) $attempt->question_stars + $bonusStars;
                 $coins = $rule?->coins ?? 0;
 
                 $attempt->update([
@@ -104,8 +106,10 @@ class ContestFinalizer
             'reason'          => 'contest_rank',
             'meta'            => [
                 'contest_id' => $attempt->contest_id,
-                'rank'       => $rank,
-                'score'      => $attempt->score,
+                'rank'           => $rank,
+                'score'          => $attempt->score,
+                'question_stars' => (int) $attempt->question_stars,
+                'rank_stars'     => $stars - (int) $attempt->question_stars,
             ],
             'idempotency_key' => $key,
         ]);

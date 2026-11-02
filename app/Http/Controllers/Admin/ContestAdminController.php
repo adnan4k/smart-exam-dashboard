@@ -38,7 +38,7 @@ class ContestAdminController extends Controller
     public function create()
     {
         return view('contests.form', [
-            'contest'  => new Contest(['duration_minutes' => 40]),
+            'contest'  => new Contest(['duration_minutes' => 40, 'stars_per_question' => 1]),
             'types'    => Type::orderBy('name')->get(),
             'subjects' => Subject::orderBy('name')->get(),
         ]);
@@ -214,6 +214,7 @@ class ContestAdminController extends Controller
     {
         $attempts = ContestAttempt::where('contest_id', $contest->id)
             ->with('user:id,name,institution_name')
+            ->orderByDesc('question_stars')
             ->orderByDesc('score')
             ->orderBy('time_taken_seconds')
             ->orderBy('submitted_at')
@@ -245,7 +246,10 @@ class ContestAdminController extends Controller
                     'score'        => $a->score,
                     'total'        => $a->total_questions,
                     'time_taken'   => $a->time_taken_seconds,
-                    'stars'        => $a->stars_awarded,
+                    // Stars from correct answers, live from the moment of submit.
+                    'question_stars' => $a->question_stars,
+                    // Paid total once finalized; until then, what the answers have earned.
+                    'stars'        => $a->stars_awarded ?: $a->question_stars,
                     'coins'        => $a->coins_awarded,
                 ];
             }),
@@ -290,7 +294,7 @@ class ContestAdminController extends Controller
                 ]);
             }
 
-            $attempt->update(['status' => 'voided', 'stars_awarded' => 0, 'coins_awarded' => 0, 'rank' => null]);
+            $attempt->update(['status' => 'voided', 'stars_awarded' => 0, 'question_stars' => 0, 'coins_awarded' => 0, 'rank' => null]);
         });
 
         return back()->with('success', 'Entry voided. Re-finalize the contest to re-rank the others.');
@@ -309,6 +313,7 @@ class ContestAdminController extends Controller
             'type_id'             => 'nullable|exists:types,id',
             'subject_id'          => 'nullable|exists:subjects,id',
             'duration_minutes'    => 'required|integer|min:1|max:600',
+            'stars_per_question'  => 'required|integer|min:0|max:100',
             'starts_at'           => 'required|date',
             'ends_at'             => 'required|date|after:starts_at',
         ]);

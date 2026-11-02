@@ -31,6 +31,12 @@
                                         <i class="fa-regular fa-clock text-slate-400"></i>
                                         Started {{ $contest->starts_at->tz(\App\Models\Contest::TIMEZONE)->format('D, M d, Y \a\t H:i') }} EAT
                                     </span>
+                                    @if ($contest->stars_per_question)
+                                        <span class="flex items-center gap-1.5">
+                                            <i class="fa-solid fa-star text-amber-500"></i>
+                                            {{ $contest->stars_per_question }} {{ \Illuminate\Support\Str::plural('star', $contest->stars_per_question) }} per correct answer
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
 

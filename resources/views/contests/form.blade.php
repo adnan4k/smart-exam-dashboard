@@ -109,6 +109,24 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                        <i class="fa-solid fa-star text-amber-500 text-[10px]"></i>
+                                        Stars Per Correct Answer <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="number" name="stars_per_question" min="0" max="100" required
+                                           value="{{ old('stars_per_question', $contest->stars_per_question ?? 1) }}"
+                                           class="input-modern">
+                                    <span class="text-[11px] text-slate-400 block mt-1">
+                                        Earned for each question answered correctly. The leaderboard ranks by stars. Set 0 to rank by score only.
+                                    </span>
+                                    @error('stars_per_question')
+                                        <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
                                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Starts At (EAT) <span class="text-rose-500">*</span></label>
                                     <input type="datetime-local" name="starts_at" required
                                            x-model="startsAt" class="input-modern">

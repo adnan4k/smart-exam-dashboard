@@ -64,6 +64,7 @@ class ContestController extends Controller
                     'exam_type'          => $contest->type?->name,
                     'question_count'     => $contest->question_count,
                     'duration_minutes'   => $contest->duration_minutes,
+                    'stars_per_question' => $contest->stars_per_question,
                     'starts_at'          => $contest->starts_at->toIso8601String(),
                     'ends_at'            => $contest->ends_at->toIso8601String(),
                     // Entry stays open for the whole contest; kept for older app builds.
@@ -72,6 +73,7 @@ class ContestController extends Controller
                     'has_attempted'      => $attempt !== null,
                     'attempt_status'     => $attempt?->status,
                     'my_score'           => $attempt?->status === 'submitted' ? $attempt->score : null,
+                    'my_question_stars'  => $attempt?->status === 'submitted' ? $attempt->question_stars : null,
                     'my_rank'            => $attempt?->rank,
                     // An attempt already in progress can always be finished,
                     // so it is never shown locked - see ContestService::start().
@@ -121,6 +123,7 @@ class ContestController extends Controller
                 'subject'          => $contest->subject?->name,
                 'question_count'   => $contest->question_count,
                 'duration_minutes' => $contest->duration_minutes,
+                'stars_per_question' => $contest->stars_per_question,
                 'starts_at'        => $contest->starts_at->toIso8601String(),
                 'ends_at'          => $contest->ends_at->toIso8601String(),
                 // Entry stays open for the whole contest; kept for older app builds.
@@ -151,6 +154,7 @@ class ContestController extends Controller
                 'seconds_remaining' => $attempt->status === 'in_progress' ? $attempt->secondsRemaining() : 0,
                 'submitted_at'      => $attempt->submitted_at?->toIso8601String(),
                 'score'             => $attempt->score,
+                'question_stars'    => $attempt->question_stars,
                 'rank'              => $attempt->rank,
                 'stars_awarded'     => $attempt->stars_awarded,
             ] : null,
@@ -196,6 +200,7 @@ class ContestController extends Controller
                 'id'               => $contest->id,
                 'title'            => $contest->title,
                 'duration_minutes' => $contest->duration_minutes,
+                'stars_per_question' => $contest->stars_per_question,
                 'ends_at'          => $contest->ends_at->toIso8601String(),
             ],
             'questions' => $this->contests->paperFor($contest),
@@ -263,6 +268,8 @@ class ContestController extends Controller
             'status' => 'success',
             'result' => [
                 'score'              => $attempt->score,
+                // Earned now, credited to the wallet when the contest is finalized.
+                'question_stars'     => $attempt->question_stars,
                 'correct'            => $attempt->correct_count,
                 'wrong'              => $attempt->wrong_count,
                 'unanswered'         => $attempt->unanswered_count,
@@ -315,6 +322,7 @@ class ContestController extends Controller
         return response()->json([
             'status'        => 'success',
             'score'         => $attempt->score,
+            'question_stars' => $attempt->question_stars,
             'rank'          => $attempt->rank,
             'stars_awarded' => $attempt->stars_awarded,
             // Standings are only settled once the contest is finalized.
@@ -368,6 +376,10 @@ class ContestController extends Controller
             'name'               => $attempt->user?->name,
             'institution'        => $attempt->user?->institution_name,
             'score'              => $attempt->score,
+            'question_stars'     => $attempt->question_stars,
+            // What the table is ranked on: the paid total once finalized,
+            // the stars earned from answers until then.
+            'stars'              => $attempt->stars_awarded ?: $attempt->question_stars,
             'time_taken_seconds' => $attempt->time_taken_seconds,
             'stars_awarded'      => $attempt->stars_awarded,
         ]);
@@ -384,8 +396,10 @@ class ContestController extends Controller
             'leaderboard' => $rows,
             'me' => $mine && $mine->status === 'submitted' ? [
                 'rank'          => $mine->rank ?? $this->contests->provisionalRank($mine),
-                'score'         => $mine->score,
-                'stars_awarded' => $mine->stars_awarded,
+                'score'          => $mine->score,
+                'question_stars' => $mine->question_stars,
+                'stars'          => $mine->stars_awarded ?: $mine->question_stars,
+                'stars_awarded'  => $mine->stars_awarded,
             ] : null,
         ]);
     }
@@ -462,6 +476,7 @@ class ContestController extends Controller
                 'seconds_remaining'  => $attempt->status === 'in_progress' ? $attempt->secondsRemaining() : 0,
                 'submitted_at'       => $attempt->submitted_at?->toIso8601String(),
                 'score'              => $attempt->score,
+                'question_stars'     => $attempt->question_stars,
                 'correct'            => $attempt->correct_count,
                 'wrong'              => $attempt->wrong_count,
                 'unanswered'         => $attempt->unanswered_count,

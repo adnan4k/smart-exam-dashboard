@@ -239,6 +239,7 @@ class ContestService
                 'status'             => $status,
                 'submitted_at'       => $submittedAt,
                 'score'              => $score,
+                'question_stars'     => $correct * (int) $attempt->contest->stars_per_question,
                 'correct_count'      => $correct,
                 'wrong_count'        => $wrong,
                 'unanswered_count'   => $unanswered,
@@ -282,12 +283,18 @@ class ContestService
      */
     public function provisionalRank(ContestAttempt $attempt): int
     {
+        // Mirrors ContestAttempt::scopeRanked(): stars, then score, then time.
         return ContestAttempt::where('contest_id', $attempt->contest_id)
             ->where('status', 'submitted')
             ->where(function ($q) use ($attempt) {
-                $q->where('score', '>', $attempt->score)
+                $q->where('question_stars', '>', $attempt->question_stars)
                     ->orWhere(function ($q) use ($attempt) {
-                        $q->where('score', $attempt->score)
+                        $q->where('question_stars', $attempt->question_stars)
+                            ->where('score', '>', $attempt->score);
+                    })
+                    ->orWhere(function ($q) use ($attempt) {
+                        $q->where('question_stars', $attempt->question_stars)
+                            ->where('score', $attempt->score)
                             ->where('time_taken_seconds', '<', $attempt->time_taken_seconds);
                     });
             })
