@@ -36,6 +36,7 @@ class ContestController extends Controller
 
         $contests = Contest::visibleTo($user)
             ->with('type:id,name')
+            ->withCount(['attempts as ranked_count' => fn ($q) => $q->where('status', 'submitted')])
             ->where('ends_at', '>=', now()->subDays(30))
             ->orderBy('starts_at')
             ->get();
@@ -74,7 +75,11 @@ class ContestController extends Controller
                     'attempt_status'     => $attempt?->status,
                     'my_score'           => $attempt?->status === 'submitted' ? $attempt->score : null,
                     'my_question_stars'  => $attempt?->status === 'submitted' ? $attempt->question_stars : null,
-                    'my_rank'            => $attempt?->rank,
+                    // The student's place in this contest: live while it runs,
+                    // final once it is finalized. Null if they have not submitted.
+                    'my_rank'            => $this->rankIn($attempt),
+                    'my_rank_is_final'   => $attempt?->rank !== null,
+                    'participants'       => (int) $contest->ranked_count,
                     // An attempt already in progress can always be finished,
                     // so it is never shown locked - see ContestService::start().
                     'locked'             => $locked && $attempt?->status !== 'in_progress',
@@ -97,6 +102,7 @@ class ContestController extends Controller
         // Drafts and other-cohort contests must not even be discoverable.
         $contest = Contest::visibleTo($user)
             ->with(['type:id,name', 'subject:id,name'])
+            ->withCount(['attempts as ranked_count' => fn ($q) => $q->where('status', 'submitted')])
             ->find($contest->id);
 
         if (! $contest) {
@@ -155,7 +161,9 @@ class ContestController extends Controller
                 'submitted_at'      => $attempt->submitted_at?->toIso8601String(),
                 'score'             => $attempt->score,
                 'question_stars'    => $attempt->question_stars,
-                'rank'              => $attempt->rank,
+                'rank'              => $this->rankIn($attempt),
+                'rank_is_final'     => $attempt->rank !== null,
+                'participants'      => (int) $contest->ranked_count,
                 'stars_awarded'     => $attempt->stars_awarded,
             ] : null,
         ]);
@@ -542,7 +550,8 @@ class ContestController extends Controller
                 'unanswered'         => $attempt->unanswered_count,
                 'total_questions'    => $attempt->total_questions,
                 'time_taken_seconds' => $attempt->time_taken_seconds,
-                'rank'               => $attempt->rank,
+                'rank'               => $this->rankIn($attempt),
+                'rank_is_final'      => $attempt->rank !== null,
                 'stars_awarded'      => $attempt->stars_awarded,
             ]),
         ]);
@@ -571,6 +580,20 @@ class ContestController extends Controller
         return ContestAttempt::where('contest_id', $contest->id)
             ->where('user_id', $request->user()->id)
             ->first();
+    }
+
+    /**
+     * Where an attempt stands in its contest: the settled rank once the
+     * contest is finalized, otherwise the live provisional one. Only a
+     * submitted attempt is ranked.
+     */
+    private function rankIn(?ContestAttempt $attempt): ?int
+    {
+        if ($attempt?->status !== 'submitted') {
+            return null;
+        }
+
+        return $attempt->rank ?? $this->contests->provisionalRank($attempt);
     }
 
     private function stateOf(Contest $contest): string

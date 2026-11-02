@@ -197,6 +197,47 @@ class ContestStarsTest extends TestCase
     }
 
     /** @test */
+    public function each_contest_shows_the_students_own_rank_in_it()
+    {
+        $first  = $this->student();
+        $second = $this->student();
+        $absent = $this->student();
+
+        $this->sit($first, correct: 3);
+        $this->sit($second, correct: 1);
+
+        // While the contest is running the rank is live.
+        Sanctum::actingAs($second);
+
+        $this->getJson('/api/contests')
+            ->assertOk()
+            ->assertJsonPath('contests.0.my_rank', 2)
+            ->assertJsonPath('contests.0.my_rank_is_final', false)
+            ->assertJsonPath('contests.0.participants', 2);
+
+        $this->getJson("/api/contests/{$this->contest->id}")
+            ->assertJsonPath('my_attempt.rank', 2)
+            ->assertJsonPath('my_attempt.participants', 2);
+
+        // Once finalized it is the settled rank.
+        $this->travel(2)->hours();
+        app(ContestFinalizer::class)->finalize($this->contest->fresh());
+
+        Sanctum::actingAs($first);
+
+        $this->getJson('/api/contests')
+            ->assertJsonPath('contests.0.my_rank', 1)
+            ->assertJsonPath('contests.0.my_rank_is_final', true);
+
+        // A student who never entered has no rank in it.
+        Sanctum::actingAs($absent);
+
+        $this->getJson('/api/contests')
+            ->assertJsonPath('contests.0.my_rank', null)
+            ->assertJsonPath('contests.0.participants', 2);
+    }
+
+    /** @test */
     public function a_contest_with_zero_stars_per_question_pays_none()
     {
         $this->contest->update(['stars_per_question' => 0]);
