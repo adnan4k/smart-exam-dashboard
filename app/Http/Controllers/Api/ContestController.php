@@ -453,6 +453,46 @@ class ContestController extends Controller
     }
 
     /**
+     * The top three students by stars earned across every contest, within the
+     * caller's own exam type.
+     *
+     * Sums the whole ledger, clawbacks included, so stars revoked from a
+     * voided entry do not keep someone on the board.
+     */
+    public function topStudents(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $totals = RewardTransaction::selectRaw('user_id, SUM(stars) as stars')
+            ->where('source_type', ContestAttempt::class)
+            ->when($user->type_id, fn ($q) => $q->whereIn(
+                'user_id',
+                \App\Models\User::where('type_id', $user->type_id)->select('id')
+            ))
+            ->groupBy('user_id')
+            ->havingRaw('SUM(stars) > 0')
+            ->orderByDesc('stars')
+            ->orderBy('user_id')
+            ->limit(3)
+            ->get();
+
+        $names = \App\Models\User::whereIn('id', $totals->pluck('user_id'))
+            ->get(['id', 'name', 'institution_name'])
+            ->keyBy('id');
+
+        return response()->json([
+            'status'       => 'success',
+            'top_students' => $totals->values()->map(fn ($row, $i) => [
+                'rank'        => $i + 1,
+                'user_id'     => (int) $row->user_id,
+                'name'        => $names[$row->user_id]->name ?? null,
+                'institution' => $names[$row->user_id]->institution_name ?? null,
+                'stars'       => (int) $row->stars,
+            ]),
+        ]);
+    }
+
+    /**
      * The caller's own contest record, for the app's "My contests" screen.
      * Every entry with its result, newest first; an attempt still in progress
      * comes back with its seconds_remaining so a resume is one tap away.

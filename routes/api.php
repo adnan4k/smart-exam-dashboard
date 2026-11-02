@@ -162,6 +162,7 @@ Route::get('/test-email', function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('contests', [\App\Http\Controllers\Api\ContestController::class, 'index']);
     Route::get('contests/leaderboard', [\App\Http\Controllers\Api\ContestController::class, 'globalLeaderboard']);
+    Route::get('contests/top-students', [\App\Http\Controllers\Api\ContestController::class, 'topStudents']);
     Route::get('me/rewards', [\App\Http\Controllers\Api\ContestController::class, 'myRewards']);
     Route::get('me/contest-attempts', [\App\Http\Controllers\Api\ContestController::class, 'myAttempts']);
 

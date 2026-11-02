@@ -152,6 +152,30 @@ class ContestStarsTest extends TestCase
     }
 
     /** @test */
+    public function top_students_returns_the_three_highest_star_earners()
+    {
+        $students = [];
+        foreach ([3, 1, 2, 3, 0, 1] as $correct) {
+            $student = $this->student();
+            $this->sit($student, correct: $correct);
+            $students[] = $student;
+        }
+
+        $this->travel(2)->hours();
+        app(ContestFinalizer::class)->finalize($this->contest->fresh());
+
+        Sanctum::actingAs($students[0]);
+
+        $this->getJson('/api/contests/top-students')
+            ->assertOk()
+            ->assertJsonCount(3, 'top_students')
+            ->assertJsonPath('top_students.0.stars', 9)
+            ->assertJsonPath('top_students.1.stars', 9)
+            ->assertJsonPath('top_students.2.stars', 6)
+            ->assertJsonPath('top_students.2.user_id', $students[2]->id);
+    }
+
+    /** @test */
     public function a_contest_with_zero_stars_per_question_pays_none()
     {
         $this->contest->update(['stars_per_question' => 0]);
