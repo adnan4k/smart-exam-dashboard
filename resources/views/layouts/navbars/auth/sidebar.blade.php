@@ -139,6 +139,17 @@
                 </a>
             </li>
 
+            <!-- Contest prizes -->
+            <li class="nav-item">
+                <a class="nav-link {{ str_starts_with(Route::currentRouteName() ?? '', 'contest-prizes.') ? 'is-active' : '' }}"
+                    href="{{ route('contest-prizes.index') }}">
+                    <div class="nav-icon">
+                        <i class="fas fa-gift text-xs"></i>
+                    </div>
+                    <span class="nav-text">Contest Prizes</span>
+                </a>
+            </li>
+
             <!-- GROUP: LEARNING MEDIA -->
             <li class="pt-3 pb-1 px-3">
                 <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Learning Media</span>

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContestAttempt;
+use App\Models\ContestPrize;
 use App\Models\Type;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -50,7 +52,17 @@ class ContestRankingController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        $history = $this->history($paginator->getCollection()->pluck('user_id'));
+        $pageUserIds = $paginator->getCollection()->pluck('user_id');
+        $history = $this->history($pageUserIds);
+
+        // Contact details and prizes for the students on this page only.
+        $users = User::with('type:id,name')->whereIn('id', $pageUserIds)->get()->keyBy('id');
+        $prizes = ContestPrize::with(['contest:id,title', 'package:id,name'])
+            ->whereIn('user_id', $pageUserIds)
+            ->where('status', '!=', 'cancelled')
+            ->latest()
+            ->get()
+            ->groupBy('user_id');
 
         $summary = [
             'participants' => $ranked->count(),
@@ -62,6 +74,8 @@ class ContestRankingController extends Controller
         return view('contests.rankings', [
             'rows'    => $paginator,
             'history' => $history,
+            'users'   => $users,
+            'prizes'  => $prizes,
             'summary' => $summary,
             'types'   => Type::orderBy('name')->get(['id', 'name']),
             'typeId'  => $typeId,

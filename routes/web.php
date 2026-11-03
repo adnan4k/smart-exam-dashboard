@@ -91,6 +91,15 @@ Route::middleware('auth')->group(function () {
     Route::get('contest-rankings', [\App\Http\Controllers\Admin\ContestRankingController::class, 'index'])
         ->name('contest-rankings.index');
 
+    // Manual prizes (subscription or cash) for top-ranked students.
+    Route::controller(\App\Http\Controllers\Admin\ContestPrizeController::class)->group(function () {
+        Route::get('contest-prizes', 'index')->name('contest-prizes.index');
+        Route::get('contest-prizes/create', 'create')->name('contest-prizes.create');
+        Route::post('contest-prizes', 'store')->name('contest-prizes.store');
+        Route::post('contest-prizes/{prize}/paid', 'markPaid')->name('contest-prizes.paid');
+        Route::post('contest-prizes/{prize}/cancel', 'cancel')->name('contest-prizes.cancel');
+    });
+
     Route::controller(\App\Http\Controllers\Admin\ContestAdminController::class)->group(function () {
         Route::get('contests', 'index')->name('contests.index');
         Route::get('contests/create', 'create')->name('contests.create');

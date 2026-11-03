@@ -89,6 +89,7 @@
                                         <th class="text-center">Accuracy</th>
                                         <th class="text-center">Time</th>
                                         <th class="text-center">Stars</th>
+                                        <th class="text-center w-28">Prize</th>
                                         <th class="w-10"></th>
                                     </tr>
                                 </thead>
@@ -133,6 +134,16 @@
                                             <td class="text-center text-xs ct-star ct-num">
                                                 <i class="fa-solid fa-star text-[10px] text-amber-500"></i> {{ number_format($row->stars) }}
                                             </td>
+                                            <td class="text-center">
+                                                @php $given = $prizes->get($row->user_id, collect()); @endphp
+                                                <a href="{{ route('contest-prizes.create', ['user' => $row->user_id, 'rank' => $row->rank]) }}" @click.stop
+                                                   class="{{ $row->rank <= 3 ? 'btn-brand' : 'btn-brand-outline' }} text-[11px] px-2.5 py-1.5 inline-flex items-center gap-1">
+                                                    <i class="fa-solid fa-gift text-[10px]"></i> Reward
+                                                </a>
+                                                @if ($given->isNotEmpty())
+                                                    <p class="text-[10px] text-slate-400 mb-0 mt-1">{{ $given->count() }} given</p>
+                                                @endif
+                                            </td>
                                             <td class="text-center text-slate-400">
                                                 <i class="fa-solid fa-chevron-down text-[10px] transition" :class="open && 'rotate-180'"></i>
                                             </td>
@@ -140,7 +151,26 @@
 
                                         <!-- Per-contest breakdown -->
                                         <tr x-show="open" x-cloak>
-                                            <td colspan="9" class="bg-slate-50/70 px-6 py-3">
+                                            <td colspan="10" class="bg-slate-50/70 px-6 py-3">
+                                                @if ($student = $users->get($row->user_id))
+                                                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                                                        <div class="lg:col-span-2">
+                                                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Contact</p>
+                                                            @include('contests.prizes.partials.contact', ['user' => $student])
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Prizes given</p>
+                                                            @forelse ($prizes->get($row->user_id, collect()) as $p)
+                                                                <p class="text-xs text-slate-700 mb-1">
+                                                                    <span class="font-semibold">{{ $p->summary() }}</span>
+                                                                    <span class="text-slate-400">· {{ $p->forLabel() }} · {{ $p->statusLabel() }}</span>
+                                                                </p>
+                                                            @empty
+                                                                <p class="text-xs text-slate-400 mb-0">None yet.</p>
+                                                            @endforelse
+                                                        </div>
+                                                    </div>
+                                                @endif
                                                 <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Contest history</p>
                                                 <table class="w-full text-xs">
                                                     <thead>
@@ -188,7 +218,7 @@
                                 @empty
                                     <tbody>
                                         <tr>
-                                            <td colspan="9" class="p-0">
+                                            <td colspan="10" class="p-0">
                                                 <x-empty-state
                                                     :title="$search !== '' ? 'No Matching Students' : 'No Participants Yet'"
                                                     :description="$search !== '' ? 'No ranked student matches that name or email.' : 'Students appear here once they have submitted a contest.'"
