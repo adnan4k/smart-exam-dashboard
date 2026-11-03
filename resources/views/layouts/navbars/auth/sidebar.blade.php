@@ -128,6 +128,17 @@
                 </a>
             </li>
 
+            <!-- Contest rankings -->
+            <li class="nav-item">
+                <a class="nav-link {{ Route::currentRouteName() === 'contest-rankings.index' ? 'is-active' : '' }}"
+                    href="{{ route('contest-rankings.index') }}">
+                    <div class="nav-icon">
+                        <i class="fas fa-ranking-star text-xs"></i>
+                    </div>
+                    <span class="nav-text">Contest Rankings</span>
+                </a>
+            </li>
+
             <!-- GROUP: LEARNING MEDIA -->
             <li class="pt-3 pb-1 px-3">
                 <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Learning Media</span>

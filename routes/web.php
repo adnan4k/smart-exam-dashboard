@@ -87,6 +87,10 @@ Route::middleware('auth')->group(function () {
     | Contests. Plain controllers with Blade and Alpine rather than Livewire, so
     | the paper builder and the live leaderboard run client side.
     */
+    // Every participant ranked across all contests.
+    Route::get('contest-rankings', [\App\Http\Controllers\Admin\ContestRankingController::class, 'index'])
+        ->name('contest-rankings.index');
+
     Route::controller(\App\Http\Controllers\Admin\ContestAdminController::class)->group(function () {
         Route::get('contests', 'index')->name('contests.index');
         Route::get('contests/create', 'create')->name('contests.create');
