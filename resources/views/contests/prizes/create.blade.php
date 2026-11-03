@@ -1,5 +1,5 @@
 <x-layouts.app>
-    @include('contests.partials.theme')
+    @include('contests.partials.pz-styles')
 
     @php
         $packageDays = $packages->pluck('duration_days', 'id');
@@ -7,183 +7,177 @@
         $oldPackage  = old('package_id', $packages->first()?->id);
     @endphp
 
-    <div class="ct">
-        <div class="row">
-            <div class="col-12">
-                @include('contests.partials.flash')
+    <div class="pz">
+        <a href="{{ route('contest-rankings.index') }}" class="pz-back"><i class="fa-solid fa-arrow-left"></i> Contest Rankings</a>
 
-                <div class="mb-3">
-                    <a href="{{ route('contest-rankings.index') }}" class="text-xs font-semibold text-[#58706D] hover:underline flex items-center gap-1">
-                        <i class="fa-solid fa-arrow-left text-[10px]"></i> Contest Rankings
-                    </a>
-                </div>
+        @include('contests.partials.pz-flash')
 
-                <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                    <!-- Student -->
-                    <div class="lg:col-span-2 space-y-4">
-                        <div class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm p-4">
-                            <div class="flex items-center gap-3 mb-3">
-                                <div class="w-10 h-10 rounded-full bg-[#58706D]/10 text-[#58706D] font-bold text-sm flex items-center justify-center uppercase">
-                                    {{ mb_substr($user->name, 0, 2) }}
-                                </div>
-                                <div>
-                                    <h5 class="font-bold text-slate-800 text-base mb-0 tracking-tight">{{ $user->name }}</h5>
-                                    <p class="text-[11px] text-slate-400 mb-0">
-                                        <i class="fa-solid fa-star text-amber-500"></i> {{ number_format($user->total_stars) }} stars in total
-                                    </p>
-                                </div>
+        <div class="pz-layout">
+            {{-- Student --}}
+            <div class="pz-stack">
+                <section class="pz-card">
+                    <div class="pz-card-body">
+                        <div class="pz-person" style="margin-bottom: 18px;">
+                            <div class="pz-avatar is-lg">{{ mb_substr($user->name, 0, 2) }}</div>
+                            <div style="min-width: 0;">
+                                <p class="pz-title">{{ $user->name }}</p>
+                                <p class="pz-sub"><span class="pz-stars"><i class="fa-solid fa-star"></i> {{ number_format($user->total_stars) }}</span> stars in total</p>
                             </div>
-                            @include('contests.prizes.partials.contact', ['user' => $user])
                         </div>
+                        @include('contests.prizes.partials.contact', ['user' => $user])
+                    </div>
+                </section>
 
-                        <div class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm p-4">
-                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Active subscriptions</p>
+                <section class="pz-card">
+                    <div class="pz-card-body">
+                        <span class="pz-label">Active subscriptions</span>
+                        <ul class="pz-list" style="margin-bottom: 16px;">
                             @forelse ($user->subscriptions as $sub)
-                                <p class="text-xs text-slate-700 mb-1">
-                                    <span class="font-semibold">{{ $sub->package?->name ?? 'Legacy (exam type)' }}</span>
-                                    <span class="text-slate-400">until {{ \Illuminate\Support\Carbon::parse($sub->end_date)->format('M d, Y') }}</span>
-                                </p>
+                                <li>
+                                    <span class="pz-strong">{{ $sub->package?->name ?? 'Legacy (exam type)' }}</span>
+                                    <span class="pz-muted">until {{ \Illuminate\Support\Carbon::parse($sub->end_date)->format('M d, Y') }}</span>
+                                </li>
                             @empty
-                                <p class="text-xs text-slate-400 mb-0">None.</p>
+                                <li class="pz-faint">None.</li>
                             @endforelse
+                        </ul>
 
-                            <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-3 mb-2">Prizes already given</p>
+                        <span class="pz-label">Prizes already given</span>
+                        <ul class="pz-list">
                             @forelse ($previous as $p)
-                                <p class="text-xs text-slate-700 mb-1">
-                                    <span class="font-semibold">{{ $p->summary() }}</span>
-                                    <span class="text-slate-400">· {{ $p->forLabel() }} · {{ $p->statusLabel() }} · {{ $p->created_at->format('M d, Y') }}</span>
-                                </p>
+                                <li>
+                                    <span class="pz-strong">{{ $p->summary() }}</span>
+                                    <span class="pz-muted">· {{ $p->forLabel() }} · {{ $p->created_at->format('M d, Y') }}</span>
+                                    <span class="pz-pill is-sm {{ $p->status === 'pending' ? 'is-amber' : ($p->status === 'cancelled' ? 'is-muted' : 'is-green') }}">{{ $p->statusLabel() }}</span>
+                                </li>
                             @empty
-                                <p class="text-xs text-slate-400 mb-0">None yet.</p>
+                                <li class="pz-faint">None yet.</li>
                             @endforelse
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            {{-- Form --}}
+            <section class="pz-card" style="margin-bottom: 0;">
+                <header class="pz-card-head">
+                    <h2 class="pz-title">Give a prize</h2>
+                    <p class="pz-sub">A subscription unlocks immediately. Money is tracked until you mark it paid.</p>
+                </header>
+
+                <form method="POST" action="{{ route('contest-prizes.store') }}" class="pz-card-body pz-fields"
+                      x-data="{
+                          kind: @js($oldKind),
+                          packageId: @js((string) $oldPackage),
+                          days: @js(old('subscription_days', $packageDays[$oldPackage] ?? 30)),
+                          paidNow: @js((bool) old('paid_now')),
+                          defaults: @js($packageDays),
+                      }">
+                    @csrf
+                    <input type="hidden" name="user_id" value="{{ $user->id }}">
+
+                    <div class="pz-row is-2-1">
+                        <div>
+                            <label class="pz-field-label" for="pz-contest">Awarded for</label>
+                            <select id="pz-contest" name="contest_id" class="pz-select">
+                                <option value="">Overall ranking (all contests)</option>
+                                @foreach ($attempts as $a)
+                                    <option value="{{ $a->contest_id }}" @selected((int) old('contest_id', $contestId) === $a->contest_id)>
+                                        {{ $a->contest->title }}{{ $a->rank && $a->contest->status === 'finalized' ? ' — placed #' . $a->rank : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="pz-field-label" for="pz-rank">Rank</label>
+                            <input id="pz-rank" type="number" min="1" name="rank" value="{{ old('rank', $rank) }}" class="pz-input" placeholder="e.g. 1">
                         </div>
                     </div>
 
-                    <!-- Form -->
-                    <div class="lg:col-span-3">
-                        <form method="POST" action="{{ route('contest-prizes.store') }}"
-                              class="card border border-slate-200/80 rounded-2xl bg-white shadow-sm p-4 space-y-4"
-                              x-data="{
-                                  kind: @js($oldKind),
-                                  packageId: @js((string) $oldPackage),
-                                  days: @js(old('subscription_days', $packageDays[$oldPackage] ?? 30)),
-                                  paidNow: @js((bool) old('paid_now')),
-                                  defaults: @js($packageDays),
-                              }">
-                            @csrf
-                            <input type="hidden" name="user_id" value="{{ $user->id }}">
-
-                            <div>
-                                <h5 class="font-bold text-slate-800 text-base mb-0.5 tracking-tight">Give a prize</h5>
-                                <p class="text-xs text-slate-400 mb-0">A subscription unlocks immediately. Cash is tracked until you mark it paid.</p>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <label class="block sm:col-span-2">
-                                    <span class="text-xs font-semibold text-slate-600">Awarded for</span>
-                                    <select name="contest_id" class="form-select text-xs w-full mt-1">
-                                        <option value="">Overall ranking (all contests)</option>
-                                        @foreach ($attempts as $a)
-                                            <option value="{{ $a->contest_id }}" @selected((int) old('contest_id', $contestId) === $a->contest_id)>
-                                                {{ $a->contest->title }}{{ $a->rank && $a->contest->status === 'finalized' ? ' — placed #' . $a->rank : '' }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                    <div>
+                        <span class="pz-field-label">Prize</span>
+                        <div class="pz-choice">
+                            @foreach ([
+                                'subscription' => ['Subscription', 'Free access to a package', 'fa-id-card'],
+                                'cash'         => ['Money', 'Paid outside the app', 'fa-money-bill-wave'],
+                            ] as $value => [$label, $desc, $icon])
+                                <label class="pz-choice-option" :class="kind === '{{ $value }}' && 'is-on'">
+                                    <input type="radio" name="kind" value="{{ $value }}" x-model="kind">
+                                    <span class="pz-choice-icon"><i class="fa-solid {{ $icon }}"></i></span>
+                                    <span style="min-width: 0;">
+                                        <span class="pz-choice-title" style="display: block;">{{ $label }}</span>
+                                        <span class="pz-choice-desc" style="display: block;">{{ $desc }}</span>
+                                    </span>
+                                    <i class="fa-solid fa-circle-check pz-choice-check" x-show="kind === '{{ $value }}'"></i>
                                 </label>
-                                <label class="block">
-                                    <span class="text-xs font-semibold text-slate-600">Rank</span>
-                                    <input type="number" min="1" name="rank" value="{{ old('rank', $rank) }}" class="form-control text-xs w-full mt-1" placeholder="e.g. 1">
-                                </label>
-                            </div>
-
-                            <!-- Kind -->
-                            <div>
-                                <span class="text-xs font-semibold text-slate-600">Prize</span>
-                                <div class="grid grid-cols-2 gap-2 mt-1">
-                                    @foreach (['subscription' => ['Subscription', 'fa-id-card'], 'cash' => ['Money', 'fa-money-bill-wave']] as $value => [$label, $icon])
-                                        <label class="flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition"
-                                               :class="kind === '{{ $value }}' ? 'border-[#58706D] bg-emerald-50/60' : 'border-slate-200 hover:bg-slate-50'">
-                                            <input type="radio" name="kind" value="{{ $value }}" x-model="kind" class="sr-only">
-                                            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition"
-                                                  :class="kind === '{{ $value }}' ? 'bg-[#58706D] text-white' : 'bg-slate-100 text-slate-500'">
-                                                <i class="fa-solid {{ $icon }} text-xs"></i>
-                                            </span>
-                                            <span class="text-xs font-bold text-slate-800 flex-1">{{ $label }}</span>
-                                            <i class="fa-solid fa-circle-check text-[#58706D]" x-show="kind === '{{ $value }}'"></i>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- Subscription -->
-                            <div x-show="kind === 'subscription'" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <label class="block sm:col-span-2">
-                                    <span class="text-xs font-semibold text-slate-600">Package</span>
-                                    <select name="package_id" x-model="packageId" @change="days = defaults[packageId] ?? days"
-                                            class="form-select text-xs w-full mt-1" :disabled="kind !== 'subscription'">
-                                        @foreach ($packages as $package)
-                                            <option value="{{ $package->id }}">{{ $package->name }} ({{ number_format($package->price) }} ETB value)</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                                <label class="block">
-                                    <span class="text-xs font-semibold text-slate-600">Days</span>
-                                    <input type="number" min="1" max="3650" name="subscription_days" x-model="days"
-                                           class="form-control text-xs w-full mt-1" :disabled="kind !== 'subscription'">
-                                </label>
-                                <p class="sm:col-span-3 text-[11px] text-slate-400 mb-0">
-                                    If the student already has this package active, the days are added to the end of it.
-                                </p>
-                            </div>
-
-                            <!-- Cash -->
-                            <div x-show="kind === 'cash'" x-cloak class="space-y-3">
-                                <label class="block">
-                                    <span class="text-xs font-semibold text-slate-600">Amount (ETB)</span>
-                                    <input type="number" min="1" step="0.01" name="amount" value="{{ old('amount') }}"
-                                           class="form-control text-xs w-full mt-1" :disabled="kind !== 'cash'" placeholder="e.g. 500">
-                                </label>
-
-                                <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
-                                    <input type="checkbox" name="paid_now" value="1" x-model="paidNow" :disabled="kind !== 'cash'"
-                                           style="width: 1rem; height: 1rem; margin: 0; accent-color: #58706D;">
-                                    Already paid
-                                    <span class="font-normal text-slate-400">(otherwise it is saved as awaiting payment)</span>
-                                </label>
-
-                                <div x-show="paidNow" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <label class="block">
-                                        <span class="text-xs font-semibold text-slate-600">Sent via</span>
-                                        <select name="payment_method" class="form-select text-xs w-full mt-1" :disabled="kind !== 'cash' || ! paidNow">
-                                            <option value="">Choose...</option>
-                                            @foreach ($methods as $method)
-                                                <option value="{{ $method }}" @selected(old('payment_method') === $method)>{{ $method }}</option>
-                                            @endforeach
-                                        </select>
-                                    </label>
-                                    <label class="block">
-                                        <span class="text-xs font-semibold text-slate-600">Transaction reference</span>
-                                        <input type="text" name="payment_reference" value="{{ old('payment_reference') }}"
-                                               class="form-control text-xs w-full mt-1" :disabled="kind !== 'cash' || ! paidNow" placeholder="Optional">
-                                    </label>
-                                </div>
-                            </div>
-
-                            <label class="block">
-                                <span class="text-xs font-semibold text-slate-600">Note</span>
-                                <textarea name="note" rows="2" class="form-control text-xs w-full mt-1" placeholder="Optional, e.g. agreed on the phone on Nov 3">{{ old('note') }}</textarea>
-                            </label>
-
-                            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                                <a href="{{ route('contest-rankings.index') }}" class="btn-brand-outline text-xs px-4 py-2">Cancel</a>
-                                <button type="submit" class="btn-brand text-xs px-4 py-2 shadow-sm">
-                                    <i class="fa-solid fa-gift text-xs"></i> Give prize
-                                </button>
-                            </div>
-                        </form>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            </div>
+
+                    {{-- Subscription --}}
+                    <div x-show="kind === 'subscription'">
+                        <div class="pz-row is-2-1">
+                            <div>
+                                <label class="pz-field-label" for="pz-package">Package</label>
+                                <select id="pz-package" name="package_id" x-model="packageId" @change="days = defaults[packageId] ?? days"
+                                        class="pz-select" :disabled="kind !== 'subscription'">
+                                    @foreach ($packages as $package)
+                                        <option value="{{ $package->id }}">{{ $package->name }} ({{ number_format($package->price) }} ETB value)</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="pz-field-label" for="pz-days">Days</label>
+                                <input id="pz-days" type="number" min="1" max="3650" name="subscription_days" x-model="days"
+                                       class="pz-input" :disabled="kind !== 'subscription'">
+                            </div>
+                        </div>
+                        <p class="pz-field-help">If the student already has this package active, the days are added to the end of it.</p>
+                    </div>
+
+                    {{-- Money --}}
+                    <div x-show="kind === 'cash'" x-cloak class="pz-fields">
+                        <div>
+                            <label class="pz-field-label" for="pz-amount">Amount (ETB)</label>
+                            <input id="pz-amount" type="number" min="1" step="0.01" name="amount" value="{{ old('amount') }}"
+                                   class="pz-input" :disabled="kind !== 'cash'" placeholder="e.g. 500">
+                        </div>
+
+                        <label class="pz-check">
+                            <input type="checkbox" name="paid_now" value="1" x-model="paidNow" :disabled="kind !== 'cash'">
+                            Already paid
+                            <span class="pz-faint" style="font-weight: 400;">— otherwise it is saved as awaiting payment</span>
+                        </label>
+
+                        <div class="pz-row is-1-1" x-show="paidNow" x-cloak>
+                            <div>
+                                <label class="pz-field-label" for="pz-method">Sent via</label>
+                                <select id="pz-method" name="payment_method" class="pz-select" :disabled="kind !== 'cash' || ! paidNow">
+                                    <option value="">Choose…</option>
+                                    @foreach ($methods as $method)
+                                        <option value="{{ $method }}" @selected(old('payment_method') === $method)>{{ $method }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="pz-field-label" for="pz-ref">Transaction reference</label>
+                                <input id="pz-ref" type="text" name="payment_reference" value="{{ old('payment_reference') }}"
+                                       class="pz-input" :disabled="kind !== 'cash' || ! paidNow" placeholder="Optional">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="pz-field-label" for="pz-note">Note</label>
+                        <textarea id="pz-note" name="note" rows="2" class="pz-textarea" placeholder="Optional, e.g. agreed on the phone on Nov 3">{{ old('note') }}</textarea>
+                    </div>
+
+                    <div class="pz-actions">
+                        <a href="{{ route('contest-rankings.index') }}" class="pz-btn pz-btn-quiet">Cancel</a>
+                        <button type="submit" class="pz-btn pz-btn-primary"><i class="fa-solid fa-gift"></i> Give prize</button>
+                    </div>
+                </form>
+            </section>
         </div>
     </div>
 </x-layouts.app>
