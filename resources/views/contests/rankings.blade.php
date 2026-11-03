@@ -86,8 +86,6 @@
                                         <th class="text-center">Exam Type</th>
                                         <th class="text-center">Contests</th>
                                         <th class="text-center">Wins</th>
-                                        <th class="text-center">Best Rank</th>
-                                        <th class="text-center">Correct</th>
                                         <th class="text-center">Accuracy</th>
                                         <th class="text-center">Time</th>
                                         <th class="text-center">Stars</th>
@@ -130,8 +128,6 @@
                                             <td class="text-center text-xs font-bold ct-num {{ $row->wins ? 'text-amber-700' : 'text-slate-400' }}">
                                                 @if ($row->wins)<i class="fa-solid fa-crown text-[10px] text-amber-500"></i>@endif {{ $row->wins }}
                                             </td>
-                                            <td class="text-center text-xs font-semibold text-slate-600 ct-num">{{ $row->best_rank ? '#' . $row->best_rank : '—' }}</td>
-                                            <td class="text-center text-xs text-slate-700 ct-num">{{ $row->correct }}<span class="text-slate-400">/{{ $row->questions }}</span></td>
                                             <td class="text-center text-xs font-semibold text-slate-700 ct-num">{{ $row->accuracy }}%</td>
                                             <td class="text-center text-xs text-slate-500 ct-num">{{ $fmtTime($row->time_taken) }}</td>
                                             <td class="text-center text-xs ct-star ct-num">
@@ -144,7 +140,7 @@
 
                                         <!-- Per-contest breakdown -->
                                         <tr x-show="open" x-cloak>
-                                            <td colspan="11" class="bg-slate-50/70 px-6 py-3">
+                                            <td colspan="9" class="bg-slate-50/70 px-6 py-3">
                                                 <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Contest history</p>
                                                 <table class="w-full text-xs">
                                                     <thead>
@@ -192,7 +188,7 @@
                                 @empty
                                     <tbody>
                                         <tr>
-                                            <td colspan="11" class="p-0">
+                                            <td colspan="9" class="p-0">
                                                 <x-empty-state
                                                     :title="$search !== '' ? 'No Matching Students' : 'No Participants Yet'"
                                                     :description="$search !== '' ? 'No ranked student matches that name or email.' : 'Students appear here once they have submitted a contest.'"

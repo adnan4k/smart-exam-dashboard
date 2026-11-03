@@ -98,15 +98,13 @@ class ContestRankingController extends Controller
                 SUM(a.correct_count) as correct,
                 SUM(a.total_questions) as questions,
                 SUM(a.time_taken_seconds) as time_taken,
-                SUM(CASE WHEN c.status = 'finalized' AND a.`rank` = 1 THEN 1 ELSE 0 END) as wins,
-                MIN(CASE WHEN c.status = 'finalized' THEN a.`rank` END) as best_rank
+                SUM(CASE WHEN c.status = 'finalized' AND a.`rank` = 1 THEN 1 ELSE 0 END) as wins
             ")
             ->get()
             ->map(function ($r) {
                 foreach (['contests', 'stars', 'score', 'correct', 'questions', 'time_taken', 'wins'] as $col) {
                     $r->$col = (int) $r->$col;
                 }
-                $r->best_rank = $r->best_rank === null ? null : (int) $r->best_rank;
                 $r->accuracy  = $r->questions ? round($r->correct / $r->questions * 100) : 0;
 
                 return $r;
