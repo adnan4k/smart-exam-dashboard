@@ -114,7 +114,7 @@
                                                     <div class="w-8 h-8 rounded-full bg-[#58706D]/10 text-[#58706D] font-bold text-xs flex items-center justify-center flex-shrink-0 uppercase">
                                                         {{ mb_substr($row->name ?? '?', 0, 2) }}
                                                     </div>
-                                                    <div class="min-w-0">
+                                                    <div class="min-w-0" style="max-width: 15rem;">
                                                         <p class="text-xs font-bold text-slate-800 mb-0 truncate">{{ $row->name }}</p>
                                                         <p class="text-[11px] text-slate-400 mb-0 truncate">
                                                             {{ $row->email }}@if ($row->institution) &middot; {{ $row->institution }}@endif
@@ -151,7 +151,7 @@
 
                                         <!-- Per-contest breakdown -->
                                         <tr x-show="open" x-cloak>
-                                            <td colspan="10" class="bg-slate-50/70 px-6 py-3">
+                                            <td colspan="10" class="bg-slate-50/70 px-6 py-3 whitespace-normal">
                                                 @if ($student = $users->get($row->user_id))
                                                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                                                         <div class="lg:col-span-2">

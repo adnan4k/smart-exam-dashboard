@@ -19,6 +19,30 @@
         --ct-surface: #ffffff;
     }
 
+    /*
+     * Undo two Soft UI rules that fight Tailwind inside contest pages:
+     *  - `.card .card-body { font-family: Open Sans }` names a font that is
+     *    never loaded, so every table fell back to a serif face.
+     *  - `.w-N { width: N% !important }` turns Tailwind's fixed sizes (w-7 =
+     *    1.75rem) into percentages, collapsing avatars and rank badges to a
+     *    sliver and stretching w-40 columns to 40% of the table.
+     * Soft UI's `p { font-size: 1rem }` also outweighs the cell's text size;
+     * :where() keeps this at zero specificity so text-* classes still win.
+     */
+    .ct .card-body { font-family: inherit; }
+    :where(.ct td, .ct dd, .ct dl) p { font-size: inherit; }
+    .ct .w-4  { width: 1rem !important; }
+    .ct .w-6  { width: 1.5rem !important; }
+    .ct .w-7  { width: 1.75rem !important; }
+    .ct .w-8  { width: 2rem !important; }
+    .ct .w-9  { width: 2.25rem !important; }
+    .ct .w-10 { width: 2.5rem !important; }
+    .ct .w-12 { width: 3rem !important; }
+    .ct .w-16 { width: 4rem !important; }
+    .ct .w-28 { width: 7rem !important; }
+    .ct .w-36 { width: 9rem !important; }
+    .ct .w-40 { width: 10rem !important; }
+
     /* Panels and rails */
     .ct .ct-panel {
         background: var(--ct-cream);
@@ -71,7 +95,14 @@
         border-radius: 50%; background: var(--ct-sage); margin-right: .35rem;
     }
 
-    /* Tables */
+    /* Tables. Soft UI pads every cell 1.5rem a side, which pushes wide tables
+       past the card edge; scroll instead of clipping when they still do. */
+    .ct .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* app.css pads `.table thead th` / `.table tbody td` 1.25rem !important. */
+    .ct .table thead th,
+    .ct .table tbody td { padding-left: .75rem !important; padding-right: .75rem !important; }
+    /* Soft UI's `.table td { white-space: nowrap }` outranks the utility class. */
+    .ct .table td.whitespace-normal { white-space: normal; }
     .ct table thead th { color: var(--ct-ink) !important; border-bottom-color: var(--ct-khaki) !important; }
     .ct table tbody tr td { border-bottom-color: rgba(176, 176, 135, .45); }
     .ct .ct-rank { color: var(--ct-ink); font-weight: 700; font-variant-numeric: tabular-nums; }

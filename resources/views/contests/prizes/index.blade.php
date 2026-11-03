@@ -69,7 +69,7 @@
                                         <th class="text-center">Status</th>
                                         <th>Payment</th>
                                         <th class="text-center">Given</th>
-                                        <th class="text-center w-40">Actions</th>
+                                        <th class="text-center w-36">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -93,10 +93,10 @@
                                                     <p class="text-[10px] text-slate-400 mb-0">Account deleted</p>
                                                 @endif
                                             </td>
-                                            <td class="text-xs text-slate-700">
+                                            <td class="text-xs text-slate-700 whitespace-normal" style="min-width: 11rem; max-width: 16rem;">
                                                 {{ $prize->forLabel() }}
                                                 @if ($prize->note)
-                                                    <p class="text-[11px] text-slate-400 mb-0 max-w-xs whitespace-normal">{{ $prize->note }}</p>
+                                                    <p class="text-[11px] text-slate-400 mb-0">{{ $prize->note }}</p>
                                                 @endif
                                             </td>
                                             <td class="text-center">

@@ -9,7 +9,7 @@
 
     <div class="ct">
         <div class="row">
-            <div class="col-12 col-xl-10">
+            <div class="col-12">
                 @include('contests.partials.flash')
 
                 <div class="mb-3">
@@ -101,11 +101,15 @@
                                 <span class="text-xs font-semibold text-slate-600">Prize</span>
                                 <div class="grid grid-cols-2 gap-2 mt-1">
                                     @foreach (['subscription' => ['Subscription', 'fa-id-card'], 'cash' => ['Money', 'fa-money-bill-wave']] as $value => [$label, $icon])
-                                        <label class="flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition"
+                                        <label class="flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition"
                                                :class="kind === '{{ $value }}' ? 'border-[#58706D] bg-emerald-50/60' : 'border-slate-200 hover:bg-slate-50'">
                                             <input type="radio" name="kind" value="{{ $value }}" x-model="kind" class="sr-only">
-                                            <i class="fa-solid {{ $icon }} text-[#58706D]"></i>
-                                            <span class="text-xs font-bold text-slate-800">{{ $label }}</span>
+                                            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition"
+                                                  :class="kind === '{{ $value }}' ? 'bg-[#58706D] text-white' : 'bg-slate-100 text-slate-500'">
+                                                <i class="fa-solid {{ $icon }} text-xs"></i>
+                                            </span>
+                                            <span class="text-xs font-bold text-slate-800 flex-1">{{ $label }}</span>
+                                            <i class="fa-solid fa-circle-check text-[#58706D]" x-show="kind === '{{ $value }}'"></i>
                                         </label>
                                     @endforeach
                                 </div>
@@ -140,9 +144,11 @@
                                            class="form-control text-xs w-full mt-1" :disabled="kind !== 'cash'" placeholder="e.g. 500">
                                 </label>
 
-                                <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                                    <input type="checkbox" name="paid_now" value="1" x-model="paidNow" class="form-check-input" :disabled="kind !== 'cash'">
+                                <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                                    <input type="checkbox" name="paid_now" value="1" x-model="paidNow" :disabled="kind !== 'cash'"
+                                           style="width: 1rem; height: 1rem; margin: 0; accent-color: #58706D;">
                                     Already paid
+                                    <span class="font-normal text-slate-400">(otherwise it is saved as awaiting payment)</span>
                                 </label>
 
                                 <div x-show="paidNow" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
