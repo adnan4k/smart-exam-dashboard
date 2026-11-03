@@ -5,12 +5,17 @@ namespace Database\Seeders;
 use App\Models\Choice;
 use App\Models\Contest;
 use App\Models\ContestQuestion;
+use App\Models\ContestRewardRule;
+use App\Models\Package;
 use App\Models\Question;
+use App\Models\Subject;
 use App\Models\Subscription;
+use App\Models\Type;
 use App\Models\User;
 use App\Services\ContestService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -54,13 +59,31 @@ class ContestSampleSeeder extends Seeder
             return;
         }
 
-        Model::unguarded(function () use ($contests) {
-            $this->call(ContestRewardRuleSeeder::class);
+        // Resolve real rows instead of assuming ids, which differ between
+        // databases. SAMPLE_CONTEST_TYPE_ID picks the exam type explicitly.
+        $typeId = env('SAMPLE_CONTEST_TYPE_ID')
+            ?: Subject::whereNotNull('type_id')->orderBy('id')->value('type_id')
+            ?: Type::orderBy('id')->value('id');
+
+        $subjectId = Subject::where('type_id', $typeId)->orderBy('id')->value('id')
+            ?: Subject::orderBy('id')->value('id');
+
+        if (! $typeId || ! Type::whereKey($typeId)->exists() || ! $subjectId) {
+            $this->command?->error('ContestSampleSeeder needs at least one type and one subject in the database.');
+
+            return;
+        }
+
+        $packageId = Package::orderBy('id')->value('id');
+
+        // One transaction: if anything fails, nothing is left behind.
+        DB::transaction(fn () => Model::unguarded(function () use ($contests, $typeId, $subjectId, $packageId) {
+            // Never overwrite reward bands an admin has already configured.
+            if (! ContestRewardRule::whereNull('contest_id')->exists()) {
+                $this->call(ContestRewardRuleSeeder::class);
+            }
 
             $this->cleanUp();
-
-            $typeId    = 1;
-            $subjectId = 1;
 
             $contest = Contest::create([
                 'title'              => self::TITLE,
@@ -126,7 +149,7 @@ class ContestSampleSeeder extends Seeder
 
                 Subscription::create([
                     'user_id'        => $user->id,
-                    'package_id'     => 1,
+                    'package_id'     => $packageId,
                     'type_id'        => $typeId,
                     'payment_status' => 'paid',
                     'start_date'     => now()->toDateString(),
@@ -140,7 +163,7 @@ class ContestSampleSeeder extends Seeder
             }
 
             $this->report($contest);
-        });
+        }));
     }
 
     /**
