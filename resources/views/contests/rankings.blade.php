@@ -91,7 +91,6 @@
                                         <th class="text-center">Accuracy</th>
                                         <th class="text-center">Time</th>
                                         <th class="text-center">Stars</th>
-                                        <th class="text-center">Coins</th>
                                         <th class="w-10"></th>
                                     </tr>
                                 </thead>
@@ -138,7 +137,6 @@
                                             <td class="text-center text-xs ct-star ct-num">
                                                 <i class="fa-solid fa-star text-[10px] text-amber-500"></i> {{ number_format($row->stars) }}
                                             </td>
-                                            <td class="text-center text-xs text-slate-600 ct-num">{{ number_format($row->coins) }}</td>
                                             <td class="text-center text-slate-400">
                                                 <i class="fa-solid fa-chevron-down text-[10px] transition" :class="open && 'rotate-180'"></i>
                                             </td>
@@ -146,7 +144,7 @@
 
                                         <!-- Per-contest breakdown -->
                                         <tr x-show="open" x-cloak>
-                                            <td colspan="12" class="bg-slate-50/70 px-6 py-3">
+                                            <td colspan="11" class="bg-slate-50/70 px-6 py-3">
                                                 <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Contest history</p>
                                                 <table class="w-full text-xs">
                                                     <thead>
@@ -157,7 +155,6 @@
                                                             <th class="text-center font-semibold pb-1.5">Score</th>
                                                             <th class="text-center font-semibold pb-1.5">Time</th>
                                                             <th class="text-center font-semibold pb-1.5">Stars</th>
-                                                            <th class="text-center font-semibold pb-1.5">Coins</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -185,7 +182,6 @@
                                                                 <td class="text-center text-slate-700 ct-num">{{ $attempt->score }}<span class="text-slate-400">/{{ $attempt->total_questions }}</span></td>
                                                                 <td class="text-center text-slate-500 ct-num">{{ $fmtTime((int) $attempt->time_taken_seconds) }}</td>
                                                                 <td class="text-center ct-star ct-num">{{ number_format($stars) }}</td>
-                                                                <td class="text-center text-slate-600 ct-num">{{ number_format($attempt->coins_awarded) }}</td>
                                                             </tr>
                                                         @endforeach
                                                     </tbody>
@@ -196,7 +192,7 @@
                                 @empty
                                     <tbody>
                                         <tr>
-                                            <td colspan="12" class="p-0">
+                                            <td colspan="11" class="p-0">
                                                 <x-empty-state
                                                     :title="$search !== '' ? 'No Matching Students' : 'No Participants Yet'"
                                                     :description="$search !== '' ? 'No ranked student matches that name or email.' : 'Students appear here once they have submitted a contest.'"

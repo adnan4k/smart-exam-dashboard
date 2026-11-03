@@ -94,7 +94,6 @@ class ContestRankingController extends Controller
                 t.name as type_name,
                 COUNT(*) as contests,
                 SUM(CASE WHEN c.status = 'finalized' THEN a.stars_awarded ELSE a.question_stars END) as stars,
-                SUM(a.coins_awarded) as coins,
                 SUM(a.score) as score,
                 SUM(a.correct_count) as correct,
                 SUM(a.total_questions) as questions,
@@ -104,7 +103,7 @@ class ContestRankingController extends Controller
             ")
             ->get()
             ->map(function ($r) {
-                foreach (['contests', 'stars', 'coins', 'score', 'correct', 'questions', 'time_taken', 'wins'] as $col) {
+                foreach (['contests', 'stars', 'score', 'correct', 'questions', 'time_taken', 'wins'] as $col) {
                     $r->$col = (int) $r->$col;
                 }
                 $r->best_rank = $r->best_rank === null ? null : (int) $r->best_rank;
